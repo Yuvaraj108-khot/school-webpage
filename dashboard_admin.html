@@ -630,13 +630,9 @@
                         <label>Select Category / Section</label>
                         <select id="imgCategory">
                             <option value="Campus">Campus</option>
-                            <option value="Events">Events</option>
+                            <option value="Lab">Lab</option>
                             <option value="Sports">Sports</option>
-                            <option value="Main Block">Main Block</option>
-                            <option value="Library">Library</option>
-                            <option value="Computer Lab">Computer Lab</option>
-                            <option value="Science Lab">Science Lab</option>
-                            <option value="Auditorium">Auditorium / Open Air Theatre</option>
+                            <option value="Events">Events</option>
                             <option value="Other">Other</option>
                         </select>
 
@@ -663,8 +659,13 @@
             <div id="admin-events-section" style="display: none;">
                 <div class="card-box">
                     <h3><i class="fas fa-bullhorn"></i> Add Notice / Event</h3>
-                    <input type="text" id="eventTitle" placeholder="Event Title">
+                    <input type="text" id="eventTitle" placeholder="Event Title (Required)">
+                    <label style="font-size:0.8rem; color:#666; margin-bottom:5px; display:block;">Event Date
+                        (Optional)</label>
                     <input type="date" id="eventDate">
+                    <label style="font-size:0.8rem; color:#666; margin-bottom:5px; display:block;">Auto-Delete After
+                        Date (Optional)</label>
+                    <input type="date" id="eventExpiryDate">
                     <textarea id="eventDetails" rows="3" placeholder="Event Details..."></textarea>
                     <button class="btn btn-primary" onclick="publishNotice()">Publish Notice</button>
                 </div>
@@ -908,9 +909,30 @@
         }
 
         function loadAdminNotices() {
-            const notices = getNotices();
+            let notices = getNotices();
             const list = document.getElementById('noticeList');
             list.innerHTML = '';
+
+            // Automatically clean up expired notices
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let updated = false;
+
+            const validNotices = notices.filter(notice => {
+                if (notice.expiryDate) {
+                    const expDate = new Date(notice.expiryDate);
+                    if (expDate < today) {
+                        updated = true;
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            if (updated) {
+                notices = validNotices;
+                saveNotices(notices);
+            }
 
             if (notices.length === 0) {
                 list.innerHTML = '<p style="color: #888; text-align: center;">No active notices found.</p>';
@@ -935,16 +957,18 @@
         function publishNotice() {
             const title = document.getElementById('eventTitle').value;
             const date = document.getElementById('eventDate').value;
+            const expiryDate = document.getElementById('eventExpiryDate').value;
             const details = document.getElementById('eventDetails').value;
 
-            if (!title || !date) {
-                alert("Please fill in the Event Title and Date.");
+            if (!title) {
+                alert("Please fill in the Event Title.");
                 return;
             }
 
             const newNotice = {
                 title,
-                date,
+                date: date || new Date().toLocaleDateString(),
+                expiryDate: expiryDate || null,
                 details
             };
 
@@ -957,6 +981,7 @@
             // Reset form
             document.getElementById('eventTitle').value = '';
             document.getElementById('eventDate').value = '';
+            document.getElementById('eventExpiryDate').value = '';
             document.getElementById('eventDetails').value = '';
             alert("Notice Published Successfully!");
         }

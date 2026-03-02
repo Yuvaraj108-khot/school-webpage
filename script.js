@@ -81,7 +81,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const notices = localStorage.getItem('sbrs_notices');
 
         if (notices) {
-            const parsedNotices = JSON.parse(notices);
+            let parsedNotices = JSON.parse(notices);
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            parsedNotices = parsedNotices.filter(notice => {
+                if (notice.expiryDate) {
+                    const expDate = new Date(notice.expiryDate);
+                    if (expDate < today) return false;
+                }
+                return true;
+            });
+
             if (parsedNotices.length > 0) {
                 // Reverse iterate to maintain order when prepending (Newest at top)
                 [...parsedNotices].reverse().forEach(notice => {

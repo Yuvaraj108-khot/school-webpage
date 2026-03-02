@@ -136,7 +136,7 @@
             <div class="logo">
                 <img src="logo.png" alt="SBRS Logo">
                 <div class="logo-text">
-                    <h1>Srimad Bhuvanendra School</h1>
+                    <h1>SRIMAD BHUVANENDRA EDUCATIONAL INSTITUTIONS</h1>
                     <span>Karkala, Karnataka, INDIA</span>
                 </div>
             </div>
@@ -177,8 +177,10 @@
             <div class="gallery-filter-chips">
                 <button class="gallery-chip active" data-filter="All">All</button>
                 <button class="gallery-chip" data-filter="Campus">Campus</button>
-                <button class="gallery-chip" data-filter="Events">Events</button>
+                <button class="gallery-chip" data-filter="Lab">Lab</button>
                 <button class="gallery-chip" data-filter="Sports">Sports</button>
+                <button class="gallery-chip" data-filter="Events">Events</button>
+                <button class="gallery-chip" data-filter="Other">Other</button>
             </div>
             <div class="gallery-results-count" id="galleryResultsCount">Showing all photos</div>
         </div>
@@ -186,7 +188,7 @@
         <div class="cards-grid" id="galleryGrid" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
             <!-- Updated Placeholders -->
             <div class="card" data-category="Campus" style="padding: 0; overflow: hidden;">
-                <img src="schoolimage.png" alt="Campus" style="width: 100%; height: 200px; object-fit: cover;">
+                <img src="schoolimage.jpeg" alt="Campus" style="width: 100%; height: 200px; object-fit: cover;">
                 <div style="padding: 1rem;">
                     <h4>Main Block</h4>
                     <p style="font-size: 0.8rem; color: #666;">View of the academic block</p>
@@ -200,7 +202,7 @@
                     <p style="font-size: 0.8rem; color: #666;">75,000+ Volumes</p>
                 </div>
             </div>
-            <div class="card" data-category="Campus" style="padding: 0; overflow: hidden;">
+            <div class="card" data-category="Lab" style="padding: 0; overflow: hidden;">
                 <img src="https://images.unsplash.com/photo-1531482615713-2afd69097998?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
                     alt="Computer Lab" style="width: 100%; height: 200px; object-fit: cover;">
                 <div style="padding: 1rem;">
@@ -216,7 +218,7 @@
                     <p style="font-size: 0.8rem; color: #666;">Annual Athletic Meet</p>
                 </div>
             </div>
-            <div class="card" data-category="Campus" style="padding: 0; overflow: hidden;">
+            <div class="card" data-category="Lab" style="padding: 0; overflow: hidden;">
                 <img src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
                     alt="Science Lab" style="width: 100%; height: 200px; object-fit: cover;">
                 <div style="padding: 1rem;">
@@ -247,7 +249,7 @@
         <div class="container footer-grid">
             <div class="footer-col">
                 <h4>About Us</h4>
-                <p>Sri Bhuvanendra School, Karkala. A premier institution providing quality education in a
+                <p>Srimad Bhuvanendra Educational Institutions, Karkala. A premier institution providing quality education in a
                     serene environment.</p>
             </div>
             <div class="footer-col">
@@ -275,8 +277,8 @@
                     <i class="fas fa-map-marker-alt"></i> Madhav Nagar, Karkala,<br> udupi District. Pin:
                     574104<br>Karnataka, INDIA
                 </p>
-                <p><i class="fas fa-phone"></i> +91 8258 235078 (O)</p>
-                <p><i class="fas fa-envelope"></i> sbrs2002@gmail.com</p>
+                <p><i class="fas fa-phone"></i> 9663523449</p>
+                <p><i class="fas fa-envelope"></i> srimadbhuvanendra@gmail.com</p>
             </div>
         </div>
         <div class="footer-bottom">
@@ -309,11 +311,13 @@
                     // Determine category match
                     let matchesCategory = activeFilter === 'All';
                     if (!matchesCategory) {
-                        const campusTags = ['Main Block', 'Library', 'Computer Lab', 'Science Lab', 'Auditorium', 'Campus'];
+                        const campusTags = ['Main Block', 'Library', 'Auditorium', 'Campus'];
+                        const labTags = ['Lab', 'Computer Lab', 'Science Lab'];
                         const sportsTags = ['Sports', 'Sports Day'];
                         const eventsTags = ['Events', 'Cultural', 'Open Air Theatre'];
 
                         if (activeFilter === 'Campus' && campusTags.some(t => category.includes(t) || title.includes(t.toLowerCase()))) matchesCategory = true;
+                        else if (activeFilter === 'Lab' && labTags.some(t => category.includes(t) || title.includes(t.toLowerCase()))) matchesCategory = true;
                         else if (activeFilter === 'Sports' && sportsTags.some(t => category.includes(t) || title.includes(t.toLowerCase()))) matchesCategory = true;
                         else if (activeFilter === 'Events' && eventsTags.some(t => category.includes(t) || title.includes(t.toLowerCase()))) matchesCategory = true;
                         else if (category === activeFilter) matchesCategory = true;
