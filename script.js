@@ -1,21 +1,76 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Menu Toggle Logic
+    // ═══════════════════════════════════════════════
+    // Premium Slide-in Sidebar Navigation Logic
+    // ═══════════════════════════════════════════════
     const menuToggle = document.querySelector('.menu-toggle');
     const navMenu = document.querySelector('.nav-menu');
-    const navButtons = document.querySelector('.nav-buttons');
 
-    if (menuToggle) {
-        menuToggle.addEventListener('click', () => {
-            navMenu.classList.toggle('active');
-            navButtons.classList.toggle('active');
+    if (menuToggle && navMenu) {
+        // Create overlay backdrop
+        const overlay = document.createElement('div');
+        overlay.className = 'nav-overlay';
+        document.body.appendChild(overlay);
+
+        // Create close button inside sidebar
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'sidebar-close';
+        closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+        closeBtn.setAttribute('aria-label', 'Close menu');
+        navMenu.prepend(closeBtn);
+
+        // Create mobile buttons at bottom of sidebar
+        const mobileButtons = document.createElement('div');
+        mobileButtons.className = 'mobile-nav-buttons';
+        mobileButtons.innerHTML = `
+            <a href="login.html" class="btn-mobile-login">Login</a>
+            <a href="admission.html" class="btn-mobile-apply">Apply Now</a>
+        `;
+        navMenu.appendChild(mobileButtons);
+
+        // Toggle function
+        function openSidebar() {
+            navMenu.classList.add('active');
+            overlay.classList.add('active');
+            menuToggle.classList.add('active');
+            document.body.style.overflow = 'hidden';
 
             const icon = menuToggle.querySelector('i');
-            if (icon.classList.contains('fa-bars')) {
-                icon.classList.remove('fa-bars');
-                icon.classList.add('fa-times');
+            icon.classList.remove('fa-bars');
+            icon.classList.add('fa-times');
+        }
+
+        function closeSidebar() {
+            navMenu.classList.remove('active');
+            overlay.classList.remove('active');
+            menuToggle.classList.remove('active');
+            document.body.style.overflow = '';
+
+            const icon = menuToggle.querySelector('i');
+            icon.classList.remove('fa-times');
+            icon.classList.add('fa-bars');
+        }
+
+        // Event listeners
+        menuToggle.addEventListener('click', () => {
+            if (navMenu.classList.contains('active')) {
+                closeSidebar();
             } else {
-                icon.classList.remove('fa-times');
-                icon.classList.add('fa-bars');
+                openSidebar();
+            }
+        });
+
+        closeBtn.addEventListener('click', closeSidebar);
+        overlay.addEventListener('click', closeSidebar);
+
+        // Close sidebar when a nav link is clicked
+        navMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', closeSidebar);
+        });
+
+        // Close sidebar on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && navMenu.classList.contains('active')) {
+                closeSidebar();
             }
         });
     }

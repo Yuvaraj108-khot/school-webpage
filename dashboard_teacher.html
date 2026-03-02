@@ -9,39 +9,92 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --teacher-primary: #2c3e50;
+            --teacher-accent: #f1c40f;
+            --teacher-success: #27ae60;
+            --teacher-danger: #e74c3c;
+            --teacher-bg: #f0f2f5;
+            --glass-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
         .dashboard-container {
             display: flex;
             min-height: 100vh;
         }
 
         .sidebar {
-            width: 250px;
-            background: #2c3e50;
+            width: 260px;
+            background: linear-gradient(180deg, #1a252f 0%, #2c3e50 100%);
             color: white;
             padding: 2rem 0;
             display: flex;
             flex-direction: column;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .sidebar-logo {
+            text-align: center;
+            padding: 0 2rem 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 1rem;
+        }
+
+        .sidebar-logo img {
+            width: 55px;
+            border-radius: 50%;
+            border: 2px solid var(--teacher-accent);
+            padding: 3px;
+        }
+
+        .sidebar-logo h3 {
+            margin-top: 10px;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
         }
 
         .sidebar-menu a {
-            padding: 15px 20px;
-            color: #ccc;
-            display: block;
+            padding: 14px 24px;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 12px;
             border-left: 4px solid transparent;
-            transition: 0.3s;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            font-size: 0.95rem;
         }
 
         .sidebar-menu a:hover,
         .sidebar-menu a.active {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.08);
             color: white;
-            border-left-color: #f1c40f;
+            border-left-color: var(--teacher-accent);
+        }
+
+        .sidebar-menu a i {
+            font-size: 1.1rem;
+            width: 22px;
+            text-align: center;
         }
 
         .main-content {
             flex: 1;
-            padding: 2rem;
-            background: #f4f7f6;
+            padding: 2rem 2.5rem;
+            background: var(--teacher-bg);
+            overflow-y: auto;
         }
 
         .header-bar {
@@ -49,154 +102,1453 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 2rem;
-            background: white;
-            padding: 1rem 2rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            background: var(--glass-bg);
+            padding: 1.2rem 2rem;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+            backdrop-filter: blur(10px);
+        }
+
+        .header-bar h2 {
+            font-size: 1.4rem;
+            color: var(--teacher-primary);
+        }
+
+        .header-bar .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-bar .user-info span {
+            font-size: 0.85rem;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 5px 12px;
+            border-radius: 20px;
         }
 
         .card-box {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            background: var(--glass-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
             margin-bottom: 2rem;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            transition: box-shadow 0.3s ease;
         }
 
-        input,
+        .card-box:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-box h3 {
+            font-size: 1.2rem;
+            color: var(--teacher-primary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-box h3 i {
+            color: var(--teacher-accent);
+            font-size: 1.1rem;
+        }
+
+        .card-subtitle {
+            color: #64748b;
+            font-size: 0.88rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Form Elements */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #475569;
+            letter-spacing: 0.3px;
+        }
+
+        .form-group label .required {
+            color: var(--teacher-danger);
+        }
+
         select,
+        input[type="text"],
+        input[type="date"],
         textarea {
             width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 11px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            color: #334155;
+            background: #f8fafc;
+            transition: all 0.3s ease;
+            outline: none;
+            margin-bottom: 0;
         }
 
-        .student-list-item {
+        select:focus,
+        input[type="text"]:focus,
+        input[type="date"]:focus,
+        textarea:focus {
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        select:disabled {
+            background: #e2e8f0;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Step Indicator */
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 0;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #94a3b8;
+            transition: color 0.3s;
+        }
+
+        .step.active {
+            color: #3b82f6;
+        }
+
+        .step.completed {
+            color: var(--teacher-success);
+        }
+
+        .step-num {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: #e2e8f0;
+            color: #94a3b8;
+            transition: all 0.3s;
+        }
+
+        .step.active .step-num {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .step.completed .step-num {
+            background: var(--teacher-success);
+            color: white;
+        }
+
+        .step-arrow {
+            color: #cbd5e1;
+            font-size: 0.7rem;
+        }
+
+        /* Student Attendance List */
+        .attendance-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #1e293b, #334155);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            font-size: 0.88rem;
         }
 
+        .attendance-stats {
+            display: flex;
+            gap: 16px;
+        }
+
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .stat-badge.present {
+            background: rgba(39, 174, 96, 0.2);
+            color: #6ee7b7;
+        }
+
+        .stat-badge.absent {
+            background: rgba(231, 76, 60, 0.2);
+            color: #fca5a5;
+        }
+
+        .student-list-container {
+            border: 2px solid #e2e8f0;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            overflow: hidden;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .student-list-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .student-list-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .student-list-container::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 3px;
+        }
+
+        .student-row {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .student-row:hover {
+            background: #f8fafc;
+        }
+
+        .student-row:last-child {
+            border-bottom: none;
+        }
+
+        .student-row.absent-row {
+            background: #fef2f2;
+        }
+
+        .student-row.absent-row:hover {
+            background: #fee2e2;
+        }
+
+        .student-sl {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #475569;
+            margin-right: 14px;
+            flex-shrink: 0;
+        }
+
+        .student-info {
+            flex: 1;
+        }
+
+        .student-name {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 0.95rem;
+        }
+
+        .student-roll {
+            font-size: 0.78rem;
+            color: #94a3b8;
+        }
+
+        .attendance-toggle {
+            position: relative;
+            width: 52px;
+            height: 28px;
+            flex-shrink: 0;
+        }
+
+        .attendance-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--teacher-danger);
+            border-radius: 28px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: white;
+            top: 3px;
+            left: 3px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        .attendance-toggle input:checked+.toggle-slider {
+            background: var(--teacher-success);
+        }
+
+        .attendance-toggle input:checked+.toggle-slider::before {
+            transform: translateX(24px);
+        }
+
+        .status-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 10px;
+            width: 55px;
+            text-align: center;
+        }
+
+        .status-label.present {
+            color: var(--teacher-success);
+        }
+
+        .status-label.absent {
+            color: var(--teacher-danger);
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 1.5rem;
+        }
+
+        .btn-submit {
+            padding: 12px 32px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-submit.primary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-submit.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-submit.secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 2px solid #e2e8f0;
+        }
+
+        .btn-submit.secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-submit.success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-submit.success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #94a3b8;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #cbd5e1;
+        }
+
+        .empty-state p {
+            font-size: 0.95rem;
+        }
+
+        /* Attendance History */
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            background: #f8fafc;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border-left: 4px solid var(--teacher-success);
+            transition: all 0.2s;
+        }
+
+        .history-item:hover {
+            background: #f1f5f9;
+            transform: translateX(4px);
+        }
+
+        .history-item .hi-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .history-item .hi-title {
+            font-weight: 600;
+            font-size: 0.92rem;
+            color: #1e293b;
+        }
+
+        .history-item .hi-meta {
+            font-size: 0.78rem;
+            color: #94a3b8;
+        }
+
+        .history-item .hi-stats {
+            display: flex;
+            gap: 12px;
+        }
+
+        .history-item .hi-stat {
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .history-item .hi-stat.p {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .history-item .hi-stat.a {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        /* Success Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.92rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        /* Date badge */
+        .date-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            color: #2563eb;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* Marks Entry */
+        .marks-grid {
+            display: grid;
+            gap: 8px;
+        }
+
+        .marks-row {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            background: #f8fafc;
+            border-radius: 8px;
+            gap: 12px;
+        }
+
+        .marks-row .student-sl {
+            width: 30px;
+            height: 30px;
+            font-size: 0.75rem;
+        }
+
+        .marks-row input[type="number"] {
+            width: 90px;
+            padding: 8px 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .marks-row input[type="number"]:focus {
+            border-color: #3b82f6;
+        }
+
+        /* Mobile sidebar toggle button */
+        .teacher-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--teacher-primary);
+            font-size: 1.4rem;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .teacher-menu-toggle:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        /* Teacher overlay */
+        .teacher-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .teacher-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Responsive */
         @media (max-width: 768px) {
             .dashboard-container {
                 flex-direction: column;
             }
 
+            /* Mobile sidebar - slide-in from left */
             .sidebar {
+                position: fixed;
+                top: 0;
+                left: -280px;
+                width: 260px;
+                height: 100vh;
+                z-index: 1050;
+                transition: left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+                box-shadow: 5px 0 30px rgba(0, 0, 0, 0.3);
+                overflow-y: auto;
+            }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+            .teacher-menu-toggle {
+                display: block;
+            }
+
+            .main-content {
                 width: 100%;
+                padding: 1rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-bar {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+                padding: 0.8rem 1rem;
+            }
+
+            .header-bar h2 {
+                font-size: 1.1rem;
+            }
+
+            .header-bar .user-info {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
+            }
+
+            /* Step indicator */
+            .step-indicator {
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+
+            .step {
+                font-size: 0.72rem;
+            }
+
+            .step-arrow {
+                font-size: 0.55rem;
+            }
+
+            /* Card box */
+            .card-box {
+                padding: 1rem;
+            }
+
+            /* Student rows */
+            .student-row {
+                padding: 10px 12px;
+            }
+
+            .student-sl {
+                width: 30px;
+                height: 30px;
+                font-size: 0.75rem;
+                margin-right: 10px;
+            }
+
+            .student-name {
+                font-size: 0.85rem;
+            }
+
+            .status-label {
+                font-size: 0.7rem;
+                width: 45px;
+                margin-left: 6px;
+            }
+
+            .attendance-toggle {
+                width: 46px;
+                height: 24px;
+            }
+
+            .toggle-slider::before {
+                width: 18px;
+                height: 18px;
+            }
+
+            .attendance-toggle input:checked+.toggle-slider::before {
+                transform: translateX(22px);
+            }
+
+            .attendance-stats {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+
+            .btn-submit {
+                justify-content: center;
+            }
+
+            /* History items */
+            .history-item {
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-start;
+            }
+
+            /* Toast */
+            .toast {
+                bottom: 15px;
+                right: 15px;
+                left: 15px;
+                font-size: 0.85rem;
+            }
+
+            /* Marks entry */
+            .marks-row {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .marks-row input[type="number"] {
+                width: 70px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .main-content {
+                padding: 0.6rem;
+            }
+
+            .card-box {
+                padding: 0.8rem;
+            }
+
+            .step {
+                font-size: 0.65rem;
+            }
+
+            .step-num {
+                width: 20px;
+                height: 20px;
+                font-size: 0.65rem;
             }
         }
     </style>
 </head>
 
 <body>
+    <!-- Teacher Overlay -->
+    <div class="teacher-overlay" id="teacherOverlay"></div>
+
     <div class="dashboard-container">
         <!-- Sidebar -->
         <div class="sidebar">
-            <div style="text-align: center; padding: 0 2rem 2rem;">
-                <img src="logo.png" style="width: 50px; border-radius: 50%;">
-                <h3 style="margin-top: 10px;">Teacher Panel</h3>
+            <div class="sidebar-logo">
+                <img src="logo.png" alt="SBRS Logo">
+                <h3>Teacher Panel</h3>
             </div>
             <nav class="sidebar-menu">
-                <a href="#" class="active"><i class="fas fa-edit"></i> Enter Marks</a>
-                <a href="#"><i class="fas fa-check-square"></i> Attendance</a>
-                <a href="#"><i class="fas fa-book"></i> Daily Log</a>
+                <a href="#attendance-section" class="active" onclick="showSection('attendance')"><i
+                        class="fas fa-clipboard-check"></i> Attendance</a>
+                <a href="#marks-section" onclick="showSection('marks')"><i class="fas fa-pen-alt"></i> Enter Marks</a>
+                <a href="#history-section" onclick="showSection('history')"><i class="fas fa-history"></i> History</a>
             </nav>
             <div style="margin-top: auto; padding: 20px;">
-                <a href="login.html" style="color: #ea5455;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <a href="login.html"
+                    style="color: #ea5455; display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
             </div>
         </div>
 
         <!-- Main Content -->
         <div class="main-content">
             <div class="header-bar">
-                <h2>Welcome, Staff</h2>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <button class="teacher-menu-toggle" id="teacherMenuToggle" aria-label="Open menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div>
+                        <h2>Welcome, Teacher</h2>
+                        <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 4px;">Mark daily attendance & record
+                            topics</p>
+                    </div>
+                </div>
                 <div class="user-info">
-                    <span>ID: T-102</span>
+                    <div class="date-badge">
+                        <i class="fas fa-calendar-day"></i>
+                        <span id="todayDate"></span>
+                    </div>
                     <a href="index.html" class="btn btn-outline"
-                        style="border: 1px solid var(--primary-color); color: var(--primary-color); margin-left: 10px; padding: 5px 15px; font-size: 0.8rem;">Back
-                        to Home</a>
+                        style="border: 2px solid var(--teacher-primary); color: var(--teacher-primary); padding: 6px 16px; font-size: 0.82rem; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                        <i class="fas fa-home"></i> Home
+                    </a>
                 </div>
             </div>
 
-            <!-- Daily Log -->
-            <div class="card-box">
-                <h3><i class="fas fa-book-open"></i> Daily Topic Log</h3>
-                <p style="color: #666; margin-bottom: 1rem;">Record topics covered in today's class.</p>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <select>
-                        <option>Select Class</option>
-                        <option>Class 10 A</option>
-                        <option>Class 10 B</option>
-                        <option>Class 9 A</option>
-                    </select>
-                    <select>
-                        <option>Select Subject</option>
-                        <option>Mathematics</option>
-                        <option>Physics</option>
-                    </select>
+            <!-- ========== ATTENDANCE SECTION ========== -->
+            <div id="attendance-section">
+                <div class="card-box">
+                    <h3><i class="fas fa-clipboard-check"></i> Mark Attendance</h3>
+                    <p class="card-subtitle">Select the medium, class, period and subject. Then mark absent students.
+                    </p>
+
+                    <!-- Step Indicator -->
+                    <div class="step-indicator">
+                        <div class="step active" id="step1">
+                            <span class="step-num">1</span> Select Class
+                        </div>
+                        <i class="fas fa-chevron-right step-arrow"></i>
+                        <div class="step" id="step2">
+                            <span class="step-num">2</span> Period & Subject
+                        </div>
+                        <i class="fas fa-chevron-right step-arrow"></i>
+                        <div class="step" id="step3">
+                            <span class="step-num">3</span> Topic
+                        </div>
+                        <i class="fas fa-chevron-right step-arrow"></i>
+                        <div class="step" id="step4">
+                            <span class="step-num">4</span> Mark Attendance
+                        </div>
+                    </div>
+
+                    <!-- Row 1: Medium & Class -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label><i class="fas fa-school"></i> Medium <span class="required">*</span></label>
+                            <select id="selectMedium" onchange="onMediumChange()">
+                                <option value="">-- Select Medium --</option>
+                                <option value="CBSE">CBSE (English Medium)</option>
+                                <option value="Kannada">Kannada Medium</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-chalkboard"></i> Class <span class="required">*</span></label>
+                            <select id="selectClass" disabled onchange="onClassChange()">
+                                <option value="">-- Select Class --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Period & Subject -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label><i class="fas fa-clock"></i> Period <span class="required">*</span></label>
+                            <select id="selectPeriod" disabled onchange="onPeriodChange()">
+                                <option value="">-- Select Period --</option>
+                                <option value="1">1st Period</option>
+                                <option value="2">2nd Period</option>
+                                <option value="3">3rd Period</option>
+                                <option value="4">4th Period</option>
+                                <option value="5">5th Period</option>
+                                <option value="6">6th Period</option>
+                                <option value="7">7th Period</option>
+                                <option value="8">8th Period</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-book"></i> Subject <span class="required">*</span></label>
+                            <select id="selectSubject" disabled onchange="onSubjectChange()">
+                                <option value="">-- Select Subject --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Topic -->
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label><i class="fas fa-pen-fancy"></i> Topic Covered Today <span
+                                    class="required">*</span></label>
+                            <textarea id="topicInput"
+                                placeholder="Enter the topic you covered today (e.g., Quadratic Equations - Introduction & Examples)"
+                                disabled oninput="onTopicInput()"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Load Students Button -->
+                    <div style="text-align: center; margin: 1.5rem 0;">
+                        <button class="btn-submit primary" id="loadStudentsBtn" onclick="loadStudentList()" disabled>
+                            <i class="fas fa-users"></i> Load Student List
+                        </button>
+                    </div>
+
+                    <!-- Student Attendance List -->
+                    <div id="attendanceArea" style="display: none;">
+                        <div class="attendance-header">
+                            <span><i class="fas fa-users"></i> Student Attendance</span>
+                            <div class="attendance-stats">
+                                <span class="stat-badge present"><i class="fas fa-check-circle"></i> Present: <span
+                                        id="presentCount">0</span></span>
+                                <span class="stat-badge absent"><i class="fas fa-times-circle"></i> Absent: <span
+                                        id="absentCount">0</span></span>
+                            </div>
+                        </div>
+                        <div class="student-list-container" id="studentListContainer">
+                            <!-- Student rows loaded dynamically -->
+                        </div>
+
+                        <div class="btn-group" style="justify-content: center; margin-top: 2rem;">
+                            <button class="btn-submit secondary" onclick="markAllPresent()">
+                                <i class="fas fa-check-double"></i> Mark All Present
+                            </button>
+                            <button class="btn-submit success" onclick="saveAttendance()">
+                                <i class="fas fa-save"></i> Save Attendance
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <textarea rows="3"
-                    placeholder="Enter topics covered (e.g., Quadratic Equations - Introduction)"></textarea>
-                <button class="btn btn-primary" onclick="alert('Log Saved Successfully!')">Save Log</button>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
-                <!-- Marks Entry -->
+            <!-- ========== MARKS SECTION ========== -->
+            <div id="marks-section" style="display: none;">
                 <div class="card-box">
                     <h3><i class="fas fa-pen-alt"></i> Enter Marks</h3>
-                    <select style="margin-bottom: 1rem;">
-                        <option>Mid-Term Exam 2026</option>
-                        <option>Unit Test 1</option>
-                    </select>
+                    <p class="card-subtitle">Select the class and exam to enter student marks.</p>
 
-                    <div class="student-list">
-                        <div class="student-list-item">
-                            <span>1. Rahul Kumar</span>
-                            <input type="number" placeholder="Marks" style="width: 80px; margin-bottom: 0;">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label><i class="fas fa-school"></i> Medium</label>
+                            <select id="marksMedium" onchange="onMarksMediumChange()">
+                                <option value="">-- Select Medium --</option>
+                                <option value="CBSE">CBSE (English Medium)</option>
+                                <option value="Kannada">Kannada Medium</option>
+                            </select>
                         </div>
-                        <div class="student-list-item">
-                            <span>2. Sharma G</span>
-                            <input type="number" placeholder="Marks" style="width: 80px; margin-bottom: 0;">
+                        <div class="form-group">
+                            <label><i class="fas fa-chalkboard"></i> Class</label>
+                            <select id="marksClass" disabled onchange="loadMarksStudents()">
+                                <option value="">-- Select Class --</option>
+                            </select>
                         </div>
-                        <div class="student-list-item">
-                            <span>3. Ananya S</span>
-                            <input type="number" placeholder="Marks" style="width: 80px; margin-bottom: 0;">
+                        <div class="form-group">
+                            <label><i class="fas fa-file-alt"></i> Exam</label>
+                            <select id="marksExam">
+                                <option>Mid-Term Exam 2026</option>
+                                <option>Unit Test 1</option>
+                                <option>Unit Test 2</option>
+                                <option>Final Exam 2026</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-book"></i> Subject</label>
+                            <select id="marksSubject">
+                                <option>Mathematics</option>
+                                <option>Science</option>
+                                <option>English</option>
+                                <option>Social Science</option>
+                                <option>Kannada</option>
+                                <option>Hindi</option>
+                            </select>
                         </div>
                     </div>
-                    <br>
-                    <button class="btn btn-primary" onclick="alert('Marks Submitted!')">Submit Marks</button>
-                </div>
 
-                <!-- Attendance -->
-                <div class="card-box">
-                    <h3><i class="fas fa-user-check"></i> Mark Attendance</h3>
-                    <p style="text-align: right; font-size: 0.9rem; color: #666;">Date: 06-02-2026</p>
-                    <div class="student-list">
-                        <div class="student-list-item">
-                            <span>1. Rahul Kumar</span>
-                            <input type="checkbox" checked style="width: 20px; height: 20px; margin-bottom: 0;">
-                        </div>
-                        <div class="student-list-item">
-                            <span>2. Sharma G</span>
-                            <input type="checkbox" checked style="width: 20px; height: 20px; margin-bottom: 0;">
-                        </div>
-                        <div class="student-list-item">
-                            <span>3. Ananya S</span>
-                            <input type="checkbox" style="width: 20px; height: 20px; margin-bottom: 0;">
+                    <div id="marksListContainer" class="marks-grid">
+                        <div class="empty-state">
+                            <i class="fas fa-clipboard-list"></i>
+                            <p>Select Medium and Class to load students</p>
                         </div>
                     </div>
-                    <br>
-                    <button class="btn btn-primary" onclick="alert('Attendance Marked!')">Save Attendance</button>
+
+                    <div class="btn-group" style="justify-content: center;">
+                        <button class="btn-submit primary" onclick="alert('Marks Submitted Successfully!')">
+                            <i class="fas fa-paper-plane"></i> Submit Marks
+                        </button>
+                    </div>
                 </div>
             </div>
 
+            <!-- ========== HISTORY SECTION ========== -->
+            <div id="history-section" style="display: none;">
+                <div class="card-box">
+                    <h3><i class="fas fa-history"></i> Attendance History</h3>
+                    <p class="card-subtitle">View previously recorded attendance sessions.</p>
+                    <div id="historyList">
+                        <div class="empty-state">
+                            <i class="fas fa-clipboard-list"></i>
+                            <p>No attendance records yet. Records will appear after you save attendance.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Success!</span>
+    </div>
+
+    <script>
+        // ===================== INITIALIZATION =====================
+        const today = new Date();
+        document.getElementById('todayDate').textContent = today.toLocaleDateString('en-IN', {
+            weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+        });
+
+        // Subject lists
+        const subjectsCBSE = ['Mathematics', 'Science', 'English', 'Social Science', 'Hindi', 'Kannada', 'Computer Science', 'Physical Education'];
+        const subjectsKannada = ['Ganitha (Mathematics)', 'Vigyana (Science)', 'English', 'Samaja Vigyana (Social Science)', 'Kannada', 'Hindi'];
+
+        // ===================== SECTION NAVIGATION =====================
+        function showSection(section) {
+            document.getElementById('attendance-section').style.display = section === 'attendance' ? 'block' : 'none';
+            document.getElementById('marks-section').style.display = section === 'marks' ? 'block' : 'none';
+            document.getElementById('history-section').style.display = section === 'history' ? 'block' : 'none';
+
+            // Update sidebar active
+            document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            if (section === 'history') loadHistory();
+        }
+
+        // ===================== STEP MANAGEMENT =====================
+        function updateSteps() {
+            const medium = document.getElementById('selectMedium').value;
+            const cls = document.getElementById('selectClass').value;
+            const period = document.getElementById('selectPeriod').value;
+            const subject = document.getElementById('selectSubject').value;
+            const topic = document.getElementById('topicInput').value.trim();
+
+            ['step1', 'step2', 'step3', 'step4'].forEach(id => {
+                document.getElementById(id).classList.remove('active', 'completed');
+            });
+
+            if (!medium) {
+                document.getElementById('step1').classList.add('active');
+                return;
+            }
+            document.getElementById('step1').classList.add(cls ? 'completed' : 'active');
+
+            if (cls) {
+                document.getElementById('step2').classList.add((period && subject) ? 'completed' : 'active');
+            }
+
+            if (period && subject) {
+                document.getElementById('step3').classList.add(topic ? 'completed' : 'active');
+            }
+
+            if (topic) {
+                document.getElementById('step4').classList.add('active');
+            }
+        }
+
+        // ===================== MEDIUM & CLASS LOGIC =====================
+        function onMediumChange() {
+            const medium = document.getElementById('selectMedium').value;
+            const classSelect = document.getElementById('selectClass');
+            classSelect.innerHTML = '<option value="">-- Select Class --</option>';
+
+            if (medium === 'CBSE') {
+                for (let i = 1; i <= 10; i++) {
+                    classSelect.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                }
+                classSelect.disabled = false;
+            } else if (medium === 'Kannada') {
+                for (let i = 7; i <= 10; i++) {
+                    classSelect.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                }
+                classSelect.disabled = false;
+            } else {
+                classSelect.disabled = true;
+            }
+
+            // Reset downstream
+            document.getElementById('selectPeriod').disabled = true;
+            document.getElementById('selectPeriod').value = '';
+            document.getElementById('selectSubject').disabled = true;
+            document.getElementById('selectSubject').innerHTML = '<option value="">-- Select Subject --</option>';
+            document.getElementById('topicInput').disabled = true;
+            document.getElementById('topicInput').value = '';
+            document.getElementById('loadStudentsBtn').disabled = true;
+            document.getElementById('attendanceArea').style.display = 'none';
+
+            updateSteps();
+        }
+
+        function onClassChange() {
+            const cls = document.getElementById('selectClass').value;
+            const medium = document.getElementById('selectMedium').value;
+
+            if (cls) {
+                document.getElementById('selectPeriod').disabled = false;
+
+                // Populate subjects based on medium
+                const subjectSelect = document.getElementById('selectSubject');
+                subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
+                const subjects = medium === 'CBSE' ? subjectsCBSE : subjectsKannada;
+                subjects.forEach(sub => {
+                    subjectSelect.innerHTML += `<option value="${sub}">${sub}</option>`;
+                });
+                subjectSelect.disabled = false;
+            }
+
+            // Reset downstream
+            document.getElementById('selectPeriod').value = '';
+            document.getElementById('topicInput').disabled = true;
+            document.getElementById('topicInput').value = '';
+            document.getElementById('loadStudentsBtn').disabled = true;
+            document.getElementById('attendanceArea').style.display = 'none';
+
+            updateSteps();
+        }
+
+        function onPeriodChange() {
+            checkTopicReady();
+            updateSteps();
+        }
+
+        function onSubjectChange() {
+            checkTopicReady();
+            updateSteps();
+        }
+
+        function checkTopicReady() {
+            const period = document.getElementById('selectPeriod').value;
+            const subject = document.getElementById('selectSubject').value;
+            document.getElementById('topicInput').disabled = !(period && subject);
+        }
+
+        function onTopicInput() {
+            const topic = document.getElementById('topicInput').value.trim();
+            document.getElementById('loadStudentsBtn').disabled = !topic;
+            updateSteps();
+        }
+
+        // ===================== STUDENT LIST LOADING =====================
+        function getStudentsForClass(medium, classNum) {
+            const key = `sbrs_students_${medium}_${classNum}`;
+            const stored = localStorage.getItem(key);
+            if (stored) return JSON.parse(stored);
+
+            // Default sample students if none added yet
+            const defaults = [];
+            const sampleNames = [
+                'Rahul Kumar', 'Priya Sharma', 'Ananya S', 'Vikram R', 'Sneha Patil',
+                'Aditya Hegde', 'Kavya M', 'Rohan Desai', 'Meera Kulkarni', 'Arjun Nayak'
+            ];
+            sampleNames.forEach((name, i) => {
+                defaults.push({ id: i + 1, name: name, roll: `${medium.substring(0, 1)}${classNum}-${String(i + 1).padStart(3, '0')}` });
+            });
+            localStorage.setItem(key, JSON.stringify(defaults));
+            return defaults;
+        }
+
+        function loadStudentList() {
+            const medium = document.getElementById('selectMedium').value;
+            const cls = document.getElementById('selectClass').value;
+
+            if (!medium || !cls) {
+                showToast('Please select Medium and Class first.', 'error');
+                return;
+            }
+
+            const students = getStudentsForClass(medium, cls);
+            const container = document.getElementById('studentListContainer');
+            container.innerHTML = '';
+
+            if (students.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-user-slash"></i>
+                        <p>No students found for this class. Ask Admin to add students.</p>
+                    </div>`;
+                document.getElementById('attendanceArea').style.display = 'block';
+                return;
+            }
+
+            students.forEach((student, index) => {
+                const row = document.createElement('div');
+                row.className = 'student-row';
+                row.id = `student-row-${index}`;
+                row.innerHTML = `
+                    <div class="student-sl">${index + 1}</div>
+                    <div class="student-info">
+                        <div class="student-name">${student.name}</div>
+                        <div class="student-roll">${student.roll}</div>
+                    </div>
+                    <label class="attendance-toggle">
+                        <input type="checkbox" checked id="att-${index}" onchange="toggleAttendance(${index})">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="status-label present" id="status-${index}">Present</span>
+                `;
+                // Click row to toggle (except the toggle itself)
+                row.addEventListener('click', (e) => {
+                    if (e.target.type !== 'checkbox' && !e.target.classList.contains('toggle-slider')) {
+                        const cb = document.getElementById(`att-${index}`);
+                        cb.checked = !cb.checked;
+                        toggleAttendance(index);
+                    }
+                });
+                container.appendChild(row);
+            });
+
+            document.getElementById('attendanceArea').style.display = 'block';
+            updateCounts();
+            updateSteps();
+        }
+
+        function toggleAttendance(index) {
+            const cb = document.getElementById(`att-${index}`);
+            const label = document.getElementById(`status-${index}`);
+            const row = document.getElementById(`student-row-${index}`);
+
+            if (cb.checked) {
+                label.textContent = 'Present';
+                label.className = 'status-label present';
+                row.classList.remove('absent-row');
+            } else {
+                label.textContent = 'Absent';
+                label.className = 'status-label absent';
+                row.classList.add('absent-row');
+            }
+            updateCounts();
+        }
+
+        function updateCounts() {
+            const checkboxes = document.querySelectorAll('#studentListContainer input[type="checkbox"]');
+            let present = 0, absent = 0;
+            checkboxes.forEach(cb => {
+                if (cb.checked) present++;
+                else absent++;
+            });
+            document.getElementById('presentCount').textContent = present;
+            document.getElementById('absentCount').textContent = absent;
+        }
+
+        function markAllPresent() {
+            const checkboxes = document.querySelectorAll('#studentListContainer input[type="checkbox"]');
+            checkboxes.forEach((cb, i) => {
+                cb.checked = true;
+                toggleAttendance(i);
+            });
+        }
+
+        // ===================== SAVE ATTENDANCE =====================
+        function saveAttendance() {
+            const medium = document.getElementById('selectMedium').value;
+            const cls = document.getElementById('selectClass').value;
+            const period = document.getElementById('selectPeriod').value;
+            const subject = document.getElementById('selectSubject').value;
+            const topic = document.getElementById('topicInput').value.trim();
+
+            if (!medium || !cls || !period || !subject || !topic) {
+                showToast('Please fill all fields before saving.', 'error');
+                return;
+            }
+
+            const checkboxes = document.querySelectorAll('#studentListContainer input[type="checkbox"]');
+            const students = getStudentsForClass(medium, cls);
+            const presentList = [];
+            const absentList = [];
+
+            checkboxes.forEach((cb, i) => {
+                if (cb.checked) presentList.push(students[i].name);
+                else absentList.push(students[i].name);
+            });
+
+            const record = {
+                date: today.toLocaleDateString('en-IN'),
+                medium,
+                class: cls,
+                period,
+                subject,
+                topic,
+                present: presentList.length,
+                absent: absentList.length,
+                total: students.length,
+                absentNames: absentList,
+                timestamp: Date.now()
+            };
+
+            // Save to localStorage
+            const history = JSON.parse(localStorage.getItem('sbrs_attendance_history') || '[]');
+            history.unshift(record);
+            localStorage.setItem('sbrs_attendance_history', JSON.stringify(history));
+
+            showToast(`Attendance saved! Present: ${presentList.length}, Absent: ${absentList.length}`, 'success');
+
+            // Reset form
+            setTimeout(() => {
+                document.getElementById('selectMedium').value = '';
+                onMediumChange();
+            }, 1500);
+        }
+
+        // ===================== HISTORY =====================
+        function loadHistory() {
+            const history = JSON.parse(localStorage.getItem('sbrs_attendance_history') || '[]');
+            const list = document.getElementById('historyList');
+
+            if (history.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard-list"></i>
+                        <p>No attendance records yet. Records will appear after you save attendance.</p>
+                    </div>`;
+                return;
+            }
+
+            list.innerHTML = '';
+            history.forEach(rec => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.innerHTML = `
+                    <div class="hi-info">
+                        <div class="hi-title">${rec.medium} - Class ${rec.class} | Period ${rec.period}</div>
+                        <div class="hi-meta"><i class="fas fa-calendar-alt"></i> ${rec.date} &nbsp;|&nbsp; <i class="fas fa-book"></i> ${rec.subject} &nbsp;|&nbsp; <i class="fas fa-pen"></i> ${rec.topic}</div>
+                    </div>
+                    <div class="hi-stats">
+                        <span class="hi-stat p"><i class="fas fa-check"></i> ${rec.present}</span>
+                        <span class="hi-stat a"><i class="fas fa-times"></i> ${rec.absent}</span>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        // ===================== MARKS SECTION =====================
+        function onMarksMediumChange() {
+            const medium = document.getElementById('marksMedium').value;
+            const classSelect = document.getElementById('marksClass');
+            classSelect.innerHTML = '<option value="">-- Select Class --</option>';
+
+            if (medium === 'CBSE') {
+                for (let i = 1; i <= 10; i++) {
+                    classSelect.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                }
+                classSelect.disabled = false;
+            } else if (medium === 'Kannada') {
+                for (let i = 7; i <= 10; i++) {
+                    classSelect.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                }
+                classSelect.disabled = false;
+            } else {
+                classSelect.disabled = true;
+            }
+
+            document.getElementById('marksListContainer').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>Select Medium and Class to load students</p>
+                </div>`;
+        }
+
+        function loadMarksStudents() {
+            const medium = document.getElementById('marksMedium').value;
+            const cls = document.getElementById('marksClass').value;
+            if (!medium || !cls) return;
+
+            const students = getStudentsForClass(medium, cls);
+            const container = document.getElementById('marksListContainer');
+            container.innerHTML = '';
+
+            students.forEach((student, index) => {
+                const row = document.createElement('div');
+                row.className = 'marks-row';
+                row.innerHTML = `
+                    <div class="student-sl">${index + 1}</div>
+                    <div class="student-info">
+                        <div class="student-name">${student.name}</div>
+                        <div class="student-roll">${student.roll}</div>
+                    </div>
+                    <input type="number" placeholder="Marks" min="0" max="100">
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // ===================== TOAST =====================
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            toastMsg.textContent = message;
+            toast.className = `toast ${type} show`;
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // ═══════════════════════════════════════════
+        // Teacher Sidebar Mobile Toggle Logic
+        // ═══════════════════════════════════════════
+        document.addEventListener('DOMContentLoaded', () => {
+            const teacherToggle = document.getElementById('teacherMenuToggle');
+            const teacherSidebar = document.querySelector('.sidebar');
+            const teacherOverlay = document.getElementById('teacherOverlay');
+
+            if (teacherToggle && teacherSidebar && teacherOverlay) {
+                function openTeacherSidebar() {
+                    teacherSidebar.classList.add('active');
+                    teacherOverlay.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+
+                function closeTeacherSidebar() {
+                    teacherSidebar.classList.remove('active');
+                    teacherOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+
+                teacherToggle.addEventListener('click', openTeacherSidebar);
+                teacherOverlay.addEventListener('click', closeTeacherSidebar);
+
+                document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                    link.addEventListener('click', closeTeacherSidebar);
+                });
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && teacherSidebar.classList.contains('active')) {
+                        closeTeacherSidebar();
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 
 </html>

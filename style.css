@@ -136,6 +136,7 @@ header {
     height: 60px;
     /* Adjust based on actual logo */
     width: auto;
+    border-radius: 50%;
 }
 
 .logo-text h1 {
@@ -370,18 +371,72 @@ footer {
     text-align: center;
 }
 
-/* Responsive */
-/* Responsive & Mobile Menu */
+/* ═══════════════════════════════════════════════════ */
+/* Premium Mobile Slide-in Sidebar Navigation         */
+/* ═══════════════════════════════════════════════════ */
+
+/* Hamburger Toggle Button */
 .menu-toggle {
     display: none;
     font-size: 1.5rem;
     color: var(--white);
     cursor: pointer;
+    z-index: 1100;
+    position: relative;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: background 0.3s ease;
+}
+
+.menu-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.menu-toggle i {
+    transition: transform 0.3s ease;
+}
+
+.menu-toggle.active i {
+    transform: rotate(90deg);
+}
+
+/* Dark Overlay Backdrop */
+.nav-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.nav-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Hide mobile-only elements on desktop by default */
+.sidebar-close {
+    display: none;
+}
+
+.mobile-nav-buttons {
+    display: none;
 }
 
 @media (max-width: 900px) {
     .header-container {
         position: relative;
+        justify-content: space-between;
     }
 
     .logo img {
@@ -397,88 +452,191 @@ footer {
     }
 
     .menu-toggle {
-        display: block;
+        display: flex;
     }
 
+    /* === Slide-in Sidebar === */
     .nav-menu {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        width: 100%;
-        background-color: var(--primary-color);
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: min(75%, 320px);
+        height: 100vh;
+        background: linear-gradient(180deg, #1a252f 0%, #15202b 50%, #0f1923 100%);
         flex-direction: column;
-        align-items: center;
-        padding: 2rem 0;
-        gap: 1.5rem;
-        transform: translateY(-150%);
-        transition: transform 0.3s ease;
-        z-index: 999;
-        box-shadow: 0 10px 10px rgba(0, 0, 0, 0.1);
+        align-items: stretch;
+        justify-content: flex-start;
+        padding: 0;
+        gap: 0;
+        z-index: 1050;
+        transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        box-shadow: -10px 0 40px rgba(0, 0, 0, 0.3);
+        overflow-y: auto;
     }
 
     .nav-menu.active {
-        transform: translateY(0);
+        right: 0;
     }
 
+    /* Sidebar Header */
+    .nav-menu::before {
+        content: 'Menu';
+        display: block;
+        padding: 24px 28px 20px;
+        font-family: var(--font-heading);
+        font-size: 1.4rem;
+        color: var(--secondary-color);
+        font-weight: 700;
+        letter-spacing: 1px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        margin-bottom: 8px;
+    }
+
+    /* Nav Links Styling */
+    .nav-menu a {
+        display: flex;
+        align-items: center;
+        padding: 14px 28px;
+        font-size: 1rem;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.75);
+        border-left: 3px solid transparent;
+        transition: all 0.3s ease;
+        position: relative;
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    .nav-menu.active a {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    /* Staggered animation for each link */
+    .nav-menu.active a:nth-child(1) {
+        transition-delay: 0.05s;
+    }
+
+    .nav-menu.active a:nth-child(2) {
+        transition-delay: 0.1s;
+    }
+
+    .nav-menu.active a:nth-child(3) {
+        transition-delay: 0.15s;
+    }
+
+    .nav-menu.active a:nth-child(4) {
+        transition-delay: 0.2s;
+    }
+
+    .nav-menu.active a:nth-child(5) {
+        transition-delay: 0.25s;
+    }
+
+    .nav-menu.active a:nth-child(6) {
+        transition-delay: 0.3s;
+    }
+
+    .nav-menu.active a:nth-child(7) {
+        transition-delay: 0.35s;
+    }
+
+    .nav-menu.active a:nth-child(8) {
+        transition-delay: 0.4s;
+    }
+
+    .nav-menu a:hover {
+        color: var(--white);
+        background: rgba(255, 255, 255, 0.05);
+        border-left-color: var(--secondary-color);
+        padding-left: 34px;
+    }
+
+    .nav-menu a.active {
+        color: var(--secondary-color);
+        background: rgba(241, 196, 15, 0.08);
+        border-left-color: var(--secondary-color);
+        font-weight: 600;
+    }
+
+    /* Hide desktop nav-buttons, show mobile ones inside sidebar */
     .nav-buttons {
         display: none;
-        /* Hide default buttons on mobile, maybe add inside menu? */
     }
 
-    /* Show buttons inside menu when active (requires JS to clone or CSS restructuring) 
-       For simplicity, let's keep buttons visible below menu or stick to simple stack */
-
-    .nav-buttons.active {
+    /* Mobile sidebar buttons (added by JS) */
+    .mobile-nav-buttons {
         display: flex;
         flex-direction: column;
-        width: 70%;
-        /* Match drawer width */
+        gap: 10px;
+        padding: 20px 28px 30px;
+        margin-top: auto;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .mobile-nav-buttons a {
+        display: block;
+        text-align: center;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+    }
+
+    .mobile-nav-buttons .btn-mobile-login {
+        background: var(--secondary-color);
+        color: var(--primary-color);
+    }
+
+    .mobile-nav-buttons .btn-mobile-login:hover {
+        background: #d4ac0d;
+        transform: translateY(-1px);
+    }
+
+    .mobile-nav-buttons .btn-mobile-apply {
+        background: transparent;
+        color: var(--secondary-color);
+        border: 2px solid var(--secondary-color);
+    }
+
+    .mobile-nav-buttons .btn-mobile-apply:hover {
+        background: var(--secondary-color);
+        color: var(--primary-color);
+    }
+
+    /* Close button in sidebar */
+    .sidebar-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 36px;
+        height: 36px;
+        display: flex;
         align-items: center;
-        /* background-color: var(--primary-color); Remove bg as drawer has it, but buttons are on top? Button bg transparent? */
-        padding-bottom: 2rem;
-        position: fixed;
-        bottom: 0;
-        right: 0;
-        z-index: 1000;
-        gap: 15px;
+        justify-content: center;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        z-index: 1060;
     }
 
-    /* Better Mobile Approach: Just Stack Everything in the Dropdown */
-    .header-container {
-        justify-content: space-between;
+    .sidebar-close:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: var(--white);
+        transform: rotate(90deg);
     }
-
-    .nav-menu {
-        position: fixed;
-        top: 70px;
-        /* Below header */
-        right: -100%;
-        width: 70%;
-        height: calc(100vh - 70px);
-        background-color: var(--primary-color);
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        padding-top: 3rem;
-        transition: 0.3s ease;
-        border-left: 1px solid rgba(255, 255, 255, 0.1);
-        left: auto;
-        /* Reset left */
-    }
-
-    .nav-menu.active {
-        right: 0;
-    }
-
-    /* Add buttons to the mobile menu view via CSS logic or just ensure they are visible */
-    .nav-buttons {
-        display: none;
-        /* Hide desktop buttons */
-    }
-
-    /* We will inject buttons into nav-menu via HTML usually, but let's try a simpler stack */
 }
 
+/* ═══════════════════════════════════════════════════ */
+/* Small Screen Adjustments                            */
+/* ═══════════════════════════════════════════════════ */
 @media (max-width: 600px) {
     .container {
         padding: 0 15px;
@@ -486,7 +644,6 @@ footer {
 
     .logo-text {
         display: none;
-        /* Hide text on very small screens to save space, keep logo */
     }
 
     .hero-content h1 {
@@ -510,5 +667,10 @@ footer {
 
     .login-box {
         padding: 2rem;
+    }
+
+    /* Sidebar takes more width on very small screens */
+    .nav-menu {
+        width: min(85%, 320px);
     }
 }

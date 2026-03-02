@@ -15,11 +15,15 @@
             background: #fff;
             border-radius: 10px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, opacity 0.3s ease;
         }
 
         .teacher-card:hover {
             transform: translateY(-5px);
+        }
+
+        .teacher-card.hidden {
+            display: none;
         }
 
         .teacher-img {
@@ -55,6 +59,120 @@
             margin-right: 5px;
             width: 20px;
         }
+
+        /* Search & Filter Section */
+        .search-filter-section {
+            background: white;
+            padding: 1.5rem 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2.5rem;
+        }
+
+        .search-bar {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .search-bar i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 1rem;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 14px 16px 14px 46px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-family: var(--font-main);
+            background: #f8fafc;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .search-bar input:focus {
+            border-color: var(--secondary-color);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(241, 196, 15, 0.15);
+        }
+
+        .filter-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter-chip {
+            padding: 8px 18px;
+            border-radius: 25px;
+            border: 2px solid #e2e8f0;
+            background: #f8fafc;
+            color: #475569;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: var(--font-main);
+        }
+
+        .filter-chip:hover {
+            border-color: var(--secondary-color);
+            color: var(--primary-color);
+        }
+
+        .filter-chip.active {
+            background: var(--secondary-color);
+            border-color: var(--secondary-color);
+            color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(241, 196, 15, 0.3);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            color: #94a3b8;
+            display: none;
+            grid-column: 1 / -1;
+        }
+
+        .no-results i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+            color: #cbd5e1;
+        }
+
+        .no-results p {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .results-count {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 600px) {
+            .search-filter-section {
+                padding: 1rem 1.2rem;
+            }
+
+            .filter-chips {
+                gap: 6px;
+            }
+
+            .filter-chip {
+                padding: 6px 14px;
+                font-size: 0.8rem;
+            }
+        }
     </style>
 </head>
 
@@ -63,7 +181,7 @@
     <header>
         <div class="container header-container">
             <div class="logo">
-                <img src="logo.png" alt="SBRS Logo" style="border-radius: 50%;">
+                <img src="logo.png" alt="SBRS Logo">
                 <div class="logo-text">
                     <h1>Srimad Bhuvanendra School</h1>
                     <span>Karkala, Karnataka, INDIA</span>
@@ -96,9 +214,27 @@
     </div>
 
     <div class="container" style="padding: 4rem 20px;">
-        <div class="cards-grid">
+
+        <!-- Search & Filter -->
+        <div class="search-filter-section">
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="teacherSearch" placeholder="Search by name, subject, or qualification...">
+            </div>
+            <div class="filter-chips">
+                <button class="filter-chip active" data-filter="all">All</button>
+                <button class="filter-chip" data-filter="mathematics">Mathematics</button>
+                <button class="filter-chip" data-filter="science">Science</button>
+                <button class="filter-chip" data-filter="english">English</button>
+                <button class="filter-chip" data-filter="sports">Sports</button>
+            </div>
+            <div class="results-count" id="resultsCount">Showing all 4 teachers</div>
+        </div>
+
+        <div class="cards-grid" id="teacherGrid">
             <!-- Teacher 1 -->
-            <div class="teacher-card">
+            <div class="teacher-card" data-subject="mathematics" data-name="mrs sarah johnson"
+                data-qual="m.sc. mathematics b.ed">
                 <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
                     alt="Mrs. Sarah Johnson" class="teacher-img">
                 <div class="teacher-info">
@@ -113,7 +249,8 @@
             </div>
 
             <!-- Teacher 2 -->
-            <div class="teacher-card">
+            <div class="teacher-card" data-subject="science" data-name="mr rajesh kumar"
+                data-qual="m.sc. physics m.phil">
                 <img src="https://images.unsplash.com/photo-1568602471122-7832951cc4c5?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
                     alt="Mr. Rajesh Kumar" class="teacher-img">
                 <div class="teacher-info">
@@ -128,7 +265,7 @@
             </div>
 
             <!-- Teacher 3 -->
-            <div class="teacher-card">
+            <div class="teacher-card" data-subject="english" data-name="mrs anjali desai" data-qual="m.a. english b.ed">
                 <img src="https://images.unsplash.com/photo-1544717305-2782549b5136?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
                     alt="Mrs. Anjali Desai" class="teacher-img">
                 <div class="teacher-info">
@@ -143,7 +280,7 @@
             </div>
 
             <!-- Teacher 4 -->
-            <div class="teacher-card">
+            <div class="teacher-card" data-subject="sports" data-name="mr david wilson" data-qual="m.p.ed nis coach">
                 <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
                     alt="Mr. David Wilson" class="teacher-img">
                 <div class="teacher-info">
@@ -155,6 +292,12 @@
                         <p><i class="fas fa-phone"></i> +91 98765 43213</p>
                     </div>
                 </div>
+            </div>
+
+            <!-- No Results Message -->
+            <div class="no-results" id="noResults">
+                <i class="fas fa-search"></i>
+                <p>No teachers found matching your search</p>
             </div>
         </div>
     </div>
@@ -202,6 +345,57 @@
     </footer>
 
     <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('teacherSearch');
+            const filterChips = document.querySelectorAll('.filter-chip');
+            const teacherCards = document.querySelectorAll('.teacher-card');
+            const noResults = document.getElementById('noResults');
+            const resultsCount = document.getElementById('resultsCount');
+            let activeFilter = 'all';
+
+            function filterTeachers() {
+                const query = searchInput.value.toLowerCase().trim();
+                let visibleCount = 0;
+
+                teacherCards.forEach(card => {
+                    const name = card.getAttribute('data-name') || '';
+                    const subject = card.getAttribute('data-subject') || '';
+                    const qual = card.getAttribute('data-qual') || '';
+                    const designation = (card.querySelector('.designation')?.textContent || '').toLowerCase();
+                    const allText = name + ' ' + subject + ' ' + qual + ' ' + designation;
+
+                    const matchesFilter = activeFilter === 'all' || subject === activeFilter;
+                    const matchesSearch = !query || allText.includes(query);
+
+                    if (matchesFilter && matchesSearch) {
+                        card.classList.remove('hidden');
+                        visibleCount++;
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                });
+
+                noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+                if (visibleCount === teacherCards.length) {
+                    resultsCount.textContent = `Showing all ${visibleCount} teachers`;
+                } else {
+                    resultsCount.textContent = `Showing ${visibleCount} of ${teacherCards.length} teachers`;
+                }
+            }
+
+            searchInput.addEventListener('input', filterTeachers);
+
+            filterChips.forEach(chip => {
+                chip.addEventListener('click', () => {
+                    filterChips.forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    activeFilter = chip.getAttribute('data-filter');
+                    filterTeachers();
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>

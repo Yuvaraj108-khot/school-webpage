@@ -8,6 +8,125 @@
     <link rel="icon" href="logo.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Gallery Search */
+        .gallery-search-section {
+            background: white;
+            padding: 1.5rem 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2.5rem;
+        }
+
+        .gallery-search-bar {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .gallery-search-bar i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 1rem;
+        }
+
+        .gallery-search-bar input {
+            width: 100%;
+            padding: 14px 16px 14px 46px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-family: var(--font-main);
+            background: #f8fafc;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .gallery-search-bar input:focus {
+            border-color: var(--secondary-color);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(241, 196, 15, 0.15);
+        }
+
+        .gallery-filter-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .gallery-chip {
+            padding: 8px 18px;
+            border-radius: 25px;
+            border: 2px solid #e2e8f0;
+            background: #f8fafc;
+            color: #475569;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: var(--font-main);
+        }
+
+        .gallery-chip:hover {
+            border-color: var(--secondary-color);
+            color: var(--primary-color);
+        }
+
+        .gallery-chip.active {
+            background: var(--secondary-color);
+            border-color: var(--secondary-color);
+            color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(241, 196, 15, 0.3);
+        }
+
+        .gallery-results-count {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .gallery-no-results {
+            text-align: center;
+            padding: 3rem;
+            color: #94a3b8;
+            display: none;
+            grid-column: 1 / -1;
+        }
+
+        .gallery-no-results i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+            color: #cbd5e1;
+        }
+
+        .gallery-no-results p {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .card.gallery-hidden {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            .gallery-search-section {
+                padding: 1rem 1.2rem;
+            }
+
+            .gallery-filter-chips {
+                gap: 6px;
+            }
+
+            .gallery-chip {
+                padding: 6px 14px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -49,27 +168,31 @@
 
     <div class="container" style="padding: 4rem 20px;">
 
-        <div style="text-align: center; margin-bottom: 2rem;">
-            <button class="btn btn-outline"
-                style="border-color: var(--primary-color); color: var(--primary-color); margin: 0 5px;">All</button>
-            <button class="btn btn-outline"
-                style="border-color: var(--primary-color); color: var(--primary-color); margin: 0 5px;">Campus</button>
-            <button class="btn btn-outline"
-                style="border-color: var(--primary-color); color: var(--primary-color); margin: 0 5px;">Events</button>
-            <button class="btn btn-outline"
-                style="border-color: var(--primary-color); color: var(--primary-color); margin: 0 5px;">Sports</button>
+        <!-- Search & Filter Section -->
+        <div class="gallery-search-section">
+            <div class="gallery-search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="gallerySearch" placeholder="Search photos by title, event, or description...">
+            </div>
+            <div class="gallery-filter-chips">
+                <button class="gallery-chip active" data-filter="All">All</button>
+                <button class="gallery-chip" data-filter="Campus">Campus</button>
+                <button class="gallery-chip" data-filter="Events">Events</button>
+                <button class="gallery-chip" data-filter="Sports">Sports</button>
+            </div>
+            <div class="gallery-results-count" id="galleryResultsCount">Showing all photos</div>
         </div>
 
-        <div class="cards-grid" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+        <div class="cards-grid" id="galleryGrid" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
             <!-- Updated Placeholders -->
-            <div class="card" style="padding: 0; overflow: hidden;">
+            <div class="card" data-category="Campus" style="padding: 0; overflow: hidden;">
                 <img src="schoolimage.png" alt="Campus" style="width: 100%; height: 200px; object-fit: cover;">
                 <div style="padding: 1rem;">
                     <h4>Main Block</h4>
                     <p style="font-size: 0.8rem; color: #666;">View of the academic block</p>
                 </div>
             </div>
-            <div class="card" style="padding: 0; overflow: hidden;">
+            <div class="card" data-category="Campus" style="padding: 0; overflow: hidden;">
                 <img src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
                     alt="Library" style="width: 100%; height: 200px; object-fit: cover;">
                 <div style="padding: 1rem;">
@@ -77,7 +200,7 @@
                     <p style="font-size: 0.8rem; color: #666;">75,000+ Volumes</p>
                 </div>
             </div>
-            <div class="card" style="padding: 0; overflow: hidden;">
+            <div class="card" data-category="Campus" style="padding: 0; overflow: hidden;">
                 <img src="https://images.unsplash.com/photo-1531482615713-2afd69097998?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
                     alt="Computer Lab" style="width: 100%; height: 200px; object-fit: cover;">
                 <div style="padding: 1rem;">
@@ -85,7 +208,7 @@
                     <p style="font-size: 0.8rem; color: #666;">Modern IT Infrastructure</p>
                 </div>
             </div>
-            <div class="card" style="padding: 0; overflow: hidden;">
+            <div class="card" data-category="Sports" style="padding: 0; overflow: hidden;">
                 <img src="https://images.unsplash.com/photo-1461896836934-ffe607ba8211?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
                     alt="Sports" style="width: 100%; height: 200px; object-fit: cover;">
                 <div style="padding: 1rem;">
@@ -93,7 +216,7 @@
                     <p style="font-size: 0.8rem; color: #666;">Annual Athletic Meet</p>
                 </div>
             </div>
-            <div class="card" style="padding: 0; overflow: hidden;">
+            <div class="card" data-category="Campus" style="padding: 0; overflow: hidden;">
                 <img src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
                     alt="Science Lab" style="width: 100%; height: 200px; object-fit: cover;">
                 <div style="padding: 1rem;">
@@ -101,13 +224,19 @@
                     <p style="font-size: 0.8rem; color: #666;">Physics & Chemistry</p>
                 </div>
             </div>
-            <div class="card" style="padding: 0; overflow: hidden;">
+            <div class="card" data-category="Events" style="padding: 0; overflow: hidden;">
                 <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
                     alt="Auditorium" style="width: 100%; height: 200px; object-fit: cover;">
                 <div style="padding: 1rem;">
                     <h4>Open Air Theatre</h4>
                     <p style="font-size: 0.8rem; color: #666;">Cultural Events</p>
                 </div>
+            </div>
+
+            <!-- No Results -->
+            <div class="gallery-no-results" id="galleryNoResults">
+                <i class="fas fa-images"></i>
+                <p>No photos found matching your search</p>
             </div>
         </div>
 
@@ -160,26 +289,81 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadGalleryFromStorage();
 
-            // Setup filters
-            const filterBtns = document.querySelectorAll('.btn-outline'); // Assuming these are the filter buttons
-            filterBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const filter = btn.innerText;
-                    filterGallery(filter);
+            // Setup search & filter
+            const searchInput = document.getElementById('gallerySearch');
+            const filterChips = document.querySelectorAll('.gallery-chip');
+            let activeFilter = 'All';
+
+            function filterAndSearch() {
+                const query = searchInput.value.toLowerCase().trim();
+                const allCards = document.querySelectorAll('#galleryGrid .card');
+                let visibleCount = 0;
+                const totalCount = allCards.length;
+
+                allCards.forEach(card => {
+                    const title = (card.querySelector('h4')?.textContent || '').toLowerCase();
+                    const desc = (card.querySelector('p')?.textContent || '').toLowerCase();
+                    const category = card.getAttribute('data-category') || '';
+                    const searchText = title + ' ' + desc + ' ' + category.toLowerCase();
+
+                    // Determine category match
+                    let matchesCategory = activeFilter === 'All';
+                    if (!matchesCategory) {
+                        const campusTags = ['Main Block', 'Library', 'Computer Lab', 'Science Lab', 'Auditorium', 'Campus'];
+                        const sportsTags = ['Sports', 'Sports Day'];
+                        const eventsTags = ['Events', 'Cultural', 'Open Air Theatre'];
+
+                        if (activeFilter === 'Campus' && campusTags.some(t => category.includes(t) || title.includes(t.toLowerCase()))) matchesCategory = true;
+                        else if (activeFilter === 'Sports' && sportsTags.some(t => category.includes(t) || title.includes(t.toLowerCase()))) matchesCategory = true;
+                        else if (activeFilter === 'Events' && eventsTags.some(t => category.includes(t) || title.includes(t.toLowerCase()))) matchesCategory = true;
+                        else if (category === activeFilter) matchesCategory = true;
+                    }
+
+                    const matchesSearch = !query || searchText.includes(query);
+
+                    if (matchesCategory && matchesSearch) {
+                        card.classList.remove('gallery-hidden');
+                        visibleCount++;
+                    } else {
+                        card.classList.add('gallery-hidden');
+                    }
+                });
+
+                const noResults = document.getElementById('galleryNoResults');
+                const resultsCount = document.getElementById('galleryResultsCount');
+                noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+
+                if (visibleCount === totalCount) {
+                    resultsCount.textContent = `Showing all ${visibleCount} photos`;
+                } else {
+                    resultsCount.textContent = `Showing ${visibleCount} of ${totalCount} photos`;
+                }
+            }
+
+            searchInput.addEventListener('input', filterAndSearch);
+
+            filterChips.forEach(chip => {
+                chip.addEventListener('click', () => {
+                    filterChips.forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    activeFilter = chip.getAttribute('data-filter');
+                    filterAndSearch();
                 });
             });
+
+            // Initial count
+            filterAndSearch();
         });
 
         function loadGalleryFromStorage() {
             const gallery = localStorage.getItem('sbrs_gallery');
             if (gallery) {
                 const items = JSON.parse(gallery);
-                const grid = document.querySelector('.cards-grid');
+                const grid = document.getElementById('galleryGrid');
 
-                // Append new items
                 items.forEach(item => {
                     const div = document.createElement('div');
-                    div.className = 'card gallery-item'; // Add common class for filtering
+                    div.className = 'card';
                     div.setAttribute('data-category', item.category);
                     div.style.padding = '0';
                     div.style.overflow = 'hidden';
@@ -191,67 +375,11 @@
                             <p style="font-size: 0.8rem; color: #666;">${item.desc}</p>
                         </div>
                     `;
-                    grid.appendChild(div);
+                    // Insert before the no-results div
+                    const noResultsEl = document.getElementById('galleryNoResults');
+                    grid.insertBefore(div, noResultsEl);
                 });
             }
-        }
-
-        function filterGallery(category) {
-            const allItems = document.querySelectorAll('.cards-grid .card');
-
-            allItems.forEach(item => {
-                // Determine category of the item
-                // New items have data-category attribute
-                // Old items: we need to infer or add data attributes manually to them or just text content check
-                let itemCat = item.getAttribute('data-category');
-
-                // Fallback for hardcoded items (check the h4 text)
-                if (!itemCat) {
-                    const h4 = item.querySelector('h4').innerText;
-                    // Map hardcoded titles to broad categories if needed, or just use titles
-                    // Hardcoded: Main Block, Library, Computer Lab, Sports Day, Science Lab, Open Air Theatre
-                    // Filter Buttons: All, Campus, Events, Sports
-
-                    if (['Main Block', 'Library', 'Computer Lab', 'Science Lab', 'Open Air Theatre'].includes(h4)) {
-                        itemCat = 'Campus'; // Broad category
-                        // Also specific category matches
-                        if (category === h4) itemCat = category;
-                    }
-                    if (h4 === 'Sports Day') itemCat = 'Sports';
-                }
-
-                if (category === 'All') {
-                    item.style.display = 'block';
-                } else {
-                    // Simple check: does the category match?
-                    // For "Campus", we want to show Main Block, Library, etc.
-                    // For specific like "Main Block", only show Main Block.
-
-                    // Let's refine the logic.
-                    // If filter is "Campus", we show items tagged Campus OR items that fall under Campus.
-                    // If the uploaded item was tagged "Main Block", does it show under "Campus"?
-                    // The user selects "Main Block" from helper list.
-                    // The filter buttons are: All, Campus, Events, Sports.
-
-                    // Mapping specific tags to broad filters:
-                    const campusTags = ['Main Block', 'Library', 'Computer Lab', 'Science Lab', 'Auditorium', 'Campus'];
-                    const sportsTags = ['Sports', 'Sports Day'];
-                    const eventsTags = ['Events', 'Cultural', 'Open Air Theatre']; // Maybe Open Air Theatre is infrastructure (Campus) or Events? "Cultural Events" says content.
-
-                    let show = false;
-
-                    // Using the displayed text (category/title) as the source of truth for the item's category
-                    const titleText = item.querySelector('h4').innerText;
-                    const dataCat = item.getAttribute('data-category') || titleText;
-
-                    if (category === 'Campus' && campusTags.some(t => dataCat.includes(t))) show = true;
-                    else if (category === 'Sports' && sportsTags.some(t => dataCat.includes(t))) show = true;
-                    else if (category === 'Events' && eventsTags.some(t => dataCat.includes(t))) show = true;
-                    else if (dataCat === category) show = true; // Exact match if we add more buttons later
-
-                    item.style.display = show ? 'block' : 'none';
-                }
-            });
         }
     </script>
 </body>
