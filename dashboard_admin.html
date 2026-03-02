@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | SBRS</title>
+    <link rel="icon" href="logo.png" type="image/png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #1a252f;
+            color: white;
+            padding: 2rem 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-menu a {
+            padding: 15px 20px;
+            color: #ccc;
+            display: block;
+            border-left: 4px solid transparent;
+            transition: 0.3s;
+        }
+
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-left-color: #e67e22;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            background: #f4f7f6;
+        }
+
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            background: white;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .card-box {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        .drag-drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 3rem;
+            text-align: center;
+            background: #fafafa;
+            color: #666;
+            cursor: pointer;
+            transition: 0.3s;
+            position: relative;
+        }
+
+        .drag-drop-zone:hover {
+            border-color: var(--primary-color);
+            background: #f0f0f0;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        /* Hidden file input */
+        #fileInput {
+            display: none;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .preview-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .preview-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            transition: 0.2s;
+            z-index: 10;
+        }
+
+        .delete-btn:hover {
+            background: rgb(192, 57, 43);
+            transform: scale(1.1);
+        }
+
+        .notice-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid var(--secondary-color);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div style="text-align: center; padding: 0 2rem 2rem;">
+                <img src="logo.png" style="width: 50px; border-radius: 50%;">
+                <h3 style="margin-top: 10px;">Admin Panel</h3>
+            </div>
+            <nav class="sidebar-menu">
+                <a href="#" class="active"><i class="fas fa-images"></i> Gallery Manager</a>
+                <a href="#"><i class="fas fa-calendar-plus"></i> Events</a>
+                <a href="#"><i class="fas fa-user-graduate"></i> Alumni</a>
+            </nav>
+            <div style="margin-top: auto; padding: 20px;">
+                <a href="login.html" style="color: #ea5455;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header-bar">
+                <h2>Administrator</h2>
+                <div class="user-info">
+                    <span>Super Admin</span>
+                    <a href="index.html" class="btn btn-outline"
+                        style="border: 1px solid var(--primary-color); color: var(--primary-color); margin-left: 10px; padding: 5px 15px; font-size: 0.8rem;">Back
+                        to Home</a>
+                </div>
+            </div>
+
+            <!-- Gallery Uploader -->
+            <div class="card-box">
+                <h3><i class="fas fa-camera"></i> Update Gallery</h3>
+                <p style="color: #666; margin-bottom: 2rem;">Upload new photos to the school gallery.</p>
+
+                <div class="drag-drop-zone" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                    <p><strong>Drag & Drop images here</strong> or click to browse</p>
+                    <p style="font-size: 0.8rem; margin-top: 10px;">Supports JPG, PNG (Max 5MB)</p>
+                    <input type="file" id="fileInput" accept="image/*" onchange="handleFiles(this.files)">
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <label>Select Category / Section</label>
+                    <select id="imgCategory">
+                        <option value="Campus">Campus</option>
+                        <option value="Events">Events</option>
+                        <option value="Sports">Sports</option>
+                        <option value="Main Block">Main Block</option>
+                        <option value="Library">Library</option>
+                        <option value="Computer Lab">Computer Lab</option>
+                        <option value="Science Lab">Science Lab</option>
+                        <option value="Auditorium">Auditorium / Open Air Theatre</option>
+                        <option value="Other">Other</option>
+                    </select>
+
+                    <label>Image Description / Caption</label>
+                    <input type="text" id="imgDesc" placeholder="e.g., Annual Sports Day 2026 - Winners">
+                    <button class="btn btn-primary" onclick="uploadGalleryImage()" style="margin-top: 10px;">Upload to
+                        Gallery</button>
+                </div>
+
+                <!-- Preview Area -->
+                <div style="margin-top: 3rem;">
+                    <h4>Recent Uploads</h4>
+                    <p style="font-size: 0.8rem; color: #666; margin-bottom: 1rem;">Click 'X' to remove an image.</p>
+                    <div id="previewGrid" class="preview-grid">
+                        <!-- Items will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Manager -->
+            <div class="card-box">
+                <h3><i class="fas fa-bullhorn"></i> Add Notice / Event</h3>
+                <input type="text" id="eventTitle" placeholder="Event Title">
+                <input type="date" id="eventDate">
+                <textarea id="eventDetails" rows="3" placeholder="Event Details..."></textarea>
+                <button class="btn btn-primary" onclick="publishNotice()">Publish Notice</button>
+            </div>
+
+            <!-- Active Notices List -->
+            <div class="card-box">
+                <h3><i class="fas fa-list"></i> Active Notices</h3>
+                <p style="font-size: 0.8rem; color: #666; margin-bottom: 1rem;">Manage current events and notices.</p>
+                <div id="noticeList">
+                    <!-- Mock Notice -->
+                    <div class="notice-item">
+                        <div>
+                            <h4 style="margin-bottom: 5px;">Admission Open 2026-27</h4>
+                            <p style="font-size: 0.8rem; color: #666;"><i class="fas fa-calendar-alt"></i> Jun 01, 2026
+                            </p>
+                        </div>
+                        <button class="btn btn-outline"
+                            style="border-color: #ea5455; color: #ea5455; padding: 5px 10px; font-size: 0.8rem;"
+                            onclick="deleteItem(this, 'Notice')">Remove</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Load notices and gallery on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAdminNotices();
+            loadAdminGallery();
+        });
+
+        let selectedFile = null;
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                selectedFile = files[0];
+                document.querySelector('.drag-drop-zone p strong').innerText = "Selected: " + selectedFile.name;
+            }
+        }
+
+        // Gallery Functions
+        function getGallery() {
+            const gallery = localStorage.getItem('sbrs_gallery');
+            return gallery ? JSON.parse(gallery) : [];
+        }
+
+        function saveGallery(gallery) {
+            try {
+                localStorage.setItem('sbrs_gallery', JSON.stringify(gallery));
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    alert("Storage full! Please delete some images or upload smaller files.");
+                } else {
+                    alert("Error saving image.");
+                }
+            }
+        }
+
+        function loadAdminGallery() {
+            const gallery = getGallery();
+            const grid = document.getElementById('previewGrid');
+            grid.innerHTML = '';
+
+            if (gallery.length === 0) {
+                grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #888;">No uploaded images yet.</p>';
+                return;
+            }
+
+            gallery.forEach((item, index) => {
+                const newItem = document.createElement('div');
+                newItem.className = 'preview-item';
+                newItem.innerHTML = `
+                    <button class="delete-btn" onclick="deleteGalleryImage(${index})"><i class="fas fa-times"></i></button>
+                    <img src="${item.url}" alt="Preview">
+                    <div class="preview-desc">
+                        <strong>${item.category}</strong><br>
+                        ${item.desc}
+                    </div>
+                `;
+                grid.appendChild(newItem);
+            });
+        }
+
+        function uploadGalleryImage() {
+            const desc = document.getElementById('imgDesc').value;
+            const category = document.getElementById('imgCategory').value;
+
+            if (!selectedFile) {
+                alert("Please select an image first.");
+                return;
+            }
+            if (!desc) {
+                alert("Please add a description.");
+                return;
+            }
+
+            // File Size Check (Limit to ~500KB for localStorage sake)
+            if (selectedFile.size > 500000) {
+                alert("File is too large! Please upload images smaller than 500KB for this demo.");
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                const imageUrl = e.target.result; // This is the Base64 string
+
+                // Create new item object
+                const newItem = {
+                    url: imageUrl,
+                    category: category,
+                    desc: desc,
+                    date: new Date().toLocaleDateString()
+                };
+
+                const gallery = getGallery();
+                gallery.unshift(newItem); // Add to top
+
+                // Try saving
+                try {
+                    localStorage.setItem('sbrs_gallery', JSON.stringify(gallery));
+                    loadAdminGallery();
+
+                    // Reset
+                    document.getElementById('imgDesc').value = '';
+                    document.querySelector('.drag-drop-zone p strong').innerText = "Drag & Drop images here or click to browse";
+                    selectedFile = null;
+                    document.getElementById('fileInput').value = ''; // Reset file input
+
+                    alert("Image uploaded successfully to Gallery under " + category + "!");
+                } catch (e) {
+                    alert("Storage full! Image too large to save in browser.");
+                }
+            };
+
+            reader.readAsDataURL(selectedFile);
+        }
+
+        function deleteGalleryImage(index) {
+            if (confirm('Are you sure you want to remove this image?')) {
+                const gallery = getGallery();
+                gallery.splice(index, 1);
+                try {
+                    localStorage.setItem('sbrs_gallery', JSON.stringify(gallery));
+                    loadAdminGallery();
+                } catch (e) {
+                    alert("Error updating storage.");
+                }
+            }
+        }
+
+        // --- Notice Functions ---
+        function getNotices() {
+            const notices = localStorage.getItem('sbrs_notices');
+            return notices ? JSON.parse(notices) : [];
+        }
+
+        function saveNotices(notices) {
+            localStorage.setItem('sbrs_notices', JSON.stringify(notices));
+        }
+
+        function loadAdminNotices() {
+            const notices = getNotices();
+            const list = document.getElementById('noticeList');
+            list.innerHTML = '';
+
+            if (notices.length === 0) {
+                list.innerHTML = '<p style="color: #888; text-align: center;">No active notices found.</p>';
+                return;
+            }
+
+            notices.forEach((notice, index) => {
+                const newItem = document.createElement('div');
+                newItem.className = 'notice-item';
+                newItem.innerHTML = `
+                    <div>
+                        <h4 style="margin-bottom: 5px;">${notice.title}</h4>
+                        <p style="font-size: 0.8rem; color: #666;"><i class="fas fa-calendar-alt"></i> ${notice.date}</p>
+                        <p style="font-size: 0.8rem; color: #444; margin-top: 5px;">${notice.details.substring(0, 50)}${notice.details.length > 50 ? '...' : ''}</p>
+                    </div>
+                    <button class="btn btn-outline" style="border-color: #ea5455; color: #ea5455; padding: 5px 10px; font-size: 0.8rem;" onclick="deleteNotice(${index})">Remove</button>
+                `;
+                list.appendChild(newItem);
+            });
+        }
+
+        function publishNotice() {
+            const title = document.getElementById('eventTitle').value;
+            const date = document.getElementById('eventDate').value;
+            const details = document.getElementById('eventDetails').value;
+
+            if (!title || !date) {
+                alert("Please fill in the Event Title and Date.");
+                return;
+            }
+
+            const newNotice = {
+                title,
+                date,
+                details
+            };
+
+            const notices = getNotices();
+            notices.unshift(newNotice);
+            saveNotices(notices);
+
+            loadAdminNotices();
+
+            // Reset form
+            document.getElementById('eventTitle').value = '';
+            document.getElementById('eventDate').value = '';
+            document.getElementById('eventDetails').value = '';
+            alert("Notice Published Successfully!");
+        }
+
+        function deleteNotice(index) {
+            if (confirm('Are you sure you want to remove this notice?')) {
+                const notices = getNotices();
+                notices.splice(index, 1);
+                saveNotices(notices);
+                loadAdminNotices();
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | SBRS Karkala</title>
+    <link rel="icon" href="logo.png" type="image/png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-decoration: none;
+            color: var(--primary-color);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: var(--transition);
+        }
+
+        .back-btn:hover {
+            color: var(--secondary-color);
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-page" style="position: relative;">
+        <!-- Back Button -->
+        <a href="index.html" class="back-btn">
+            <i class="fas fa-home"></i> Back to Home
+        </a>
+
+        <div class="login-container">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <img src="logo.png" alt="Logo" style="width: 80px; margin-bottom: 1rem;">
+                <h2 style="color: var(--primary-color); margin-bottom: 0.5rem;">Welcome Back</h2>
+                <p style="color: #666; font-size: 0.9rem;">Sign in to access your dashboard</p>
+            </div>
+
+            <form id="loginForm" class="contact-form">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 5px; color: #333;">Username / ID</label>
+                    <input type="text" id="username" placeholder="Enter your ID" required>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 5px; color: #333;">Password</label>
+                    <input type="password" id="password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+            </form>
+
+            <div style="margin-top: 1.5rem; text-align: center; font-size: 0.8rem; color: #666;">
+                <p>Forgot user ID or password? <a href="#" style="color: var(--primary-color);">Contact Office</a></p>
+            </div>
+
+            <div
+                style="margin-top: 1rem; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 0.75rem; color: #888;">
+                <p><strong>Demo Credentials:</strong></p>
+                <p>Student: student / pass</p>
+                <p>Teacher: teacher / pass</p>
+                <p>Admin: admin / pass</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const user = document.getElementById('username').value.toLowerCase();
+            const pass = document.getElementById('password').value;
+
+            if (user === 'student') {
+                window.location.href = 'dashboard_student.html';
+            } else if (user === 'teacher') {
+                window.location.href = 'dashboard_teacher.html';
+            } else if (user === 'admin') {
+                window.location.href = 'dashboard_admin.html';
+            } else {
+                alert('Invalid Username or Password');
+            }
+        });
+    </script>
+</body>
+
+</html>
