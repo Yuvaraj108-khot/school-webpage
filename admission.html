@@ -8,6 +8,8 @@
     <link rel="icon" href="logo.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- jsPDF for direct PDF download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 
 <body>
@@ -53,34 +55,98 @@
 
             <!-- Information Side -->
             <div>
-                <h3 style="color: var(--primary-color); margin-bottom: 1.5rem;">Admission Procedure</h3>
-                <p>Admission is open to all eligible candidates irrespective of caste, creed, religion, or region. We
-                    follow a merit-based approach to ensure a conducive learning environment for all.</p>
+                <h3 style="color: var(--primary-color); margin-bottom: 1.5rem; font-family: var(--font-heading);">
+                    ADMINISTRATIVE & ACADEMIC REQUIREMENTS</h3>
 
-                <h4 style="margin-top: 2rem; margin-bottom: 1rem;">Eligibility Criteria</h4>
-                <ul style="list-style: circle; margin-left: 20px;">
-                    <li>Minimum age requirements as per government norms.</li>
-                    <li>Submission of previous school transfer certificates (TC).</li>
-                    <li>Satisfactory performance in the entrance test (if applicable).</li>
-                </ul>
+                <!-- LKG Section -->
+                <div
+                    style="background: var(--white); padding: 1.5rem; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); border-left: 5px solid var(--secondary-color); margin-bottom: 2rem;">
+                    <h4 style="color: var(--accent-color); margin-bottom: 1rem;"><i class="fas fa-child"></i> Admission
+                        For LKG</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="margin-bottom: 8px;"><i class="fas fa-check-circle"
+                                    style="color: #27ae60; margin-right: 8px;"></i> Application form</li>
+                            <li style="margin-bottom: 8px;"><i class="fas fa-check-circle"
+                                    style="color: #27ae60; margin-right: 8px;"></i> Child birth certificate Xerox copy
+                            </li>
+                            <li style="margin-bottom: 8px;"><i class="fas fa-check-circle"
+                                    style="color: #27ae60; margin-right: 8px;"></i> Pass port size photo-2</li>
+                            <li style="margin-bottom: 8px;"><i class="fas fa-check-circle"
+                                    style="color: #27ae60; margin-right: 8px;"></i> Aadhar card Xerox (parent & child)
+                            </li>
+                        </ul>
+                        <div
+                            style="background: #fff9e6; padding: 1rem; border-radius: 8px; border: 1px dashed var(--secondary-color); font-size: 0.9rem;">
+                            <strong>Fees (2026-27):</strong> Rs. 16,010/-<br>
+                            <strong>Timings:</strong> Mon-Fri 9:30 AM - 3:00 PM<br>
+                            Sat: 9:30 AM - 1:00 PM
+                        </div>
+                    </div>
+                </div>
 
-                <h4 style="margin-top: 2rem; margin-bottom: 1rem;">Required Documents</h4>
-                <ul style="list-style: disc; margin-left: 20px;">
-                    <li>Birth Certificate (Original + Copy)</li>
-                    <li>Transfer Certificate (Original)</li>
-                    <li>Marks Card of previous class</li>
-                    <li>Passport size photographs (4 nos)</li>
-                    <li>Aadhar Card copy</li>
-                </ul>
+                <!-- 1st Standard Section -->
+                <div
+                    style="background: var(--white); padding: 1.5rem; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); border-left: 5px solid var(--accent-color); margin-bottom: 2rem;">
+                    <h4 style="color: var(--primary-color); margin-bottom: 1rem;"><i class="fas fa-user-graduate"></i>
+                        For 1st Standard</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="margin-bottom: 8px;"><i class="fas fa-check-circle"
+                                    style="color: #27ae60; margin-right: 8px;"></i> Application form</li>
+                            <li style="margin-bottom: 8px;"><i class="fas fa-check-circle"
+                                    style="color: #27ae60; margin-right: 8px;"></i> Child birth cert (Xerox)</li>
+                            <li style="margin-bottom: 8px;"><i class="fas fa-check-circle"
+                                    style="color: #27ae60; margin-right: 8px;"></i> Pass port size photo-2</li>
+                            <li style="margin-bottom: 8px;"><i class="fas fa-check-circle"
+                                    style="color: #27ae60; margin-right: 8px;"></i> Income/caste certificate</li>
+                        </ul>
+                        <div
+                            style="background: #e6f7ff; padding: 1rem; border-radius: 8px; border: 1px dashed var(--primary-color); font-size: 0.9rem;">
+                            <strong>Fees (2026-27):</strong> Rs. 16,510/-<br>
+                            <strong>Timings:</strong> Mon-Fri 9:30 AM - 3:00 PM<br>
+                            Sat: 9:30 AM - 1:00 PM
+                        </div>
+                    </div>
+                </div>
 
-                <a href="#" class="btn btn-outline" style="background: var(--primary-color); margin-top: 2rem;">Download
-                    Fee Structure (PDF)</a>
-            </div>
+                <!-- High School Section -->
+                <div
+                    style="background: var(--white); padding: 1.5rem; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); border-left: 5px solid #bdc3c7; margin-bottom: 2rem;">
+                    <h4 style="color: var(--primary-color); margin-bottom: 1rem;"><i class="fas fa-school"></i> High
+                        School Requirements</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; font-size: 0.8rem;">
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="margin-bottom: 4px;"><i class="fas fa-check-circle"
+                                    style="color: #27ae60; margin-right: 8px;"></i> Application / Photo-2</li>
+                            <li style="margin-bottom: 4px;"><i class="fas fa-check-circle"
+                                    style="color: #27ae60; margin-right: 8px;"></i> Birth Cert & Aadhar (Xerox)</li>
+                            <li style="margin-bottom: 4px;"><i class="fas fa-check-circle"
+                                    style="color: #27ae60; margin-right: 8px;"></i> Pass Book Xerox & Original Report
+                            </li>
+                        </ul>
+                        <div
+                            style="background: #fdf2f2; padding: 1rem; border-radius: 8px; border: 1px dashed #e74c3c;">
+                            <strong>Fees (English):</strong> Rs. 21,970/-<br>
+                            <strong>Kannada Medium:</strong> FREE Education<br>
+                            <strong>Timings:</strong> Mon-Fri 9:30 AM - 3:50 PM<br>
+                            Sat: 9:30 AM - 1:00 PM
+                        </div>
+                    </div>
+                </div>
+
+                <a href="javascript:void(0)" onclick="openFeePDF()" class="btn btn-outline"
+                    style="background: var(--primary-color); color:white; margin-top: 2rem; display:inline-block; padding:12px 24px; border-radius:8px; text-decoration:none; font-weight:600;">
+                    <i class="fas fa-file-pdf"></i> Download Fee Structure (PDF)
+                </a>
+
+            </div><!-- end Information Side -->
 
             <!-- Form Side -->
             <div
                 style="background: var(--light-bg); padding: 2rem; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
-                <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--primary-color);">Online Application
+                <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--primary-color);">Online
+                    Application
                 </h3>
                 <form class="contact-form">
                     <label>Student Name</label>
@@ -130,7 +196,8 @@
         <div class="container footer-grid">
             <div class="footer-col">
                 <h4>About Us</h4>
-                <p>Srimad Bhuvanendra Educational Institutions, Karkala. A premier institution providing quality education in a
+                <p>Srimad Bhuvanendra Educational Institutions, Karkala. A premier institution providing quality
+                    education in a
                     serene environment.</p>
             </div>
             <div class="footer-col">
@@ -155,7 +222,7 @@
             <div class="footer-col">
                 <h4>Contact Details</h4>
                 <p>
-                    <i class="fas fa-map-marker-alt"></i> Madhav Nagar, Karkala,<br> udupi District. Pin:
+                    <i class="fas fa-map-marker-alt"></i> Madhav Nagar, Karkala,<br> Udupi District. Pin:
                     574104<br>Karnataka, INDIA
                 </p>
                 <p><i class="fas fa-phone"></i> 9663523449</p>
@@ -168,6 +235,171 @@
     </footer>
 
     <script src="script.js"></script>
+    <script>
+        function openFeePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+            const pageW = 210;
+            const margin = 18;
+            const contentW = pageW - margin * 2;
+            let y = 18;
+
+            // ── HEADER ──────────────────────────────────────────────
+            doc.setFillColor(26, 37, 47);
+            doc.rect(0, 0, pageW, 30, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(13);
+            doc.text('SRIMAD BHUVANENDRA EDUCATIONAL INSTITUTIONS', pageW / 2, 11, { align: 'center' });
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.text('Madhav Nagar, Karkala, Udupi District, Karnataka - 574104', pageW / 2, 17, { align: 'center' });
+            doc.text('Phone: 9663523449  |  Email: srimadbhuvanendra@gmail.com', pageW / 2, 22, { align: 'center' });
+
+            // ── TITLE BAR ────────────────────────────────────────────
+            doc.setFillColor(230, 126, 34);
+            doc.rect(0, 30, pageW, 10, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.text('ADMISSION REQUIREMENTS & FEE STRUCTURE  —  2026-27', pageW / 2, 36.5, { align: 'center' });
+
+            y = 48;
+            doc.setTextColor(30, 30, 30);
+
+            // ── HELPER FUNCTIONS ─────────────────────────────────────
+            function sectionHeader(title, r, g, b) {
+                doc.setFillColor(r, g, b);
+                doc.rect(margin, y, contentW, 8, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9.5);
+                doc.text(title, margin + 4, y + 5.5);
+                doc.setTextColor(30, 30, 30);
+                y += 8;
+            }
+
+            function bulletList(items) {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                items.forEach(item => {
+                    doc.setFillColor(39, 174, 96);
+                    doc.circle(margin + 3, y + 2, 1, 'F');
+                    doc.text(item, margin + 7, y + 3.5);
+                    y += 6;
+                });
+            }
+
+            function feeRow(label, value, highlight) {
+                if (highlight) doc.setFillColor(255, 249, 242);
+                else doc.setFillColor(240, 244, 248);
+                doc.rect(margin, y, contentW, 7, 'F');
+                doc.setDrawColor(220, 220, 220);
+                doc.rect(margin, y, contentW, 7, 'S');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.setTextColor(30, 30, 30);
+                doc.text(label, margin + 3, y + 4.8);
+                if (highlight) doc.setTextColor(230, 126, 34);
+                else doc.setTextColor(39, 174, 96);
+                doc.text(value, margin + contentW - 3, y + 4.8, { align: 'right' });
+                doc.setTextColor(30, 30, 30);
+                y += 7;
+            }
+
+            function timingNote(text) {
+                doc.setFont('helvetica', 'italic');
+                doc.setFontSize(8);
+                doc.setTextColor(100, 100, 100);
+                doc.text(text, margin + 2, y + 3.5);
+                doc.setTextColor(30, 30, 30);
+                y += 7;
+            }
+
+            function gap(n) { y += n || 5; }
+
+            // ── LKG ─────────────────────────────────────────────────
+            sectionHeader('1.  LKG ADMISSION', 230, 126, 34);
+            gap(2);
+            bulletList([
+                'Application form',
+                'Child Birth Certificate Xerox copy',
+                'Passport size photo — 2 nos.',
+                'Aadhar card Xerox copy (Parent & Child)',
+                'Blood Group certificate'
+            ]);
+            gap(1);
+            feeRow('School Fees 2026-27', 'Rs. 16,010/-', true);
+            gap(1);
+            timingNote('Timings: Mon–Fri: 9:30 AM – 3:00 PM  |  Saturday: 9:30 AM – 1:00 PM');
+            gap(4);
+
+            // ── 1ST STANDARD ────────────────────────────────────────
+            sectionHeader('2.  1ST STANDARD ADMISSION', 41, 128, 185);
+            gap(2);
+            bulletList([
+                'Application form',
+                'Child Birth Certificate Xerox copy',
+                'Passport size photo — 2 nos.',
+                'Income / Caste Certificate',
+                'Ration Card Xerox copy',
+                'Blood Group certificate'
+            ]);
+            gap(1);
+            feeRow('School Fees 2026-27', 'Rs. 16,510/-', true);
+            gap(1);
+            timingNote('Timings: Mon–Fri: 9:30 AM – 3:00 PM  |  Saturday: 9:30 AM – 1:00 PM');
+            gap(4);
+
+            // ── HIGH SCHOOL ─────────────────────────────────────────
+            sectionHeader('3.  HIGH SCHOOL — KANNADA & ENGLISH MEDIUM (Class 7–10)', 44, 62, 80);
+            gap(2);
+            bulletList([
+                'Application form',
+                'Student Photo — 2 nos.',
+                'Student Birth Certificate Xerox copy',
+                'Student & Parents Aadhar Xerox copy',
+                'Ration Card, Caste/Income Certificate copy',
+                'Student Passbook Xerox (with clear A/C details)',
+                'Original Report Card (SATS)'
+            ]);
+            gap(1);
+            feeRow('English Medium Fee', 'Rs. 21,970/-', true);
+            feeRow('Kannada Medium Fee', 'FREE EDUCATION (Govt. Funded)', false);
+            gap(1);
+            timingNote('Timings: Mon–Fri: 9:30 AM – 3:50 PM  |  Saturday: 9:30 AM – 1:00 PM');
+            gap(6);
+
+            // ── NOTE BOX ────────────────────────────────────────────
+            doc.setFillColor(240, 244, 248);
+            doc.rect(margin, y, contentW, 12, 'F');
+            doc.setDrawColor(192, 207, 224);
+            doc.rect(margin, y, contentW, 12, 'S');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8.5);
+            doc.setTextColor(30, 30, 30);
+            doc.text('Note:', margin + 3, y + 4.5);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Fees once paid are non-refundable. All original documents must be presented at the time of admission.', margin + 13, y + 4.5);
+            doc.text('For enquiries contact the school office during working hours.', margin + 3, y + 9.5);
+            y += 18;
+
+            // ── SIGNATURES ───────────────────────────────────────────
+            y += 10;
+            doc.setDrawColor(0, 0, 0);
+            doc.line(margin, y, margin + 50, y);
+            doc.line(pageW - margin - 50, y, pageW - margin, y);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(80, 80, 80);
+            doc.text('Office Seal', margin + 25, y + 5, { align: 'center' });
+            doc.text('Principal Signature', pageW - margin - 25, y + 5, { align: 'center' });
+
+            // ── DOWNLOAD ─────────────────────────────────────────────
+            doc.save('SBRS_Fee_Structure_2026-27.pdf');
+        }
+    </script>
 </body>
 
 </html>

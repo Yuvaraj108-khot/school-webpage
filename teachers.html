@@ -10,54 +10,98 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .teacher-card {
-            text-align: center;
-            padding: 2rem;
             background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s ease, opacity 0.3s ease;
+            border-radius: 20px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            transition: all 0.4s ease;
+            border: 1px solid #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
         }
 
         .teacher-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border-color: var(--secondary-color);
         }
 
         .teacher-card.hidden {
             display: none;
         }
 
+        .teacher-img-container {
+            width: 180px;
+            height: 180px;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
         .teacher-img {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
+            width: 100%;
+            height: 100%;
             object-fit: cover;
-            margin: 0 auto 1rem;
-            border: 3px solid var(--secondary-color);
+            border-radius: 50%;
+            border: 5px solid var(--secondary-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            background: #fff;
+            transition: all 0.3s ease;
+        }
+
+        .teacher-card:hover .teacher-img {
+            transform: scale(1.05);
+            border-color: var(--accent-color);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+
+
+
+        .teacher-info {
+            width: 100%;
         }
 
         .teacher-info h3 {
             color: var(--primary-color);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.6rem;
             font-family: var(--font-heading);
+            font-size: 1.4rem;
+            letter-spacing: 0.5px;
         }
 
         .teacher-info .designation {
             color: var(--accent-color);
-            font-weight: 600;
-            margin-bottom: 1rem;
+            font-weight: 700;
+            margin-bottom: 1.2rem;
             display: block;
+            font-size: 0.95rem;
+            padding: 0 10px;
+            line-height: 1.4;
+        }
+
+        .teacher-details {
+            width: 100%;
+            padding-top: 1.2rem;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: center;
         }
 
         .teacher-details p {
-            margin-bottom: 0.5rem;
             font-size: 0.9rem;
-            color: var(--text-dark);
+            color: #555;
+            display: flex;
+            align-items: center;
+            font-weight: 500;
         }
 
         .teacher-details i {
             color: var(--secondary-color);
-            margin-right: 5px;
-            width: 20px;
+            margin-right: 8px;
+            font-size: 1rem;
         }
 
         /* Search & Filter Section */
@@ -222,70 +266,349 @@
                 <input type="text" id="teacherSearch" placeholder="Search by name, subject, or qualification...">
             </div>
             <div class="filter-chips">
-                <button class="filter-chip active" data-filter="all">All</button>
-                <button class="filter-chip" data-filter="mathematics">Mathematics</button>
-                <button class="filter-chip" data-filter="science">Science</button>
-                <button class="filter-chip" data-filter="english">English</button>
-                <button class="filter-chip" data-filter="sports">Sports</button>
+                <button class="filter-chip active" data-filter="all">All Staff</button>
+                <button class="filter-chip" data-filter="higher-primary">Higher Primary</button>
+                <button class="filter-chip" data-filter="kannada-medium">Kannada Medium (Aided)</button>
+                <button class="filter-chip" data-filter="english-medium">English Medium</button>
             </div>
-            <div class="results-count" id="resultsCount">Showing all 4 teachers</div>
+            <div class="results-count" id="resultsCount">Showing all faculty members</div>
         </div>
 
         <div class="cards-grid" id="teacherGrid">
-            <!-- Teacher 1 -->
-            <div class="teacher-card" data-subject="mathematics" data-name="mrs sarah johnson"
-                data-qual="m.sc. mathematics b.ed">
-                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
-                    alt="Mrs. Sarah Johnson" class="teacher-img">
+            <div class="teacher-card" data-subject="higher-primary" data-name="vidyav kini">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="VIDYAV_KINI.jpeg" alt="VIDYAV KINI" class="teacher-img">
+                </div>
                 <div class="teacher-info">
-                    <h3>Mrs. Sarah Johnson</h3>
-                    <span class="designation">Senior Mathematics Teacher</span>
+                    <h3>VIDYAV KINI</h3>
+                    <span class="designation">B.Sc., B.Ed, Guide Commissioner training</span>
                     <div class="teacher-details">
-                        <p><i class="fas fa-graduation-cap"></i> M.Sc. Mathematics, B.Ed</p>
-                        <p><i class="fas fa-briefcase"></i> 12 Years Experience</p>
+                        <p><i class="fas fa-briefcase"></i> 22 Years Experience</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Teacher 2 -->
-            <div class="teacher-card" data-subject="science" data-name="mr rajesh kumar"
-                data-qual="m.sc. physics m.phil">
-                <img src="https://images.unsplash.com/photo-1568602471122-7832951cc4c5?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
-                    alt="Mr. Rajesh Kumar" class="teacher-img">
+            <div class="teacher-card" data-subject="higher-primary" data-name="seema kamath">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="SEEMA KAMATH.jpeg" alt="SEEMA KAMATH" class="teacher-img">
+                </div>
                 <div class="teacher-info">
-                    <h3>Mr. Rajesh Kumar</h3>
-                    <span class="designation">Science HOD (Physics)</span>
+                    <h3>SEEMA KAMATH</h3>
+                    <span class="designation">M.A, TCH, B.Ed, Hindi Praveena, Basic guider training</span>
                     <div class="teacher-details">
-                        <p><i class="fas fa-graduation-cap"></i> M.Sc. Physics, M.Phil</p>
+                        <p><i class="fas fa-briefcase"></i> 21 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card" data-subject="higher-primary" data-name="pusha">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="PUSHA.jpeg" alt="PUSHA" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>PUSHA</h3>
+                    <span class="designation">B.A, B.Ed</span>
+                    <div class="teacher-details">
+                        <p><i class="fas fa-briefcase"></i> 20 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card" data-subject="higher-primary" data-name="shubhalaxmi">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="SHUBHALAXMI.jpeg" alt="SHUBHALAXMI" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>SHUBHALAXMI</h3>
+                    <span class="designation">M.A, B.Ed</span>
+                    <div class="teacher-details">
+                        <p><i class="fas fa-briefcase"></i> 19 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card" data-subject="higher-primary" data-name="savitha">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="SAVITHA.jpeg" alt="SAVITHA" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>SAVITHA</h3>
+                    <span class="designation">M.A, B.Ed, Tch</span>
+                    <div class="teacher-details">
+                        <p><i class="fas fa-briefcase"></i> 19 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card" data-subject="higher-primary" data-name="asha madivala">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="ASHA MADIVALA.jpeg" alt="ASHA MADIVALA" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>ASHA MADIVALA</h3>
+                    <span class="designation">B.A, D.Ed</span>
+                    <div class="teacher-details">
+                        <p><i class="fas fa-briefcase"></i> 16 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card" data-subject="higher-primary" data-name="ranjitha">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="RANJITHA.jpeg" alt="RANJITHA" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>RANJITHA</h3>
+                    <span class="designation">B.A, D.Ed, B.Ed</span>
+                    <div class="teacher-details">
+                        <p><i class="fas fa-briefcase"></i> 14 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card" data-subject="higher-primary" data-name="sujatha hegde">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="SUJATHA HEGDE.jpeg" alt="SUJATHA HEGDE" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>SUJATHA HEGDE</h3>
+                    <span class="designation">B.A, B.P.Ed, Basic Scouter Training</span>
+                    <div class="teacher-details">
+                        <p><i class="fas fa-briefcase"></i> 8 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card" data-subject="higher-primary" data-name="shwetha bhat">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="SHWETHA BHAT.jpeg" alt="SHWETHA BHAT" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>SHWETHA BHAT</h3>
+                    <span class="designation">M.Sc, B.Ed, Montessori</span>
+                    <div class="teacher-details">
+                        <p><i class="fas fa-briefcase"></i> 5 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card" data-subject="higher-primary" data-name="archana y kini">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="ARCHANA Y KINI.jpeg" alt="ARCHANA Y KINI" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>ARCHANA Y KINI</h3>
+                    <span class="designation">PUC, Montessori</span>
+                    <div class="teacher-details">
+                        <p><i class="fas fa-briefcase"></i> 4 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card" data-subject="higher-primary" data-name="sneha londe">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="SNEHA LONDE.jpeg" alt="SNEHA LONDE" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>SNEHA LONDE</h3>
+                    <span class="designation">B.A, B.Ed</span>
+                    <div class="teacher-details">
+                        <p><i class="fas fa-briefcase"></i> 4 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card" data-subject="higher-primary" data-name="gayathri kini">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="GAYATHRI KINI.jpeg" alt="GAYATHRI KINI" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>GAYATHRI KINI</h3>
+                    <span class="designation">B.Com, Diploma in English</span>
+                    <div class="teacher-details">
+                        <p><i class="fas fa-briefcase"></i> 21 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aided Kannada Medium Staff -->
+            <div class="teacher-card" data-subject="kannada-medium" data-name="nayana shenoy m">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="Mis. Nayana  Shenoy M.jpeg" alt="Mis. Nayana Shenoy M" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>Mis. Nayana Shenoy M</h3>
+                    <span class="designation">B.Sc, Science Teacher</span>
+                    <div class="teacher-details">
+                        <p><i class="fas fa-briefcase"></i> 20 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card" data-subject="kannada-medium" data-name="chethana nayak">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="Mis. Chethana Nayak.jpeg" alt="Mis. Chethana Nayak" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>Mis. Chethana Nayak</h3>
+                    <span class="designation">MA, B.Ed, Hindi Teacher</span>
+                    <div class="teacher-details">
+                        <p><i class="fas fa-briefcase"></i> 20 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card" data-subject="kannada-medium" data-name="poornima prabhu m u">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="Mis. Poornima Prabhu M U.jpeg" alt="Mis. Poornima Prabhu M U" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>Mis. Poornima Prabhu M U</h3>
+                    <span class="designation">MA, B.Ed, Sanskrit Language Teacher</span>
+                    <div class="teacher-details">
+                        <p><i class="fas fa-briefcase"></i> 20 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card" data-subject="kannada-medium" data-name="ganesh s">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="Mr. Ganesh s.jpeg" alt="Mr. Ganesh s" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>Mr. Ganesh s</h3>
+                    <span class="designation">MA, B.Ed, Kannada Language Teacher</span>
+                    <div class="teacher-details">
                         <p><i class="fas fa-briefcase"></i> 15 Years Experience</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Teacher 3 -->
-            <div class="teacher-card" data-subject="english" data-name="mrs anjali desai" data-qual="m.a. english b.ed">
-                <img src="https://images.unsplash.com/photo-1544717305-2782549b5136?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
-                    alt="Mrs. Anjali Desai" class="teacher-img">
+            <div class="teacher-card" data-subject="kannada-medium" data-name="sanjay kumar">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="Mr. Sanjay Kumar.jpeg" alt="Mr. Sanjay Kumar" class="teacher-img">
+                </div>
                 <div class="teacher-info">
-                    <h3>Mrs. Anjali Desai</h3>
-                    <span class="designation">English Literature Teacher</span>
+                    <h3>Mr. Sanjay Kumar</h3>
+                    <span class="designation">MA, B.P.Ed, P.G.Diploma in Yoga, P.E.T(Grade-1)</span>
                     <div class="teacher-details">
-                        <p><i class="fas fa-graduation-cap"></i> M.A. English, B.Ed</p>
-                        <p><i class="fas fa-briefcase"></i> 10 Years Experience</p>
+                        <p><i class="fas fa-briefcase"></i> 30 Years Experience</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Teacher 4 -->
-            <div class="teacher-card" data-subject="sports" data-name="mr david wilson" data-qual="m.p.ed nis coach">
-                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80"
-                    alt="Mr. David Wilson" class="teacher-img">
+            <div class="teacher-card" data-subject="kannada-medium" data-name="divya kumar c k">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="Divya Kumar C K.jpeg" alt="Mr. Divya Kumar C K" class="teacher-img">
+                </div>
                 <div class="teacher-info">
-                    <h3>Mr. David Wilson</h3>
-                    <span class="designation">Sports Director</span>
+                    <h3>Mr. Divya Kumar C K</h3>
+                    <span class="designation">MA, B.Ed, Social Science Teacher</span>
                     <div class="teacher-details">
-                        <p><i class="fas fa-graduation-cap"></i> M.P.Ed, NIS Coach</p>
+                        <p><i class="fas fa-briefcase"></i> 13 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card" data-subject="kannada-medium" data-name="srilaxmi nayak">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="Miss. SriLaxmi Nayak.jpeg" alt="Miss. SriLaxmi Nayak" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>Miss. SriLaxmi Nayak</h3>
+                    <span class="designation">MCom, B.Ed, D.C.A, English & Computer Teacher</span>
+                    <div class="teacher-details">
+                        <p><i class="fas fa-briefcase"></i> 2 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- English Medium Staff -->
+            <div class="teacher-card" data-subject="english-medium" data-name="denis d’cunha">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="Denis DCunha.jpeg" alt="Mr. Denis D’Cunha" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>Mr. Denis D’Cunha</h3>
+                    <span class="designation">MA, B.Ed, Social Science and English Teacher</span>
+                    <div class="teacher-details">
+                        <p><i class="fas fa-briefcase"></i> 28 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card" data-subject="english-medium" data-name="veena b">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="Mis. Veena B.jpeg" alt="Mis. Veena B" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>Mis. Veena B</h3>
+                    <span class="designation">MA, M.Sc., B.Ed, Science & English Teacher</span>
+                    <div class="teacher-details">
+                        <p><i class="fas fa-briefcase"></i> 20 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card" data-subject="english-medium" data-name="indira p nayak">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="Mis Indira P Nayak.jpeg" alt="Mis Indira P Nayak" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>Mis Indira P Nayak</h3>
+                    <span class="designation">MA, B.Sc., B.Ed, Maths & Biology Teacher (Guide Teacher)</span>
+                    <div class="teacher-details">
+                        <p><i class="fas fa-briefcase"></i> 13 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card" data-subject="english-medium" data-name="sudha mohan">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="Mis. Sudha Mohan.jpeg" alt="Mis. Sudha Mohan" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>Mis. Sudha Mohan</h3>
+                    <span class="designation">MA, B.Ed, Sanskrit Language Teacher</span>
+                    <div class="teacher-details">
                         <p><i class="fas fa-briefcase"></i> 8 Years Experience</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card" data-subject="english-medium" data-name="bhavya kini">
+                <div class="teacher-img-container">
+                    <!-- PHOTO_PLACEHOLDER: Replace 'logo.png' with the actual teacher image path below -->
+                    <img src="Miss. Bhavya Kini.jpeg" alt="Miss. Bhavya Kini" class="teacher-img">
+                </div>
+                <div class="teacher-info">
+                    <h3>Miss. Bhavya Kini</h3>
+                    <span class="designation">M.Sc., B.Ed, Maths Teacher, N.C.C. Officer</span>
+                    <div class="teacher-details">
+                        <p><i class="fas fa-briefcase"></i> 1 Year Experience</p>
                     </div>
                 </div>
             </div>
@@ -303,7 +626,8 @@
         <div class="container footer-grid">
             <div class="footer-col">
                 <h4>About Us</h4>
-                <p>Srimad Bhuvanendra Educational Institutions, Karkala. A premier institution providing quality education in a
+                <p>Srimad Bhuvanendra Educational Institutions, Karkala. A premier institution providing quality
+                    education in a
                     serene environment.</p>
             </div>
             <div class="footer-col">
@@ -345,39 +669,69 @@
         document.addEventListener('DOMContentLoaded', () => {
             const searchInput = document.getElementById('teacherSearch');
             const filterChips = document.querySelectorAll('.filter-chip');
-            const teacherCards = document.querySelectorAll('.teacher-card');
+            const teacherGrid = document.getElementById('teacherGrid');
             const noResults = document.getElementById('noResults');
             const resultsCount = document.getElementById('resultsCount');
             let activeFilter = 'all';
 
+            // Load dynamic teachers from admin localStorage
+            const dynamicTeachers = JSON.parse(localStorage.getItem('sbrs_teachers') || '[]');
+            dynamicTeachers.forEach(teacher => {
+                const card = document.createElement('div');
+                card.className = 'teacher-card';
+                card.setAttribute('data-subject', (teacher.category || 'other').toLowerCase());
+                card.setAttribute('data-name', teacher.name.toLowerCase());
+
+                const photoSrc = teacher.photo
+                    ? teacher.photo
+                    : 'logo.png';
+                const photoStyle = teacher.photo
+                    ? 'width:100%;height:100%;object-fit:cover;'
+                    : 'width:60%;height:60%;object-fit:contain;opacity:0.4;margin:auto;display:block;';
+
+                card.innerHTML = `
+                    <div class="teacher-img-container">
+                        <img src="${photoSrc}" alt="${teacher.name}" class="teacher-img" style="${photoStyle}">
+                    </div>
+                    <div class="teacher-info">
+                        <h3>${teacher.name}</h3>
+                        <span class="designation">${teacher.designation}</span>
+                        <div class="teacher-details">
+                            <p><i class="fas fa-briefcase"></i> ${teacher.experience} Years Experience</p>
+                            ${teacher.subject ? `<p><i class="fas fa-book"></i> ${teacher.subject}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+                teacherGrid.insertBefore(card, noResults);
+            });
+
             function filterTeachers() {
                 const query = searchInput.value.toLowerCase().trim();
+                const teacherCards = document.querySelectorAll('.teacher-card');
                 let visibleCount = 0;
 
                 teacherCards.forEach(card => {
-                    const name = card.getAttribute('data-name') || '';
-                    const subject = card.getAttribute('data-subject') || '';
-                    const qual = card.getAttribute('data-qual') || '';
+                    const name = (card.getAttribute('data-name') || '').toLowerCase();
+                    const subject = (card.getAttribute('data-subject') || '').toLowerCase();
                     const designation = (card.querySelector('.designation')?.textContent || '').toLowerCase();
-                    const allText = name + ' ' + subject + ' ' + qual + ' ' + designation;
+                    const allText = name + ' ' + subject + ' ' + designation;
 
-                    const matchesFilter = activeFilter === 'all' || subject === activeFilter;
+                    const filterVal = activeFilter.toLowerCase();
+                    const matchesFilter = filterVal === 'all' || subject === filterVal || subject.includes(filterVal);
                     const matchesSearch = !query || allText.includes(query);
 
                     if (matchesFilter && matchesSearch) {
-                        card.classList.remove('hidden');
+                        card.style.display = '';
                         visibleCount++;
                     } else {
-                        card.classList.add('hidden');
+                        card.style.display = 'none';
                     }
                 });
 
                 noResults.style.display = visibleCount === 0 ? 'block' : 'none';
-                if (visibleCount === teacherCards.length) {
-                    resultsCount.textContent = `Showing all ${visibleCount} teachers`;
-                } else {
-                    resultsCount.textContent = `Showing ${visibleCount} of ${teacherCards.length} teachers`;
-                }
+                resultsCount.textContent = visibleCount === 0
+                    ? 'No results found'
+                    : `Showing ${visibleCount} teacher${visibleCount !== 1 ? 's' : ''}`;
             }
 
             searchInput.addEventListener('input', filterTeachers);
@@ -390,6 +744,8 @@
                     filterTeachers();
                 });
             });
+
+            filterTeachers();
         });
     </script>
 </body>
