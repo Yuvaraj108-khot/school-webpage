@@ -3,12 +3,24 @@
   "version": "1.0.0",
   "description": "Local School Webpage Server",
   "scripts": {
-    "start": "http-server -c-1 -o"
+    "start": "http-server -c-1 -o",
+    "seed": "node prisma/seed.js"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
   "devDependencies": {
-    "http-server": "^14.1.1"
+    "@prisma/client": "5.22.0",
+    "@types/node": "^25.3.5",
+    "http-server": "^14.1.1",
+    "prisma": "5.22.0"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1"
+  }
 }
