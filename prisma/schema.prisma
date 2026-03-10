@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id           Int      @id @default(autoincrement())
+  student_code String?  @unique
+  name         String
+  class        String
+  medium       String
+  parent_name  String?
+
+  @@map("students")
+}
+
+model Teacher {
+  id      Int    @id @default(autoincrement())
+  name    String
+  subject String
+  medium  String
+
+  @@map("teachers")
+}
+
+model Gallery {
+  id          Int       @id @default(autoincrement())
+  image_url   String
+  category    String?
+  description String?
+  upload_date DateTime? @default(now())
+
+  @@map("gallery")
+}
+
+model Notice {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  date        DateTime?
+
+  @@map("notices")
+}
+
+model Alumni {
+  id         Int     @id @default(autoincrement())
+  name       String?
+  batch_year String?
+  profession String?
+
+  @@map("alumni")
+}
+
+model Attendance {
+  id           Int      @id @default(autoincrement())
+  student_code String
+  class        String
+  teacher_name String
+  date         DateTime
+  status       String
+
+  @@map("attendance")
+}
+
+model Marks {
+  id           Int    @id @default(autoincrement())
+  student_code String
+  class        String
+  subject      String
+  exam_type    String
+  marks        Int
+
+  @@map("marks")
+}
+
+model CertificateRequest {
+  id               Int      @id @default(autoincrement())
+  student_code     String
+  certificate_type String
+  status           String   @default("Pending")
+  request_date     DateTime @default(now())
+
+  @@map("certificate_requests")
+}

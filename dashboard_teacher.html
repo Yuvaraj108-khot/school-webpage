@@ -8,6 +8,8 @@
     <link rel="icon" href="logo.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         :root {
             --teacher-primary: #2c3e50;
@@ -634,6 +636,65 @@
             font-weight: 600;
         }
 
+        /* Download Reports Section */
+        .download-cards {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .download-sub-card {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 1.5rem;
+        }
+
+        .download-sub-card h4 {
+            font-size: 1rem;
+            color: var(--teacher-primary);
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .download-sub-card h4 i {
+            color: #16a34a;
+            font-size: 1rem;
+        }
+
+        .download-sub-card p {
+            font-size: 0.82rem;
+            color: #64748b;
+            margin-bottom: 1rem;
+        }
+
+        .btn-excel {
+            padding: 11px 28px;
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.28);
+            margin-top: 1rem;
+        }
+
+        .btn-excel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(22, 163, 74, 0.36);
+        }
+
+        .btn-excel:active {
+            transform: translateY(0);
+        }
+
         /* Marks Entry */
         .marks-grid {
             display: grid;
@@ -893,6 +954,8 @@
                         class="fas fa-clipboard-check"></i> Attendance</a>
                 <a href="#marks-section" onclick="showSection('marks')"><i class="fas fa-pen-alt"></i> Enter Marks</a>
                 <a href="#history-section" onclick="showSection('history')"><i class="fas fa-history"></i> History</a>
+                <a href="#download-section" onclick="showSection('download')"><i class="fas fa-file-excel"></i> Download
+                    Reports</a>
             </nav>
             <div style="margin-top: auto; padding: 20px;">
                 <a href="login.html"
@@ -1091,7 +1154,7 @@
                     </div>
 
                     <div class="btn-group" style="justify-content: center;">
-                        <button class="btn-submit primary" onclick="alert('Marks Submitted Successfully!')">
+                        <button class="btn-submit primary" onclick="saveMarks()">
                             <i class="fas fa-paper-plane"></i> Submit Marks
                         </button>
                     </div>
@@ -1107,6 +1170,112 @@
                         <div class="empty-state">
                             <i class="fas fa-clipboard-list"></i>
                             <p>No attendance records yet. Records will appear after you save attendance.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== DOWNLOAD REPORTS SECTION ========== -->
+            <div id="download-section" style="display: none;">
+                <div class="card-box">
+                    <h3><i class="fas fa-file-excel"></i> Download Reports</h3>
+                    <p class="card-subtitle">Download class marks or attendance in Excel (.xlsx) format.</p>
+
+                    <div class="download-cards">
+                        <!-- MARKS DOWNLOAD -->
+                        <div class="download-sub-card">
+                            <h4><i class="fas fa-star"></i> Class Marks Report</h4>
+                            <p>Download marks of an entire class for a specific exam and subject.</p>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label><i class="fas fa-school"></i> Medium</label>
+                                    <select id="dlMarksMedium" onchange="onDlMarksMediumChange()">
+                                        <option value="">-- Select Medium --</option>
+                                        <option value="CBSE">CBSE (English Medium)</option>
+                                        <option value="Kannada">Kannada Medium</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-chalkboard"></i> Class</label>
+                                    <select id="dlMarksClass" disabled>
+                                        <option value="">-- Select Class --</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-file-alt"></i> Exam Type</label>
+                                    <select id="dlMarksExam">
+                                        <option value="Unit Test 1">Unit Test 1</option>
+                                        <option value="Unit Test 2">Unit Test 2</option>
+                                        <option value="Mid-Term Exam 2026">Mid-Term Exam 2026</option>
+                                        <option value="Final Exam 2026">Final Exam 2026</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-book"></i> Subject</label>
+                                    <select id="dlMarksSubject">
+                                        <option value="Mathematics">Mathematics</option>
+                                        <option value="Science">Science</option>
+                                        <option value="English">English</option>
+                                        <option value="Social Science">Social Science</option>
+                                        <option value="Kannada">Kannada</option>
+                                        <option value="Hindi">Hindi</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button class="btn-excel" onclick="downloadMarksExcel()">
+                                <i class="fas fa-download"></i> Download Marks Excel
+                            </button>
+                        </div>
+
+                        <!-- ATTENDANCE DOWNLOAD -->
+                        <div class="download-sub-card">
+                            <h4><i class="fas fa-calendar-check"></i> Monthly Attendance Report</h4>
+                            <p>Download month-wise attendance of an entire class. Each date is a column showing P / A
+                                for every student.</p>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label><i class="fas fa-school"></i> Medium</label>
+                                    <select id="dlAttMedium" onchange="onDlAttMediumChange()">
+                                        <option value="">-- Select Medium --</option>
+                                        <option value="CBSE">CBSE (English Medium)</option>
+                                        <option value="Kannada">Kannada Medium</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-chalkboard"></i> Class</label>
+                                    <select id="dlAttClass" disabled>
+                                        <option value="">-- Select Class --</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-calendar-alt"></i> Month</label>
+                                    <select id="dlAttMonth">
+                                        <option value="1">January</option>
+                                        <option value="2">February</option>
+                                        <option value="3" selected>March</option>
+                                        <option value="4">April</option>
+                                        <option value="5">May</option>
+                                        <option value="6">June</option>
+                                        <option value="7">July</option>
+                                        <option value="8">August</option>
+                                        <option value="9">September</option>
+                                        <option value="10">October</option>
+                                        <option value="11">November</option>
+                                        <option value="12">December</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-calendar"></i> Year</label>
+                                    <select id="dlAttYear">
+                                        <option value="2026" selected>2026</option>
+                                        <option value="2025">2025</option>
+                                        <option value="2027">2027</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button class="btn-excel" onclick="downloadAttendanceExcel()">
+                                <i class="fas fa-download"></i> Download Attendance Excel
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1136,6 +1305,7 @@
             document.getElementById('attendance-section').style.display = section === 'attendance' ? 'block' : 'none';
             document.getElementById('marks-section').style.display = section === 'marks' ? 'block' : 'none';
             document.getElementById('history-section').style.display = section === 'history' ? 'block' : 'none';
+            document.getElementById('download-section').style.display = section === 'download' ? 'block' : 'none';
 
             // Update sidebar active
             document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
@@ -1448,6 +1618,235 @@
                 `;
                 list.appendChild(item);
             });
+        }
+
+        // ===================== SAVE MARKS =====================
+        function saveMarks() {
+            const medium = document.getElementById('marksMedium').value;
+            const cls = document.getElementById('marksClass').value;
+            const exam = document.getElementById('marksExam').value;
+            const subject = document.getElementById('marksSubject').value;
+
+            if (!medium || !cls) {
+                showToast('Please select Medium and Class first.', 'error');
+                return;
+            }
+
+            const students = getStudentsForClass(medium, cls);
+            const inputs = document.querySelectorAll('#marksListContainer input[type="number"]');
+            const marksData = [];
+
+            students.forEach((student, i) => {
+                const val = inputs[i] ? parseFloat(inputs[i].value) : null;
+                marksData.push({ ...student, marks: isNaN(val) ? '' : val });
+            });
+
+            const key = `sbrs_marks_${medium}_${cls}_${exam}_${subject}`;
+            localStorage.setItem(key, JSON.stringify(marksData));
+            showToast(`Marks saved for Class ${cls} – ${exam} (${subject})!`, 'success');
+        }
+
+        // ===================== DOWNLOAD SECTION HELPERS =====================
+        function onDlMarksMediumChange() {
+            const medium = document.getElementById('dlMarksMedium').value;
+            const cls = document.getElementById('dlMarksClass');
+            cls.innerHTML = '<option value="">-- Select Class --</option>';
+            if (medium === 'CBSE') {
+                for (let i = 1; i <= 10; i++) cls.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                cls.disabled = false;
+            } else if (medium === 'Kannada') {
+                for (let i = 7; i <= 10; i++) cls.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                cls.disabled = false;
+            } else {
+                cls.disabled = true;
+            }
+        }
+
+        function onDlAttMediumChange() {
+            const medium = document.getElementById('dlAttMedium').value;
+            const cls = document.getElementById('dlAttClass');
+            cls.innerHTML = '<option value="">-- Select Class --</option>';
+            if (medium === 'CBSE') {
+                for (let i = 1; i <= 10; i++) cls.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                cls.disabled = false;
+            } else if (medium === 'Kannada') {
+                for (let i = 7; i <= 10; i++) cls.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                cls.disabled = false;
+            } else {
+                cls.disabled = true;
+            }
+        }
+
+        // ===================== DOWNLOAD MARKS EXCEL =====================
+        function downloadMarksExcel() {
+            const medium = document.getElementById('dlMarksMedium').value;
+            const cls = document.getElementById('dlMarksClass').value;
+            const exam = document.getElementById('dlMarksExam').value;
+            const subject = document.getElementById('dlMarksSubject').value;
+
+            if (!medium || !cls) {
+                showToast('Please select Medium and Class first.', 'error');
+                return;
+            }
+
+            const students = getStudentsForClass(medium, cls);
+            const key = `sbrs_marks_${medium}_${cls}_${exam}_${subject}`;
+            const saved = JSON.parse(localStorage.getItem(key) || '[]');
+
+            // Determine max marks based on exam
+            let maxMarks = 100;
+            if (exam.toLowerCase().includes('unit')) maxMarks = 25;
+            else if (exam.toLowerCase().includes('mid')) maxMarks = 50;
+
+            function getGrade(m, total) {
+                if (m === '' || m === null || m === undefined) return 'N/A';
+                const pct = (m / total) * 100;
+                if (pct >= 90) return 'A+';
+                if (pct >= 80) return 'A';
+                if (pct >= 70) return 'B+';
+                if (pct >= 60) return 'B';
+                if (pct >= 50) return 'C';
+                if (pct >= 35) return 'D';
+                return 'F';
+            }
+
+            // Build rows
+            const wsData = [
+                [`SBRS – ${medium} Medium – Class ${cls}`],
+                [`Exam: ${exam}   |   Subject: ${subject}   |   Max Marks: ${maxMarks}`],
+                [],
+                ['Sl.No', 'Student Name', 'Roll Number', `Marks (Out of ${maxMarks})`, 'Grade', 'Remarks']
+            ];
+
+            students.forEach((student, i) => {
+                const savedEntry = saved.find(s => s.roll === student.roll);
+                const marks = savedEntry ? savedEntry.marks : '';
+                const grade = getGrade(marks, maxMarks);
+                wsData.push([
+                    i + 1,
+                    student.name,
+                    student.roll,
+                    marks === '' ? 'Not Entered' : marks,
+                    grade,
+                    grade === 'F' ? 'Fail' : (grade === 'N/A' ? '' : 'Pass')
+                ]);
+            });
+
+            // Summary rows
+            const entered = students.filter((_, i) => {
+                const se = saved.find(s => s.roll === students[i].roll);
+                return se && se.marks !== '';
+            });
+            wsData.push([]);
+            wsData.push(['', '', 'Total Students:', students.length]);
+            wsData.push(['', '', 'Marks Entered:', entered.length]);
+            wsData.push(['', '', 'Max Marks:', maxMarks]);
+
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+            // Column widths
+            ws['!cols'] = [
+                { wch: 8 }, { wch: 28 }, { wch: 16 }, { wch: 20 }, { wch: 10 }, { wch: 14 }
+            ];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Marks');
+            const filename = `Marks_Class${cls}_${exam.replace(/\s+/g, '_')}_${subject.replace(/\s+/g, '_')}.xlsx`;
+            XLSX.writeFile(wb, filename);
+            showToast(`Downloaded: ${filename}`, 'success');
+        }
+
+        // ===================== DOWNLOAD ATTENDANCE EXCEL =====================
+        function downloadAttendanceExcel() {
+            const medium = document.getElementById('dlAttMedium').value;
+            const cls = document.getElementById('dlAttClass').value;
+            const month = parseInt(document.getElementById('dlAttMonth').value);
+            const year = parseInt(document.getElementById('dlAttYear').value);
+
+            if (!medium || !cls) {
+                showToast('Please select Medium and Class first.', 'error');
+                return;
+            }
+
+            const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+
+            const history = JSON.parse(localStorage.getItem('sbrs_attendance_history') || '[]');
+            const students = getStudentsForClass(medium, cls);
+
+            // Filter records for this medium, class, and month/year
+            const records = history.filter(rec => {
+                if (rec.medium !== medium || String(rec.class) !== String(cls)) return false;
+                // Parse date (stored as en-IN format: dd/mm/yyyy or similar)
+                const parts = rec.date.split('/');
+                if (parts.length === 3) {
+                    const recMonth = parseInt(parts[1]);
+                    const recYear = parseInt(parts[2]);
+                    return recMonth === month && recYear === year;
+                }
+                return false;
+            });
+
+            // Get unique dates, sorted
+            const dateSet = new Set();
+            records.forEach(r => dateSet.add(r.date));
+            const dates = Array.from(dateSet).sort((a, b) => {
+                const pa = a.split('/'), pb = b.split('/');
+                return new Date(pa[2], pa[1] - 1, pa[0]) - new Date(pb[2], pb[1] - 1, pb[0]);
+            });
+
+            // Header rows
+            const header1 = [`SBRS – ${medium} Medium – Class ${cls} – Monthly Attendance`];
+            const header2 = [`Month: ${monthNames[month]} ${year}`];
+            const colHeader = ['Sl.No', 'Student Name', 'Roll Number', ...dates, 'Total Present', 'Total Absent', 'Attendance %'];
+
+            const wsData = [header1, header2, [], colHeader];
+
+            students.forEach((student, i) => {
+                let totalPresent = 0;
+                const row = [i + 1, student.name, student.roll];
+
+                dates.forEach(date => {
+                    // Find record for this date
+                    const rec = records.find(r => r.date === date);
+                    let status = '-';
+                    if (rec) {
+                        // Check if student was absent
+                        const isAbsent = rec.absentNames && rec.absentNames.includes(student.name);
+                        status = isAbsent ? 'A' : 'P';
+                        if (!isAbsent) totalPresent++;
+                    }
+                    row.push(status);
+                });
+
+                const totalDays = dates.filter(d => {
+                    const rec = records.find(r => r.date === d);
+                    return !!rec;
+                }).length;
+                const totalAbsent = totalDays - totalPresent;
+                const pct = totalDays > 0 ? ((totalPresent / totalDays) * 100).toFixed(1) + '%' : 'N/A';
+                row.push(totalPresent, totalAbsent, pct);
+                wsData.push(row);
+            });
+
+            // Summary
+            wsData.push([]);
+            wsData.push(['', '', 'Total Working Days:', dates.length]);
+            wsData.push(['', '', 'Total Students:', students.length]);
+
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+            // Column widths
+            const cols = [{ wch: 7 }, { wch: 28 }, { wch: 16 }];
+            dates.forEach(() => cols.push({ wch: 10 }));
+            cols.push({ wch: 14 }, { wch: 13 }, { wch: 14 });
+            ws['!cols'] = cols;
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, `Attendance_${monthNames[month]}`);
+            const filename = `Attendance_Class${cls}_${monthNames[month]}_${year}.xlsx`;
+            XLSX.writeFile(wb, filename);
+            showToast(`Downloaded: ${filename}`, 'success');
         }
 
         // ===================== MARKS SECTION =====================
