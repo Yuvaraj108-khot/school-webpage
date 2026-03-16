@@ -8,8 +8,8 @@ datasource db {
 }
 
 model Student {
-  id           Int      @id @default(autoincrement())
-  student_code String?  @unique
+  id           Int     @id @default(autoincrement())
+  student_code String? @unique
   name         String
   class        String
   medium       String
