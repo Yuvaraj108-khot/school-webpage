@@ -222,6 +222,37 @@
     </footer>
 
     <script src="script.js"></script>
+    <script>
+        const API = "http://localhost:5000/api";
+
+        async function loadPublicNotices() {
+            try {
+                const res = await fetch(`${API}/notices`);
+                if (!res.ok) throw new Error("Failed to fetch notices");
+                const notices = await res.json();
+                
+                const list = document.getElementById('publicNoticeList');
+                if (list) {
+                    list.innerHTML = '';
+                    if (notices.length === 0) {
+                        list.innerHTML = '<li>No active notices at the moment.</li>';
+                        return;
+                    }
+                    const latest = notices.slice(0, 3);
+                    latest.forEach(n => {
+                        const li = document.createElement('li');
+                        li.style.cssText = "border-bottom: 1px solid #eee; padding: 10px 0;";
+                        li.innerHTML = `<strong>Update:</strong> ${n.title} - ${n.description || ''}`;
+                        list.appendChild(li);
+                    });
+                }
+            } catch (error) {
+                console.error("Notice fetch error:", error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadPublicNotices);
+    </script>
 </body>
 
 </html>

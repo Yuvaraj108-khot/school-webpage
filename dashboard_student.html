@@ -568,7 +568,7 @@
                 <!-- Stats -->
                 <div class="stat-card" style="border-left: 5px solid var(--secondary-color);">
                     <h4 style="color: #666;">Attendance</h4>
-                    <h2 style="font-size: 2.5rem; color: var(--primary-color);">92%</h2>
+                    <h2 style="font-size: 2.5rem; color: var(--primary-color);" id="attendancePct">92%</h2>
                     <p>Total Days: 145/156</p>
                 </div>
                 <div class="stat-card" style="border-left: 5px solid #28c76f;">
@@ -708,220 +708,175 @@
     </div>
 
     <script>
-        // ══════════════════════════════════════════════
-        //  DEMO ATTENDANCE DATA
-        //  In production, this would come from a backend.
-        // ══════════════════════════════════════════════
-        // Get current date in Indian Standard Time (IST, UTC+5:30)
-        const nowIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-        const today = new Date(nowIST.getFullYear(), nowIST.getMonth(), nowIST.getDate());
+        const API = "http://localhost:5000/api";
+        const params = new URLSearchParams(window.location.search);
+        const STUDENT_CODE =
+            params.get("code") ||
+            sessionStorage.getItem("student_code") ||
+            "C1-001";
 
-        // Absent dates with reasons
-        const absentRecords = [
-            { date: '2026-02-17', reason: 'Sick Leave – Fever' },
-            { date: '2026-02-10', reason: 'Family Function' },
-            { date: '2026-01-28', reason: 'Medical Appointment' },
-            { date: '2026-01-15', reason: 'Not Feeling Well' },
-            { date: '2026-01-06', reason: 'Personal Reason' },
-            { date: '2025-12-20', reason: 'Fever' },
-            { date: '2025-12-12', reason: 'Family Emergency' },
-            { date: '2025-11-25', reason: 'Medical Leave' },
-            { date: '2025-11-10', reason: 'Personal Reason' },
-            { date: '2025-10-14', reason: 'Sick Leave' },
-            { date: '2025-10-03', reason: 'Family Function' },
-        ];
+        async function loadMarks() {
+            try {
+                const res = await fetch(`${API}/marks/${STUDENT_CODE}`);
+                if (!res.ok) throw new Error("Failed to load marks");
+                const marks = await res.json();
 
-        // Holidays
-        const holidays = [
-            '2026-01-26', // Republic Day
-            '2026-01-01', // New Year
-            '2025-12-25', // Christmas
-            '2025-11-01', // Kannada Rajyotsava
-            '2025-10-02', // Gandhi Jayanti
-            '2025-10-20', // Dussehra
-            '2025-10-21',
-        ];
-
-        // Sundays are automatic holidays
-        function isSunday(dateStr) {
-            return new Date(dateStr).getDay() === 0;
+                const tbody = document.querySelector('.marks-table tbody');
+                if (tbody) {
+                    tbody.innerHTML = '';
+                    if (marks.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No marks found</td></tr>';
+                        return;
+                    }
+                    marks.forEach(m => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${m.subject}</td>
+                            <td>${m.exam_type}</td>
+                            <td>${m.marks}</td>
+                            <td>100</td>
+                            <td style="color: green; font-weight: bold;">--</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Failed to load data (Marks)");
+            }
         }
 
-        function dateToStr(d) {
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const dd = String(d.getDate()).padStart(2, '0');
-            return `${y}-${m}-${dd}`;
+        async function loadAttendance() {
+            try {
+                const res = await fetch(`${API}/attendance/${STUDENT_CODE}`);
+                if (!res.ok) throw new Error("Failed to load attendance");
+                const attendance = await res.json();
+
+                const presentCount = attendance.filter(a => a.status === 'Present').length;
+                const absentCount = attendance.filter(a => a.status === 'Absent').length;
+
+                const total = presentCount + absentCount;
+                const pct = total > 0 ? Math.round((presentCount / total) * 100) : 0;
+                const pctEl = document.getElementById('attendancePct') ||
+document.querySelector('.attendance-stat') ||
+document.querySelector('.stat-value') ||
+document.querySelector('.attendance-percent');
+
+if (pctEl) pctEl.textContent = pct + '%';
+
+const presentEl = document.getElementById('presentCount') ||
+document.querySelector('.present-count');
+
+if (presentEl) presentEl.textContent = presentCount;
+
+const absentEl = document.getElementById('absentCount') ||
+document.querySelector('.absent-count');
+
+if (absentEl) absentEl.textContent = absentCount;
+
+                const grid = document.getElementById('calendarGrid');
+                if (grid) {
+                    grid.innerHTML = '';
+                    if (attendance.length === 0) {
+                        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center;">No attendance records</div>';
+                        return;
+                    }
+                    attendance.forEach(rec => {
+                        const div = document.createElement('div');
+                        div.className = 'day-cell ' + (rec.status === 'Absent' ? 'absent' : 'present');
+                        div.innerHTML = `<small>${new Date(rec.date).toLocaleDateString()}</small><br><b>${rec.status}</b>`;
+                        grid.appendChild(div);
+                    });
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Failed to load data (Attendance)");
+            }
         }
 
-        function daysBetween(d1, d2) {
-            const t1 = new Date(d1).setHours(0, 0, 0, 0);
-            const t2 = new Date(d2).setHours(0, 0, 0, 0);
-            return Math.floor((t2 - t1) / (1000 * 60 * 60 * 24));
+        async function loadNotices() {
+            try {
+                const res = await fetch(`${API}/notices`);
+                if (!res.ok) throw new Error("Failed to load notices");
+                const notices = await res.json();
+
+                const container = document.getElementById('noticeList') || document.querySelector('.notices-container');
+                if (container) {
+                    container.innerHTML = '';
+                    notices.slice(0, 3).forEach(notice => {
+                        const div = document.createElement('div');
+                        div.style.padding = '10px';
+                        div.style.borderBottom = '1px solid #eee';
+                        div.innerHTML = `
+                            <strong>${notice.title}</strong><br>
+                            <small>${new Date(notice.date).toLocaleDateString()}</small><br>
+                            <span>${notice.description || ''}</span>
+                        `;
+                        container.appendChild(div);
+                    });
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Failed to load data (Notices)");
+            }
         }
 
-        // ── 1. ABSENCE ALERT BANNER ──
-        function showAbsenceAlert() {
-            const alertEl = document.getElementById('absenceAlert');
-            const titleEl = document.getElementById('alertTitle');
-            const descEl = document.getElementById('alertDesc');
-            const badgeEl = document.getElementById('alertBadge');
-
-            // Find absences within last 7 days
-            const recentAbsences = absentRecords.filter(r => {
-                const diff = daysBetween(r.date, dateToStr(today));
-                return diff >= 0 && diff <= 7;
-            }).sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            if (recentAbsences.length > 0) {
-                alertEl.style.display = 'flex';
-                const latest = recentAbsences[0];
-                const daysAgo = daysBetween(latest.date, dateToStr(today));
-                const absentDate = new Date(latest.date);
-                const dateFormatted = absentDate.toLocaleDateString('en-IN', {
-                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        async function submitCertificate(type) {
+            try {
+                const res = await fetch(`${API}/certificates`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        student_code: STUDENT_CODE,
+                        certificate_type: type,
+                        status: "Pending",
+                        request_date: new Date().toISOString()
+                    })
                 });
-
-                if (recentAbsences.length === 1) {
-                    titleEl.textContent = 'You were marked absent recently!';
-                    descEl.innerHTML = `You were absent on <strong>${dateFormatted}</strong>. Reason: ${latest.reason}`;
-                } else {
-                    titleEl.textContent = `You have ${recentAbsences.length} absences this week!`;
-                    const dates = recentAbsences.map(r => {
-                        const d = new Date(r.date);
-                        return d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
-                    }).join(', ');
-                    descEl.innerHTML = `Absent on: <strong>${dates}</strong>`;
-                }
-
-                if (daysAgo === 0) {
-                    badgeEl.textContent = '⚡ Today';
-                } else if (daysAgo === 1) {
-                    badgeEl.textContent = '⏱ 1 day ago';
-                } else {
-                    badgeEl.textContent = `⏱ ${daysAgo} days ago`;
-                }
+                if (!res.ok) throw new Error("Failed to submit request");
+                alert("Certificate request submitted");
+            } catch (error) {
+                console.error(error);
+                alert("Failed to submit request");
             }
         }
 
-        // ── 2. CALENDAR ──
-        let calendarMonth = today.getMonth();
-        let calendarYear = today.getFullYear();
+        document.addEventListener('DOMContentLoaded', () => {
+            loadMarks();
+            loadAttendance();
+            loadNotices();
 
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December'];
-        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-        function renderCalendar() {
-            const grid = document.getElementById('calendarGrid');
-            const label = document.getElementById('calendarMonthLabel');
-            label.textContent = `${monthNames[calendarMonth]} ${calendarYear}`;
-
-            grid.innerHTML = '';
-
-            // Day headers
-            dayNames.forEach(d => {
-                const hdr = document.createElement('div');
-                hdr.className = 'day-header';
-                hdr.textContent = d;
-                grid.appendChild(hdr);
-            });
-
-            const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
-            const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
-
-            // Empty cells before first day
-            for (let i = 0; i < firstDay; i++) {
-                const empty = document.createElement('div');
-                empty.className = 'day-cell empty';
-                grid.appendChild(empty);
+            const contactForm = document.querySelector('.contact-form');
+            if (contactForm) {
+                contactForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const certType = e.target.querySelector('select').value;
+                    if (certType && certType !== "Select Certificate Type") {
+                        submitCertificate(certType);
+                    }
+                });
             }
 
-            const todayStr = dateToStr(today);
-            let presentCount = 0, absentCount = 0, holidayCount = 0;
+            // Sidebar Toggle Logic
+            const studentToggle = document.getElementById('studentMenuToggle');
+            const studentSidebar = document.querySelector('.sidebar');
+            const studentOverlay = document.getElementById('studentOverlay');
 
-            for (let day = 1; day <= daysInMonth; day++) {
-                const cell = document.createElement('div');
-                cell.className = 'day-cell';
-                cell.textContent = day;
-
-                const dStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const isAbsent = absentRecords.some(r => r.date === dStr);
-                const isHoliday = holidays.includes(dStr) || isSunday(dStr);
-                const isFuture = new Date(dStr) > today;
-                const isToday = dStr === todayStr;
-
-                if (isToday) cell.classList.add('today');
-
-                if (isFuture) {
-                    cell.classList.add('future');
-                } else if (isAbsent) {
-                    cell.classList.add('absent');
-                    absentCount++;
-                    // Tooltip
-                    const rec = absentRecords.find(r => r.date === dStr);
-                    cell.title = `Absent – ${rec.reason}`;
-                } else if (isHoliday) {
-                    cell.classList.add('holiday');
-                    holidayCount++;
-                } else {
-                    cell.classList.add('present');
-                    presentCount++;
-                }
-
-                grid.appendChild(cell);
+            if (studentToggle && studentSidebar && studentOverlay) {
+                studentToggle.addEventListener('click', () => {
+                    studentSidebar.classList.add('active');
+                    studentOverlay.classList.add('active');
+                });
+                studentOverlay.addEventListener('click', () => {
+                    studentSidebar.classList.remove('active');
+                    studentOverlay.classList.remove('active');
+                });
             }
+        });
 
-            // Update summary
-            document.getElementById('presentCount').textContent = presentCount;
-            document.getElementById('absentCount').textContent = absentCount;
-            document.getElementById('holidayCount').textContent = holidayCount;
-        }
-
-        function changeMonth(dir) {
-            calendarMonth += dir;
-            if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
-            if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
-            renderCalendar();
-        }
-
-        // ── INIT ──
-        showAbsenceAlert();
-        renderCalendar();
-
-        // ═══════════════════════════════════════════
-        // Student Sidebar Mobile Toggle Logic
-        // ═══════════════════════════════════════════
-        const studentToggle = document.getElementById('studentMenuToggle');
-        const studentSidebar = document.querySelector('.sidebar');
-        const studentOverlay = document.getElementById('studentOverlay');
-
-        if (studentToggle && studentSidebar && studentOverlay) {
-            function openStudentSidebar() {
-                studentSidebar.classList.add('active');
-                studentOverlay.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-
-            function closeStudentSidebar() {
-                studentSidebar.classList.remove('active');
-                studentOverlay.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-
-            studentToggle.addEventListener('click', openStudentSidebar);
-            studentOverlay.addEventListener('click', closeStudentSidebar);
-
-            document.querySelectorAll('.sidebar-menu a').forEach(link => {
-                link.addEventListener('click', closeStudentSidebar);
-            });
-
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && studentSidebar.classList.contains('active')) {
-                    closeStudentSidebar();
-                }
-            });
-        }
+        window.changeMonth = function(direction) {
+            console.log('Month change:', direction);
+        };
     </script>
 </body>
 

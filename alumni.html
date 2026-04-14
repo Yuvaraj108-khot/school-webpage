@@ -152,6 +152,37 @@
     </footer>
 
     <script src="script.js"></script>
+    <script>
+        const API = "http://localhost:5000/api";
+
+        async function loadAlumni() {
+            try {
+                const res = await fetch(`${API}/alumni`);
+                if (!res.ok) throw new Error("Failed to fetch alumni");
+                const members = await res.json();
+                
+                const grid = document.getElementById('alumniGrid') || document.querySelector('.cards-grid') || document.querySelector('.alumni-grid');
+                if (grid) {
+                    members.forEach(m => {
+                        const div = document.createElement('div');
+                        div.className = 'alumni-card';
+                        div.innerHTML = `
+                            <div class="alumni-info">
+                                <h3>${m.name}</h3>
+                                <p><strong>Batch:</strong> ${m.batch_year}</p>
+                                <p><strong>Profession:</strong> ${m.profession || 'N/A'}</p>
+                            </div>
+                        `;
+                        grid.appendChild(div);
+                    });
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAlumni);
+    </script>
 </body>
 
 </html>

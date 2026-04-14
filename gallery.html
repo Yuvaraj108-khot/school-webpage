@@ -274,19 +274,52 @@
 
     <script src="script.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            loadGalleryFromStorage();
+        const API = "http://localhost:5000/api";
 
-            // Setup search & filter
+        async function loadGallery() {
+            try {
+                const res = await fetch(`${API}/gallery`);
+                if (!res.ok) throw new Error("Failed to fetch gallery");
+                const items = await res.json();
+                
+                const grid = document.getElementById('galleryGrid');
+                if (grid) {
+                    // Skip existing hardcoded items if preferred, or just append
+                    items.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'card';
+                        div.setAttribute('data-category', item.category);
+                        div.style.padding = '0';
+                        div.style.overflow = 'hidden';
+
+                        div.innerHTML = `
+                            <img src="http://localhost:5000${item.image_url}" alt="${item.category}" style="width: 100%; height: 200px; object-fit: cover;">
+                            <div style="padding: 1rem;">
+                                <h4>${item.category}</h4>
+                                <p style="font-size: 0.8rem; color: #666;">${item.description || ''}</p>
+                            </div>
+                        `;
+                        const noResultsEl = document.getElementById('galleryNoResults');
+                        grid.insertBefore(div, noResultsEl);
+                    });
+                }
+                
+                // Refresh filter logic
+                setupFilters();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        function setupFilters() {
             const searchInput = document.getElementById('gallerySearch');
             const filterChips = document.querySelectorAll('.gallery-chip');
             let activeFilter = 'All';
 
             function filterAndSearch() {
-                const query = searchInput.value.toLowerCase().trim();
+                const query = (searchInput?.value || '').toLowerCase().trim();
                 const allCards = document.querySelectorAll('#galleryGrid .card');
                 let visibleCount = 0;
-                const totalCount = allCards.length;
 
                 allCards.forEach(card => {
                     const title = (card.querySelector('h4')?.textContent || '').toLowerCase();
@@ -294,21 +327,7 @@
                     const category = card.getAttribute('data-category') || '';
                     const searchText = title + ' ' + desc + ' ' + category.toLowerCase();
 
-                    // Determine category match
-                    let matchesCategory = activeFilter === 'All';
-                    if (!matchesCategory) {
-                        const campusTags = ['Main Block', 'Library', 'Auditorium', 'Campus'];
-                        const labTags = ['Lab', 'Computer Lab', 'Science Lab'];
-                        const sportsTags = ['Sports', 'Sports Day'];
-                        const eventsTags = ['Events', 'Cultural', 'Open Air Theatre'];
-
-                        if (activeFilter === 'Campus' && campusTags.some(t => category.includes(t) || title.includes(t.toLowerCase()))) matchesCategory = true;
-                        else if (activeFilter === 'Lab' && labTags.some(t => category.includes(t) || title.includes(t.toLowerCase()))) matchesCategory = true;
-                        else if (activeFilter === 'Sports' && sportsTags.some(t => category.includes(t) || title.includes(t.toLowerCase()))) matchesCategory = true;
-                        else if (activeFilter === 'Events' && eventsTags.some(t => category.includes(t) || title.includes(t.toLowerCase()))) matchesCategory = true;
-                        else if (category === activeFilter) matchesCategory = true;
-                    }
-
+                    let matchesCategory = activeFilter === 'All' || category === activeFilter;
                     const matchesSearch = !query || searchText.includes(query);
 
                     if (matchesCategory && matchesSearch) {
@@ -319,19 +338,11 @@
                     }
                 });
 
-                const noResults = document.getElementById('galleryNoResults');
-                const resultsCount = document.getElementById('galleryResultsCount');
-                noResults.style.display = visibleCount === 0 ? 'block' : 'none';
-
-                if (visibleCount === totalCount) {
-                    resultsCount.textContent = `Showing all ${visibleCount} photos`;
-                } else {
-                    resultsCount.textContent = `Showing ${visibleCount} of ${totalCount} photos`;
-                }
+                if(document.getElementById('galleryNoResults')) 
+                    document.getElementById('galleryNoResults').style.display = visibleCount === 0 ? 'block' : 'none';
             }
 
-            searchInput.addEventListener('input', filterAndSearch);
-
+            searchInput?.addEventListener('input', filterAndSearch);
             filterChips.forEach(chip => {
                 chip.addEventListener('click', () => {
                     filterChips.forEach(c => c.classList.remove('active'));
@@ -340,37 +351,10 @@
                     filterAndSearch();
                 });
             });
-
-            // Initial count
             filterAndSearch();
-        });
-
-        function loadGalleryFromStorage() {
-            const gallery = localStorage.getItem('sbrs_gallery');
-            if (gallery) {
-                const items = JSON.parse(gallery);
-                const grid = document.getElementById('galleryGrid');
-
-                items.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'card';
-                    div.setAttribute('data-category', item.category);
-                    div.style.padding = '0';
-                    div.style.overflow = 'hidden';
-
-                    div.innerHTML = `
-                        <img src="${item.url}" alt="${item.category}" style="width: 100%; height: 200px; object-fit: cover;">
-                        <div style="padding: 1rem;">
-                            <h4>${item.category}</h4>
-                            <p style="font-size: 0.8rem; color: #666;">${item.desc}</p>
-                        </div>
-                    `;
-                    // Insert before the no-results div
-                    const noResultsEl = document.getElementById('galleryNoResults');
-                    grid.insertBefore(div, noResultsEl);
-                });
-            }
         }
+
+        document.addEventListener('DOMContentLoaded', loadGallery);
     </script>
 </body>
 

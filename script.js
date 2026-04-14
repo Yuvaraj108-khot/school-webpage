@@ -78,32 +78,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load Notices Logic (for Index Page)
     const publicNoticeList = document.getElementById('publicNoticeList');
     if (publicNoticeList) {
-        const notices = localStorage.getItem('sbrs_notices');
+        fetch('http://localhost:5000/api/notices')
+            .then(res => res.json())
+            .then(notices => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
 
-        if (notices) {
-            let parsedNotices = JSON.parse(notices);
+                const validNotices = notices.filter(notice => {
+                    if (notice.date) {
+                        const expDate = new Date(notice.date);
+                        // In old logic it checked expiryDate, let's keep all for now or check if it's too old
+                    }
+                    return true;
+                }).slice(0, 3); // latest 3 notices only
 
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            parsedNotices = parsedNotices.filter(notice => {
-                if (notice.expiryDate) {
-                    const expDate = new Date(notice.expiryDate);
-                    if (expDate < today) return false;
+                publicNoticeList.innerHTML = '';
+                
+                if (validNotices.length > 0) {
+                    validNotices.forEach(notice => {
+                        const li = document.createElement('li');
+                        li.style.borderBottom = '1px solid #eee';
+                        li.style.padding = '10px 0';
+                        li.innerHTML = `<strong>${notice.title}</strong> <span style="font-size:0.8rem; color:#666; margin-left:10px;">(${new Date(notice.date).toLocaleDateString()})</span><br> <span style="font-size:0.9rem; color:#444;">${notice.description || ''}</span>`;
+                        publicNoticeList.appendChild(li);
+                    });
                 }
-                return true;
-            });
-
-            if (parsedNotices.length > 0) {
-                // Reverse iterate to maintain order when prepending (Newest at top)
-                [...parsedNotices].reverse().forEach(notice => {
-                    const li = document.createElement('li');
-                    li.style.borderBottom = '1px solid #eee';
-                    li.style.padding = '10px 0';
-                    li.innerHTML = `<strong>${notice.title}</strong> <span style="font-size:0.8rem; color:#666; margin-left:10px;">(${notice.date})</span><br> <span style="font-size:0.9rem; color:#444;">${notice.details}</span>`;
-                    publicNoticeList.insertBefore(li, publicNoticeList.firstChild);
-                });
-            }
-        }
+            })
+            .catch(err => console.error(err));
     }
 });

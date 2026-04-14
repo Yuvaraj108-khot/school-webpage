@@ -664,87 +664,87 @@
 
     <script src="script.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        const API = "http://localhost:5000/api";
+
+        async function loadFaculty() {
+            try {
+                const res = await fetch(`${API}/teachers`);
+                if (!res.ok) throw new Error("Failed to fetch teachers");
+                const teachers = await res.json();
+                
+                const grid = document.getElementById('teacherGrid');
+                const noResults = document.getElementById('noResults');
+                
+                if (grid) {
+                    teachers.forEach(t => {
+                        const card = document.createElement('div');
+                        card.className = 'teacher-card';
+                        card.setAttribute('data-subject', (t.category || 'other').toLowerCase());
+                        card.setAttribute('data-name', t.name.toLowerCase());
+
+                        card.innerHTML = `
+                            <div class="teacher-img-container">
+                                <img src="${t.photo_url || 'logo.png'}" alt="${t.name}" class="teacher-img">
+                            </div>
+                            <div class="teacher-info">
+                                <h3>${t.name}</h3>
+                                <span class="designation">${t.designation}</span>
+                                <div class="teacher-details">
+                                    <p><i class="fas fa-briefcase"></i> ${t.experience} Years Experience</p>
+                                </div>
+                            </div>
+                        `;
+                        grid.insertBefore(card, noResults);
+                    });
+                }
+                setupFacultyFilters();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        function setupFacultyFilters() {
             const searchInput = document.getElementById('teacherSearch');
             const filterChips = document.querySelectorAll('.filter-chip');
-            const teacherGrid = document.getElementById('teacherGrid');
             const noResults = document.getElementById('noResults');
             const resultsCount = document.getElementById('resultsCount');
             let activeFilter = 'all';
 
-            // Load dynamic teachers from admin localStorage
-            const dynamicTeachers = JSON.parse(localStorage.getItem('sbrs_teachers') || '[]');
-            dynamicTeachers.forEach(teacher => {
-                const card = document.createElement('div');
-                card.className = 'teacher-card';
-                card.setAttribute('data-subject', (teacher.category || 'other').toLowerCase());
-                card.setAttribute('data-name', teacher.name.toLowerCase());
+            function filter() {
+                const query = (searchInput?.value || '').toLowerCase().trim();
+                const cards = document.querySelectorAll('.teacher-card');
+                let count = 0;
 
-                const photoSrc = teacher.photo
-                    ? teacher.photo
-                    : 'logo.png';
-                const photoStyle = teacher.photo
-                    ? 'width:100%;height:100%;object-fit:cover;'
-                    : 'width:60%;height:60%;object-fit:contain;opacity:0.4;margin:auto;display:block;';
-
-                card.innerHTML = `
-                    <div class="teacher-img-container">
-                        <img src="${photoSrc}" alt="${teacher.name}" class="teacher-img" style="${photoStyle}">
-                    </div>
-                    <div class="teacher-info">
-                        <h3>${teacher.name}</h3>
-                        <span class="designation">${teacher.designation}</span>
-                        <div class="teacher-details">
-                            <p><i class="fas fa-briefcase"></i> ${teacher.experience} Years Experience</p>
-                            ${teacher.subject ? `<p><i class="fas fa-book"></i> ${teacher.subject}</p>` : ''}
-                        </div>
-                    </div>
-                `;
-                teacherGrid.insertBefore(card, noResults);
-            });
-
-            function filterTeachers() {
-                const query = searchInput.value.toLowerCase().trim();
-                const teacherCards = document.querySelectorAll('.teacher-card');
-                let visibleCount = 0;
-
-                teacherCards.forEach(card => {
-                    const name = (card.getAttribute('data-name') || '').toLowerCase();
-                    const subject = (card.getAttribute('data-subject') || '').toLowerCase();
-                    const designation = (card.querySelector('.designation')?.textContent || '').toLowerCase();
-                    const allText = name + ' ' + subject + ' ' + designation;
-
-                    const filterVal = activeFilter.toLowerCase();
-                    const matchesFilter = filterVal === 'all' || subject === filterVal || subject.includes(filterVal);
-                    const matchesSearch = !query || allText.includes(query);
+                cards.forEach(card => {
+                    const name = card.getAttribute('data-name');
+                    const subject = card.getAttribute('data-subject');
+                    const matchesFilter = activeFilter === 'all' || subject === activeFilter;
+                    const matchesSearch = !query || name.includes(query);
 
                     if (matchesFilter && matchesSearch) {
-                        card.style.display = '';
-                        visibleCount++;
+                        card.style.display = 'block';
+                        count++;
                     } else {
                         card.style.display = 'none';
                     }
                 });
-
-                noResults.style.display = visibleCount === 0 ? 'block' : 'none';
-                resultsCount.textContent = visibleCount === 0
-                    ? 'No results found'
-                    : `Showing ${visibleCount} teacher${visibleCount !== 1 ? 's' : ''}`;
+                if (noResults) noResults.style.display = count === 0 ? 'block' : 'none';
+                if (resultsCount) resultsCount.textContent = `Showing ${count} teachers`;
             }
 
-            searchInput.addEventListener('input', filterTeachers);
-
+            searchInput?.addEventListener('input', filter);
             filterChips.forEach(chip => {
                 chip.addEventListener('click', () => {
                     filterChips.forEach(c => c.classList.remove('active'));
                     chip.classList.add('active');
                     activeFilter = chip.getAttribute('data-filter');
-                    filterTeachers();
+                    filter();
                 });
             });
+            filter();
+        }
 
-            filterTeachers();
-        });
+        document.addEventListener('DOMContentLoaded', loadFaculty);
     </script>
 </body>
 

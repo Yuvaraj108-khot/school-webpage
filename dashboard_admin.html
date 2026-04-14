@@ -748,382 +748,387 @@
     </div>
 
     <script>
-        /* ============================================================
-           SECTION NAVIGATION
-        ============================================================ */
-        var currentSection = 'gallery';
+        const API = "http://localhost:5000/api";
 
-        function showSection(name) {
-            // Hide all sections
-            var sections = ['gallery', 'events', 'students', 'teachers', 'alumni'];
-            for (var i = 0; i < sections.length; i++) {
-                var el = document.getElementById('section-' + sections[i]);
-                var link = document.getElementById('link-' + sections[i]);
-                if (el) el.classList.remove('active');
-                if (link) link.classList.remove('active');
-            }
-            // Show target
-            var target = document.getElementById('section-' + name);
-            var targetLink = document.getElementById('link-' + name);
-            if (target) target.classList.add('active');
-            if (targetLink) targetLink.classList.add('active');
-            currentSection = name;
-
-            // Load data
-            if (name === 'gallery') loadGallery();
-            if (name === 'events') loadNotices();
-            if (name === 'teachers') loadTeachers();
-            if (name === 'alumni') loadAlumni();
-
-            // Close mobile sidebar
-            closeSidebar();
-        }
-
-        /* ============================================================
-           TOAST
-        ============================================================ */
-        function toast(msg, type) {
-            var t = document.getElementById('adminToast');
-            document.getElementById('adminToastMsg').textContent = msg;
-            t.className = 'admin-toast ' + (type || 'success') + ' show';
-            setTimeout(function () { t.classList.remove('show'); }, 3000);
-        }
-
-        /* ============================================================
-           MOBILE SIDEBAR
-        ============================================================ */
-        function closeSidebar() {
-            document.getElementById('adminSidebar').classList.remove('active');
-            document.getElementById('adminOverlay').classList.remove('active');
-        }
-
-        document.getElementById('adminMenuToggle').addEventListener('click', function () {
-            document.getElementById('adminSidebar').classList.add('active');
-            document.getElementById('adminOverlay').classList.add('active');
-        });
-        document.getElementById('adminOverlay').addEventListener('click', closeSidebar);
-
-        /* ============================================================
-           GALLERY
-        ============================================================ */
-        var selectedFile = null;
-
-        function handleFiles(files) {
-            if (files.length > 0) {
-                selectedFile = files[0];
-                document.getElementById('dropZoneText').textContent = 'Selected: ' + selectedFile.name;
+        async function apiFetch(endpoint, options = {}) {
+            try {
+                const res = await fetch(`${API}${endpoint}`, options);
+                if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
+                return await res.json();
+            } catch (error) {
+                console.error(error);
+                alert("Failed to perform operation");
             }
         }
 
-        function loadGallery() {
-            var gallery = JSON.parse(localStorage.getItem('sbrs_gallery') || '[]');
-            var grid = document.getElementById('previewGrid');
-            if (!grid) return;
-            if (gallery.length === 0) {
-                grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#888;">No images uploaded yet.</p>';
-                return;
+        // --- STUDENTS ---
+        async function loadStudents() {
+            const medium = document.getElementById('adminMedium').value;
+            const cls = document.getElementById('adminClass').value;
+            if (!medium || !cls) return;
+            const students = await apiFetch(`/students?medium=${medium}&class=${cls}`);
+            const list = document.getElementById('enrolledStudentsList');
+            list.innerHTML = '';
+            students.forEach(s => {
+                const div = document.createElement('div');
+                div.className = 'enrolled-row';
+                div.innerHTML = `
+                    <div class="enrolled-info">
+                        <div><strong>${s.name}</strong> (${s.student_code})</div>
+                    </div>
+                    <button onclick="deleteStudent('${s.student_code}')" class="btn-remove">Remove</button>
+                `;
+                list.appendChild(div);
+            });
+            document.getElementById('totalEnrolled').textContent = students.length;
+            document.getElementById('addStudentArea').style.display = 'block';
+        }
+
+        async function addStudent() {
+            const name = document.getElementById('newStudentName').value;
+            const medium = document.getElementById('adminMedium').value;
+            const cls = document.getElementById('adminClass').value;
+            const student_code = `${medium[0]}${cls}-${Date.now().toString().slice(-3)}`;
+
+            await apiFetch('/students', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, student_code, medium, class: cls })
+            });
+            loadStudents();
+        }
+
+        async function deleteStudent(code) {
+            if (confirm("Delete student?")) {
+                await apiFetch(`/students/${code}`, { method: 'DELETE' });
+                loadStudents();
             }
+        }
+
+        // --- GALLERY ---
+        let selectedFile = null;
+        function handleFiles(files) { selectedFile = files[0]; }
+
+        async function uploadGalleryImage() {
+            if (!selectedFile) return alert("Select file");
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+            formData.append('category', document.getElementById('imgCategory').value);
+            formData.append('description', document.getElementById('imgDesc').value);
+            formData.append('date', new Date().toISOString());
+
+            const res = await fetch(`${API}/gallery/upload`, { method: 'POST', body: formData });
+            if (res.ok) {
+                alert("Uploaded");
+                loadGallery();
+            }
+        }
+
+        async function loadGallery() {
+            const items = await apiFetch('/gallery');
+            const grid = document.getElementById('previewGrid');
             grid.innerHTML = '';
-            gallery.forEach(function (item, idx) {
-                var div = document.createElement('div');
+            items.forEach(item => {
+                const div = document.createElement('div');
                 div.className = 'preview-item';
-                div.innerHTML = '<button class="delete-btn" onclick="deleteImage(' + idx + ')"><i class="fas fa-times"></i></button>' +
-                    '<img src="' + item.url + '" alt="Gallery">' +
-                    '<div class="preview-desc"><strong>' + item.category + '</strong><br>' + item.desc + '</div>';
+                div.innerHTML = `
+                    <img src="http://localhost:5000${item.image_url}">
+                    <button onclick="deleteGallery(${item.id})">Remove</button>
+                `;
                 grid.appendChild(div);
             });
         }
 
-        function uploadGalleryImage() {
-            var desc = document.getElementById('imgDesc').value;
-            var category = document.getElementById('imgCategory').value;
-            if (!selectedFile) { toast('Please select an image.', 'error'); return; }
-            if (!desc) { toast('Please add a description.', 'error'); return; }
-            if (selectedFile.size > 600000) { toast('Image too large! Max 500KB.', 'error'); return; }
-
-            var reader = new FileReader();
-            reader.onload = function (e) {
-                var gallery = JSON.parse(localStorage.getItem('sbrs_gallery') || '[]');
-                gallery.unshift({ url: e.target.result, category: category, desc: desc, date: new Date().toLocaleDateString() });
-                try {
-                    localStorage.setItem('sbrs_gallery', JSON.stringify(gallery));
-                    loadGallery();
-                    document.getElementById('imgDesc').value = '';
-                    document.getElementById('dropZoneText').textContent = 'Drag & Drop images here or click to browse';
-                    document.getElementById('fileInput').value = '';
-                    selectedFile = null;
-                    toast('Image uploaded!');
-                } catch (e) { toast('Storage full!', 'error'); }
-            };
-            reader.readAsDataURL(selectedFile);
-        }
-
-        function deleteImage(idx) {
-            if (!confirm('Remove this image?')) return;
-            var gallery = JSON.parse(localStorage.getItem('sbrs_gallery') || '[]');
-            gallery.splice(idx, 1);
-            localStorage.setItem('sbrs_gallery', JSON.stringify(gallery));
+        async function deleteGallery(id) {
+            await apiFetch(`/gallery/${id}`, { method: 'DELETE' });
             loadGallery();
         }
 
-        /* ============================================================
-           NOTICES / EVENTS
-        ============================================================ */
-        function loadNotices() {
-            var notices = JSON.parse(localStorage.getItem('sbrs_notices') || '[]');
-            var list = document.getElementById('noticeList');
-            if (!list) return;
-            if (notices.length === 0) {
-                list.innerHTML = '<p style="color:#888;text-align:center;">No active notices.</p>';
-                return;
-            }
+        // --- NOTICES ---
+        async function loadNotices() {
+            const notices = await apiFetch('/notices');
+            const list = document.getElementById('noticeList');
             list.innerHTML = '';
-            notices.forEach(function (n, i) {
-                var div = document.createElement('div');
-                div.className = 'notice-item';
-                div.innerHTML = '<div><h4 style="margin:0 0 5px;">' + n.title + '</h4>' +
-                    '<p style="font-size:0.8rem;color:#666;margin:0;">' + (n.date || '') + '</p></div>' +
-                    '<button onclick="deleteNotice(' + i + ')" style="background:#ea5455;color:white;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;">Remove</button>';
+            notices.forEach(n => {
+                const div = document.createElement('div');
+                div.innerHTML = `<strong>${n.title}</strong> <button onclick="deleteNotice(${n.id})">Delete</button>`;
                 list.appendChild(div);
             });
         }
 
-        function publishNotice() {
-            var title = document.getElementById('eventTitle').value.trim();
-            if (!title) { toast('Title is required!', 'error'); return; }
-            var notices = JSON.parse(localStorage.getItem('sbrs_notices') || '[]');
-            notices.unshift({
-                title: title,
-                date: document.getElementById('eventDate').value || new Date().toLocaleDateString(),
-                expiryDate: document.getElementById('eventExpiryDate').value || null,
-                details: document.getElementById('eventDetails').value
+        async function publishNotice() {
+            const title = document.getElementById('eventTitle').value;
+            const description = document.getElementById('eventDetails').value;
+            await apiFetch('/notices', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, description, date: new Date().toISOString() })
             });
-            localStorage.setItem('sbrs_notices', JSON.stringify(notices));
             loadNotices();
-            document.getElementById('eventTitle').value = '';
-            document.getElementById('eventDate').value = '';
-            document.getElementById('eventExpiryDate').value = '';
-            document.getElementById('eventDetails').value = '';
-            toast('Notice published!');
         }
 
-        function deleteNotice(idx) {
-            var notices = JSON.parse(localStorage.getItem('sbrs_notices') || '[]');
-            notices.splice(idx, 1);
-            localStorage.setItem('sbrs_notices', JSON.stringify(notices));
+        async function deleteNotice(id) {
+            await apiFetch(`/notices/${id}`, { method: 'DELETE' });
             loadNotices();
-            toast('Notice removed.', 'error');
         }
 
-        /* ============================================================
-           STUDENTS
-        ============================================================ */
-        function onMediumChange() {
-            var medium = document.getElementById('adminMedium').value;
-            var cls = document.getElementById('adminClass');
-            cls.innerHTML = '<option value="">-- Select Class --</option>';
-            if (medium === 'CBSE') {
-                for (var i = 1; i <= 10; i++) cls.innerHTML += '<option value="' + i + '">Class ' + i + '</option>';
-                cls.disabled = false;
-            } else if (medium === 'Kannada') {
-                for (var i = 7; i <= 10; i++) cls.innerHTML += '<option value="' + i + '">Class ' + i + '</option>';
-                cls.disabled = false;
-            } else {
-                cls.disabled = true;
-            }
-            document.getElementById('addStudentArea').style.display = 'none';
-        }
-
-        function loadStudents() {
-            var m = document.getElementById('adminMedium').value;
-            var c = document.getElementById('adminClass').value;
-            if (!m || !c) { document.getElementById('addStudentArea').style.display = 'none'; return; }
-            document.getElementById('addStudentArea').style.display = 'block';
-            renderStudents(m, c);
-        }
-
-        function renderStudents(m, c) {
-            var key = 'sbrs_students_' + m + '_' + c;
-            var students = JSON.parse(localStorage.getItem(key) || '[]');
-            var list = document.getElementById('enrolledStudentsList');
-            document.getElementById('totalEnrolled').textContent = students.length;
-            if (students.length === 0) {
-                list.innerHTML = '<div class="empty-state"><i class="fas fa-user-slash"></i><p>No students in this class yet.</p></div>';
-                return;
-            }
+        // --- TEACHERS ---
+        async function loadTeachers() {
+            const teachers = await apiFetch('/teachers');
+            const list = document.getElementById('teachersList');
             list.innerHTML = '';
-            students.forEach(function (s, i) {
-                var row = document.createElement('div');
-                row.className = 'enrolled-row';
-                row.innerHTML = '<div class="enrolled-info"><div class="enrolled-num">' + (i + 1) + '</div>' +
-                    '<div><div class="enrolled-name">' + s.name + '</div><div class="enrolled-sub">' + s.roll + '</div></div></div>' +
-                    '<button class="btn-remove" onclick="removeStudent(' + i + ')"><i class="fas fa-user-minus"></i> Remove</button>';
-                list.appendChild(row);
+            teachers.forEach(t => {
+                const div = document.createElement('div');
+                div.innerHTML = `<strong>${t.name}</strong> - ${t.designation} <button onclick="deleteTeacher(${t.id})">Remove</button>`;
+                list.appendChild(div);
             });
         }
 
-        function addStudent() {
-            var m = document.getElementById('adminMedium').value;
-            var c = document.getElementById('adminClass').value;
-            var name = document.getElementById('newStudentName').value.trim();
-            if (!name) { toast('Enter student name.', 'error'); return; }
-            if (!m || !c) { toast('Select medium and class.', 'error'); return; }
-            var key = 'sbrs_students_' + m + '_' + c;
-            var students = JSON.parse(localStorage.getItem(key) || '[]');
-            var id = students.length + 1;
-            students.push({ name: name, roll: m[0] + c + '-' + String(id).padStart(3, '0'), id: Date.now() });
-            localStorage.setItem(key, JSON.stringify(students));
-            renderStudents(m, c);
-            document.getElementById('newStudentName').value = '';
-            toast('"' + name + '" added!');
-        }
-
-        function removeStudent(idx) {
-            var m = document.getElementById('adminMedium').value;
-            var c = document.getElementById('adminClass').value;
-            var key = 'sbrs_students_' + m + '_' + c;
-            var students = JSON.parse(localStorage.getItem(key) || '[]');
-            if (!confirm('Remove "' + students[idx].name + '"?')) return;
-            students.splice(idx, 1);
-            localStorage.setItem(key, JSON.stringify(students));
-            renderStudents(m, c);
-            toast('Student removed.', 'error');
-        }
-
-        /* ============================================================
-           TEACHERS
-        ============================================================ */
-        var teacherPhotoBase64 = null;
-
-        function previewTeacherPhoto(input) {
-            if (!input.files || !input.files[0]) return;
-            var file = input.files[0];
-            if (file.size > 600000) { toast('Photo too large! Max 500KB.', 'error'); input.value = ''; return; }
-            var reader = new FileReader();
-            reader.onload = function (e) {
-                teacherPhotoBase64 = e.target.result;
-                var preview = document.getElementById('teacherPhotoPreview');
-                preview.innerHTML = '<img src="' + teacherPhotoBase64 + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function loadTeachers() {
-            var teachers = JSON.parse(localStorage.getItem('sbrs_teachers') || '[]');
-            var list = document.getElementById('teachersList');
-            document.getElementById('totalTeachers').textContent = teachers.length;
-            if (teachers.length === 0) {
-                list.innerHTML = '<div class="empty-state"><i class="fas fa-user-tie"></i><p>No teachers added yet.</p></div>';
-                return;
-            }
-            list.innerHTML = '';
-            teachers.forEach(function (t, i) {
-                var row = document.createElement('div');
-                row.className = 'enrolled-row';
-                row.innerHTML = '<div class="enrolled-info"><div class="enrolled-num">' + (i + 1) + '</div>' +
-                    '<div><div class="enrolled-name">' + t.name + '</div>' +
-                    '<div class="enrolled-sub">' + t.designation + ' | ' + t.category + ' | ' + t.experience + ' yrs</div></div></div>' +
-                    '<button class="btn-remove" onclick="removeTeacher(' + i + ')"><i class="fas fa-trash-alt"></i> Remove</button>';
-                list.appendChild(row);
-            });
-        }
-
-        function addTeacher() {
-            var name = document.getElementById('teacherName').value.trim();
-            var designation = document.getElementById('teacherDesignation').value.trim();
-            var experience = document.getElementById('teacherExperience').value.trim();
-            var category = document.getElementById('teacherCategory').value;
-            var subject = document.getElementById('teacherSubject').value.trim();
-            var medium = document.getElementById('teacherMedium').value;
-
-            if (!name || !designation || !experience) {
-                toast('Please fill Name, Designation, and Experience.', 'error');
-                return;
-            }
-
-            var teachers = JSON.parse(localStorage.getItem('sbrs_teachers') || '[]');
-            teachers.push({ name: name, designation: designation, experience: experience, category: category, subject: subject, medium: medium, photo: teacherPhotoBase64, id: Date.now() });
-            localStorage.setItem('sbrs_teachers', JSON.stringify(teachers));
+        async function deleteTeacher(id) {
+            await apiFetch(`/teachers/${id}`, { method: 'DELETE' });
             loadTeachers();
-
-            document.getElementById('teacherName').value = '';
-            document.getElementById('teacherDesignation').value = '';
-            document.getElementById('teacherExperience').value = '';
-            document.getElementById('teacherSubject').value = '';
-            document.getElementById('teacherPhoto').value = '';
-            teacherPhotoBase64 = null;
-            document.getElementById('teacherPhotoPreview').innerHTML = '<i class="fas fa-user" style="font-size:2rem;color:#94a3b8;"></i>';
-            toast('"' + name + '" registered!');
         }
 
-        function removeTeacher(idx) {
-            var teachers = JSON.parse(localStorage.getItem('sbrs_teachers') || '[]');
-            if (!confirm('Remove "' + teachers[idx].name + '" from faculty?')) return;
-            teachers.splice(idx, 1);
-            localStorage.setItem('sbrs_teachers', JSON.stringify(teachers));
-            loadTeachers();
-            toast('Teacher removed.', 'error');
+        // --- NAVIGATION ---
+        function showSection(name) {
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(`section-${name}`).classList.add('active');
+            if (name === 'gallery') loadGallery();
+            if (name === 'events') loadNotices();
+            if (name === 'teachers') loadTeachers();
         }
 
-        /* ============================================================
-           ALUMNI
-        ============================================================ */
-        function loadAlumni() {
-            var alumni = JSON.parse(localStorage.getItem('sbrs_alumni') || '[]');
-            var list = document.getElementById('alumniList');
-            document.getElementById('totalAlumni').textContent = alumni.length;
-            if (alumni.length === 0) {
-                list.innerHTML = '<div class="empty-state"><i class="fas fa-graduation-cap"></i><p>No alumni registered yet.</p></div>';
-                return;
-            }
-            list.innerHTML = '';
-            alumni.forEach(function (a, i) {
-                var row = document.createElement('div');
-                row.className = 'enrolled-row';
-                row.innerHTML = '<div class="enrolled-info"><div class="enrolled-num">' + (i + 1) + '</div>' +
-                    '<div><div class="enrolled-name">' + a.name + ' (' + a.batch + ')</div>' +
-                    '<div class="enrolled-sub">' + a.profession + '</div></div></div>' +
-                    '<button class="btn-remove" onclick="removeAlumni(' + i + ')"><i class="fas fa-trash-alt"></i> Remove</button>';
-                list.appendChild(row);
-            });
-        }
-
-        function addAlumni() {
-            var name = document.getElementById('alumniName').value.trim();
-            var batch = document.getElementById('alumniBatch').value.trim();
-            var profession = document.getElementById('alumniProfession').value.trim();
-            if (!name || !batch) { toast('Name and Batch year are required.', 'error'); return; }
-            var alumni = JSON.parse(localStorage.getItem('sbrs_alumni') || '[]');
-            alumni.push({ name: name, batch: batch, profession: profession || 'N/A' });
-            localStorage.setItem('sbrs_alumni', JSON.stringify(alumni));
-            loadAlumni();
-            document.getElementById('alumniName').value = '';
-            document.getElementById('alumniBatch').value = '';
-            document.getElementById('alumniProfession').value = '';
-            toast('"' + name + '" added!');
-        }
-
-        function removeAlumni(idx) {
-            var alumni = JSON.parse(localStorage.getItem('sbrs_alumni') || '[]');
-            if (!confirm('Remove "' + alumni[idx].name + '"?')) return;
-            alumni.splice(idx, 1);
-            localStorage.setItem('sbrs_alumni', JSON.stringify(alumni));
-            loadAlumni();
-            toast('Removed.', 'error');
-        }
-
-        /* ============================================================
-           INIT
-        ============================================================ */
-        window.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', () => {
             loadGallery();
+            loadAlumni();
+            loadCertificateRequests();
 
-            // Enter key for student name
-            var nameInput = document.getElementById('newStudentName');
-            if (nameInput) nameInput.addEventListener('keypress', function (e) {
-                if (e.key === 'Enter') addStudent();
+            const alumniForm =
+                document.getElementById("addAlumniForm") ||
+                document.querySelector(".add-alumni-form") ||
+                document.querySelector("form[data-type='alumni']");
+
+            if (alumniForm) {
+                alumniForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    addAlumni(new FormData(alumniForm));
+                });
+            }
+
+            const teacherForm =
+                document.getElementById("addTeacherForm") ||
+                document.querySelector(".add-teacher-form") ||
+                document.querySelector("form[data-type='teacher']");
+
+            if (teacherForm) {
+                teacherForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    addTeacher(new FormData(teacherForm));
+                });
+            }
+
+            // Sidebar logic
+            const sidebar = document.getElementById('adminSidebar');
+            const overlay = document.getElementById('adminOverlay');
+            document.getElementById('adminMenuToggle').addEventListener('click', () => {
+                sidebar.classList.add('active');
+                overlay.classList.add('active');
             });
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+
+            window.onDlMarksMediumChange = function() {};
+            window.downloadMarksExcel = function() {
+                alert('Export feature coming soon');
+            };
+            window.downloadAttendanceExcel = function() {
+                alert('Export feature coming soon');
+            };
+            window.previewTeacherPhoto = function(input) {
+                const preview = document.getElementById('teacherPhotoPreview');
+                if (!preview || !input.files[0]) return;
+                preview.src = URL.createObjectURL(input.files[0]);
+            };
+
+            window.deleteStudent = deleteStudent;
+            window.deleteTeacher = deleteTeacher;
+            window.deleteNotice = deleteNotice;
+            window.deleteAlumni = deleteAlumni;
+            window.updateCertificate = updateCertificate;
+            window.addAlumni = addAlumni;
+            window.addTeacher = addTeacher;
         });
+
+        async function loadAlumni() {
+            try {
+                const res = await fetch(`${API}/alumni`);
+                if (!res.ok) throw new Error("Failed to fetch alumni");
+                const data = await res.json();
+
+                const container =
+                    document.getElementById("alumniList") ||
+                    document.querySelector(".alumni-list") ||
+                    document.querySelector("#alumni-section tbody");
+
+                if (!container) return;
+
+                container.innerHTML = data.length
+                    ? data.map(a => `
+                    <div class="alumni-row" style="display:flex;gap:16px;
+                    align-items:center;padding:8px 0;
+                    border-bottom:1px solid #eee">
+                      <span style="flex:1">${a.name}</span>
+                      <span style="flex:1">${a.batch_year}</span>
+                      <span style="flex:1">${a.profession}</span>
+                      <button onclick="deleteAlumni(${a.id})"
+                        style="background:red;color:white;border:none;
+                        padding:4px 10px;cursor:pointer;
+                        border-radius:4px">
+                        Delete
+                      </button>
+                    </div>`).join("")
+                    : "<p>No alumni records found</p>";
+
+            } catch (e) {
+                console.error("Failed to load alumni", e);
+            }
+        }
+
+        async function addAlumni() {
+            try {
+                const name =
+                    document.getElementById('alumniName')?.value ||
+                    document.querySelector('input[name="name"]')?.value;
+                const batch_year =
+                    document.getElementById('batchYear')?.value ||
+                    document.querySelector('input[name="batch_year"]')?.value;
+                const profession =
+                    document.getElementById('profession')?.value ||
+                    document.querySelector('input[name="profession"]')?.value;
+                if (!name || !batch_year || !profession) {
+                    alert('Please fill all fields'); return;
+                }
+                const res = await fetch(`${API}/alumni`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, batch_year, profession })
+                });
+                if (!res.ok) throw new Error('Failed');
+                alert('Alumni added successfully');
+                loadAlumni();
+            } catch (e) {
+                alert('Error adding alumni');
+                console.error(e);
+            }
+        }
+        window.addAlumni = addAlumni;
+
+        async function deleteAlumni(id) {
+            if (!confirm("Delete this alumni record?")) return;
+
+            try {
+                const res = await fetch(`${API}/alumni/${id}`, {
+                    method: "DELETE"
+                });
+
+                if (!res.ok) throw new Error("Delete failed");
+
+                loadAlumni();
+
+            } catch (e) {
+                console.error("Failed to delete alumni", e);
+            }
+        }
+
+        async function loadCertificateRequests() {
+            try {
+                const res = await fetch(`${API}/certificates`);
+                if (!res.ok) throw new Error("Failed to fetch certificates");
+                const data = await res.json();
+
+                const container =
+                    document.getElementById("certificatesList") ||
+                    document.querySelector(".certificates-list") ||
+                    document.querySelector("#certificates-section tbody");
+
+                if (!container) return;
+
+                container.innerHTML = data.length
+                    ? data.map(c => `
+                    <tr>
+                        <td>${c.student_code}</td>
+                        <td>${c.certificate_type}</td>
+                        <td>${c.status}</td>
+                        <td>${new Date(c.request_date).toISOString().split("T")[0]}</td>
+                        <td>
+                        <button onclick="updateCertificate(${c.id},'Approved')">Approve</button>
+                        <button onclick="updateCertificate(${c.id},'Rejected')">Reject</button>
+                        </td>
+                    </tr>`).join("")
+                    : "<tr><td colspan='5'>No certificate requests</td></tr>";
+
+            } catch (e) {
+                console.error("Failed to load certificate requests", e);
+            }
+        }
+
+        async function updateCertificate(id, status) {
+            try {
+                const res = await fetch(`${API}/certificates/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ status })
+                });
+
+                if (!res.ok) throw new Error("Update failed");
+
+                loadCertificateRequests();
+
+            } catch (e) {
+                console.error("Failed to update certificate", e);
+            }
+        }
+
+        async function addTeacher() {
+            try {
+                const name =
+                    document.getElementById('teacherName')?.value ||
+                    document.querySelector('input[name="name"]')?.value;
+                const subject =
+                    document.getElementById('teacherSubject')?.value ||
+                    document.querySelector('input[name="subject"]')?.value;
+                const medium =
+                    document.getElementById('teacherMedium')?.value ||
+                    document.querySelector('select[name="medium"]')?.value;
+                if (!name || !subject || !medium) {
+                    alert('Please fill all fields'); return;
+                }
+                const res = await fetch(`${API}/teachers`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, subject, medium })
+                });
+                if (!res.ok) throw new Error('Failed');
+                alert('Teacher added successfully');
+                loadTeachers();
+            } catch (e) {
+                alert('Error adding teacher');
+                console.error(e);
+            }
+        }
+        window.addTeacher = addTeacher;
+
+        // UI Helpers
+        function onMediumChange() {
+            const medium = document.getElementById('adminMedium').value;
+            const cls = document.getElementById('adminClass');
+            cls.innerHTML = '<option value="">-- Select Class --</option>';
+            const range = medium === 'CBSE' ? [1, 10] : [7, 10];
+            for (let i = range[0]; i <= range[1]; i++) cls.innerHTML += `<option value="${i}">Class ${i}</option>`;
+            cls.disabled = false;
+        }
     </script>
 </body>
 

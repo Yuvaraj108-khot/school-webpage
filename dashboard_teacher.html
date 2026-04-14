@@ -1290,663 +1290,228 @@
     </div>
 
     <script>
-        // ===================== INITIALIZATION =====================
-        const today = new Date();
-        document.getElementById('todayDate').textContent = today.toLocaleDateString('en-IN', {
-            weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
-        });
-
-        // Subject lists
-        const subjectsCBSE = ['Mathematics', 'Science', 'English', 'Social Science', 'Hindi', 'Kannada', 'Computer Science', 'Physical Education'];
-        const subjectsKannada = ['Ganitha (Mathematics)', 'Vigyana (Science)', 'English', 'Samaja Vigyana (Social Science)', 'Kannada', 'Hindi'];
-
-        // ===================== SECTION NAVIGATION =====================
-        function showSection(section) {
-            document.getElementById('attendance-section').style.display = section === 'attendance' ? 'block' : 'none';
-            document.getElementById('marks-section').style.display = section === 'marks' ? 'block' : 'none';
-            document.getElementById('history-section').style.display = section === 'history' ? 'block' : 'none';
-            document.getElementById('download-section').style.display = section === 'download' ? 'block' : 'none';
-
-            // Update sidebar active
-            document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-
-            if (section === 'history') loadHistory();
-        }
-
-        // ===================== STEP MANAGEMENT =====================
-        function updateSteps() {
-            const medium = document.getElementById('selectMedium').value;
-            const cls = document.getElementById('selectClass').value;
-            const period = document.getElementById('selectPeriod').value;
-            const subject = document.getElementById('selectSubject').value;
-            const topic = document.getElementById('topicInput').value.trim();
-
-            ['step1', 'step2', 'step3', 'step4'].forEach(id => {
-                document.getElementById(id).classList.remove('active', 'completed');
-            });
-
-            if (!medium) {
-                document.getElementById('step1').classList.add('active');
-                return;
-            }
-            document.getElementById('step1').classList.add(cls ? 'completed' : 'active');
-
-            if (cls) {
-                document.getElementById('step2').classList.add((period && subject) ? 'completed' : 'active');
-            }
-
-            if (period && subject) {
-                document.getElementById('step3').classList.add(topic ? 'completed' : 'active');
-            }
-
-            if (topic) {
-                document.getElementById('step4').classList.add('active');
-            }
-        }
-
-        // ===================== MEDIUM & CLASS LOGIC =====================
-        function onMediumChange() {
-            const medium = document.getElementById('selectMedium').value;
-            const classSelect = document.getElementById('selectClass');
-            classSelect.innerHTML = '<option value="">-- Select Class --</option>';
-
-            if (medium === 'CBSE') {
-                for (let i = 1; i <= 10; i++) {
-                    classSelect.innerHTML += `<option value="${i}">Class ${i}</option>`;
-                }
-                classSelect.disabled = false;
-            } else if (medium === 'Kannada') {
-                for (let i = 7; i <= 10; i++) {
-                    classSelect.innerHTML += `<option value="${i}">Class ${i}</option>`;
-                }
-                classSelect.disabled = false;
-            } else {
-                classSelect.disabled = true;
-            }
-
-            // Reset downstream
-            document.getElementById('selectPeriod').disabled = true;
-            document.getElementById('selectPeriod').value = '';
-            document.getElementById('selectSubject').disabled = true;
-            document.getElementById('selectSubject').innerHTML = '<option value="">-- Select Subject --</option>';
-            document.getElementById('topicInput').disabled = true;
-            document.getElementById('topicInput').value = '';
-            document.getElementById('loadStudentsBtn').disabled = true;
-            document.getElementById('attendanceArea').style.display = 'none';
-
-            updateSteps();
-        }
-
-        function onClassChange() {
-            const cls = document.getElementById('selectClass').value;
-            const medium = document.getElementById('selectMedium').value;
-
-            if (cls) {
-                document.getElementById('selectPeriod').disabled = false;
-
-                // Populate subjects based on medium
-                const subjectSelect = document.getElementById('selectSubject');
-                subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
-                const subjects = medium === 'CBSE' ? subjectsCBSE : subjectsKannada;
-                subjects.forEach(sub => {
-                    subjectSelect.innerHTML += `<option value="${sub}">${sub}</option>`;
-                });
-                subjectSelect.disabled = false;
-            }
-
-            // Reset downstream
-            document.getElementById('selectPeriod').value = '';
-            document.getElementById('topicInput').disabled = true;
-            document.getElementById('topicInput').value = '';
-            document.getElementById('loadStudentsBtn').disabled = true;
-            document.getElementById('attendanceArea').style.display = 'none';
-
-            updateSteps();
-        }
-
-        function onPeriodChange() {
-            checkTopicReady();
-            updateSteps();
-        }
-
-        function onSubjectChange() {
-            checkTopicReady();
-            updateSteps();
-        }
-
-        function checkTopicReady() {
-            const period = document.getElementById('selectPeriod').value;
-            const subject = document.getElementById('selectSubject').value;
-            document.getElementById('topicInput').disabled = !(period && subject);
-        }
-
-        function onTopicInput() {
-            const topic = document.getElementById('topicInput').value.trim();
-            document.getElementById('loadStudentsBtn').disabled = !topic;
-            updateSteps();
-        }
-
-        // ===================== STUDENT LIST LOADING =====================
-        function getStudentsForClass(medium, classNum) {
-            const key = `sbrs_students_${medium}_${classNum}`;
-            const stored = localStorage.getItem(key);
-            if (stored) return JSON.parse(stored);
-
-            // Default sample students if none added yet
-            const defaults = [];
-            const sampleNames = [
-                'Rahul Kumar', 'Priya Sharma', 'Ananya S', 'Vikram R', 'Sneha Patil',
-                'Aditya Hegde', 'Kavya M', 'Rohan Desai', 'Meera Kulkarni', 'Arjun Nayak'
-            ];
-            sampleNames.forEach((name, i) => {
-                defaults.push({ id: i + 1, name: name, roll: `${medium.substring(0, 1)}${classNum}-${String(i + 1).padStart(3, '0')}` });
-            });
-            localStorage.setItem(key, JSON.stringify(defaults));
-            return defaults;
-        }
-
-        function loadStudentList() {
-            const medium = document.getElementById('selectMedium').value;
-            const cls = document.getElementById('selectClass').value;
-
-            if (!medium || !cls) {
-                showToast('Please select Medium and Class first.', 'error');
-                return;
-            }
-
-            const students = getStudentsForClass(medium, cls);
-            const container = document.getElementById('studentListContainer');
-            container.innerHTML = '';
-
-            if (students.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-user-slash"></i>
-                        <p>No students found for this class. Ask Admin to add students.</p>
-                    </div>`;
-                document.getElementById('attendanceArea').style.display = 'block';
-                return;
-            }
-
-            students.forEach((student, index) => {
-                const row = document.createElement('div');
-                row.className = 'student-row';
-                row.id = `student-row-${index}`;
-                row.innerHTML = `
-                    <div class="student-sl">${index + 1}</div>
-                    <div class="student-info">
-                        <div class="student-name">${student.name}</div>
-                        <div class="student-roll">${student.roll}</div>
-                    </div>
-                    <label class="attendance-toggle">
-                        <input type="checkbox" checked id="att-${index}" onchange="toggleAttendance(${index})">
-                        <span class="toggle-slider"></span>
-                    </label>
-                    <span class="status-label present" id="status-${index}">Present</span>
-                `;
-                // Click row to toggle (except the toggle itself)
-                row.addEventListener('click', (e) => {
-                    if (e.target.type !== 'checkbox' && !e.target.classList.contains('toggle-slider')) {
-                        const cb = document.getElementById(`att-${index}`);
-                        cb.checked = !cb.checked;
-                        toggleAttendance(index);
-                    }
-                });
-                container.appendChild(row);
-            });
-
-            document.getElementById('attendanceArea').style.display = 'block';
-            updateCounts();
-            updateSteps();
-        }
-
-        function toggleAttendance(index) {
-            const cb = document.getElementById(`att-${index}`);
-            const label = document.getElementById(`status-${index}`);
-            const row = document.getElementById(`student-row-${index}`);
-
-            if (cb.checked) {
-                label.textContent = 'Present';
-                label.className = 'status-label present';
-                row.classList.remove('absent-row');
-            } else {
-                label.textContent = 'Absent';
-                label.className = 'status-label absent';
-                row.classList.add('absent-row');
-            }
-            updateCounts();
-        }
-
-        function updateCounts() {
-            const checkboxes = document.querySelectorAll('#studentListContainer input[type="checkbox"]');
-            let present = 0, absent = 0;
-            checkboxes.forEach(cb => {
-                if (cb.checked) present++;
-                else absent++;
-            });
-            document.getElementById('presentCount').textContent = present;
-            document.getElementById('absentCount').textContent = absent;
-        }
-
-        function markAllPresent() {
-            const checkboxes = document.querySelectorAll('#studentListContainer input[type="checkbox"]');
-            checkboxes.forEach((cb, i) => {
-                cb.checked = true;
-                toggleAttendance(i);
-            });
-        }
-
-        // ===================== SAVE ATTENDANCE =====================
-        function saveAttendance() {
-            const medium = document.getElementById('selectMedium').value;
-            const cls = document.getElementById('selectClass').value;
-            const period = document.getElementById('selectPeriod').value;
-            const subject = document.getElementById('selectSubject').value;
-            const topic = document.getElementById('topicInput').value.trim();
-
-            if (!medium || !cls || !period || !subject || !topic) {
-                showToast('Please fill all fields before saving.', 'error');
-                return;
-            }
-
-            const checkboxes = document.querySelectorAll('#studentListContainer input[type="checkbox"]');
-            const students = getStudentsForClass(medium, cls);
-            const presentList = [];
-            const absentList = [];
-
-            checkboxes.forEach((cb, i) => {
-                if (cb.checked) presentList.push(students[i].name);
-                else absentList.push(students[i].name);
-            });
-
-            const record = {
-                date: today.toLocaleDateString('en-IN'),
-                medium,
-                class: cls,
-                period,
-                subject,
-                topic,
-                present: presentList.length,
-                absent: absentList.length,
-                total: students.length,
-                absentNames: absentList,
-                timestamp: Date.now()
-            };
-
-            // Save to localStorage
-            const history = JSON.parse(localStorage.getItem('sbrs_attendance_history') || '[]');
-            history.unshift(record);
-            localStorage.setItem('sbrs_attendance_history', JSON.stringify(history));
-
-            showToast(`Attendance saved! Present: ${presentList.length}, Absent: ${absentList.length}`, 'success');
-
-            // Reset form
-            setTimeout(() => {
-                document.getElementById('selectMedium').value = '';
-                onMediumChange();
-            }, 1500);
-        }
-
-        // ===================== HISTORY =====================
-        function loadHistory() {
-            const history = JSON.parse(localStorage.getItem('sbrs_attendance_history') || '[]');
-            const list = document.getElementById('historyList');
-
-            if (history.length === 0) {
-                list.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-clipboard-list"></i>
-                        <p>No attendance records yet. Records will appear after you save attendance.</p>
-                    </div>`;
-                return;
-            }
-
-            list.innerHTML = '';
-            history.forEach(rec => {
-                const item = document.createElement('div');
-                item.className = 'history-item';
-                item.innerHTML = `
-                    <div class="hi-info">
-                        <div class="hi-title">${rec.medium} - Class ${rec.class} | Period ${rec.period}</div>
-                        <div class="hi-meta"><i class="fas fa-calendar-alt"></i> ${rec.date} &nbsp;|&nbsp; <i class="fas fa-book"></i> ${rec.subject} &nbsp;|&nbsp; <i class="fas fa-pen"></i> ${rec.topic}</div>
-                    </div>
-                    <div class="hi-stats">
-                        <span class="hi-stat p"><i class="fas fa-check"></i> ${rec.present}</span>
-                        <span class="hi-stat a"><i class="fas fa-times"></i> ${rec.absent}</span>
-                    </div>
-                `;
-                list.appendChild(item);
-            });
-        }
-
-        // ===================== SAVE MARKS =====================
-        function saveMarks() {
-            const medium = document.getElementById('marksMedium').value;
-            const cls = document.getElementById('marksClass').value;
-            const exam = document.getElementById('marksExam').value;
-            const subject = document.getElementById('marksSubject').value;
-
-            if (!medium || !cls) {
-                showToast('Please select Medium and Class first.', 'error');
-                return;
-            }
-
-            const students = getStudentsForClass(medium, cls);
-            const inputs = document.querySelectorAll('#marksListContainer input[type="number"]');
-            const marksData = [];
-
-            students.forEach((student, i) => {
-                const val = inputs[i] ? parseFloat(inputs[i].value) : null;
-                marksData.push({ ...student, marks: isNaN(val) ? '' : val });
-            });
-
-            const key = `sbrs_marks_${medium}_${cls}_${exam}_${subject}`;
-            localStorage.setItem(key, JSON.stringify(marksData));
-            showToast(`Marks saved for Class ${cls} – ${exam} (${subject})!`, 'success');
-        }
-
-        // ===================== DOWNLOAD SECTION HELPERS =====================
-        function onDlMarksMediumChange() {
-            const medium = document.getElementById('dlMarksMedium').value;
-            const cls = document.getElementById('dlMarksClass');
-            cls.innerHTML = '<option value="">-- Select Class --</option>';
-            if (medium === 'CBSE') {
-                for (let i = 1; i <= 10; i++) cls.innerHTML += `<option value="${i}">Class ${i}</option>`;
-                cls.disabled = false;
-            } else if (medium === 'Kannada') {
-                for (let i = 7; i <= 10; i++) cls.innerHTML += `<option value="${i}">Class ${i}</option>`;
-                cls.disabled = false;
-            } else {
-                cls.disabled = true;
-            }
-        }
-
-        function onDlAttMediumChange() {
-            const medium = document.getElementById('dlAttMedium').value;
-            const cls = document.getElementById('dlAttClass');
-            cls.innerHTML = '<option value="">-- Select Class --</option>';
-            if (medium === 'CBSE') {
-                for (let i = 1; i <= 10; i++) cls.innerHTML += `<option value="${i}">Class ${i}</option>`;
-                cls.disabled = false;
-            } else if (medium === 'Kannada') {
-                for (let i = 7; i <= 10; i++) cls.innerHTML += `<option value="${i}">Class ${i}</option>`;
-                cls.disabled = false;
-            } else {
-                cls.disabled = true;
-            }
-        }
-
-        // ===================== DOWNLOAD MARKS EXCEL =====================
-        function downloadMarksExcel() {
-            const medium = document.getElementById('dlMarksMedium').value;
-            const cls = document.getElementById('dlMarksClass').value;
-            const exam = document.getElementById('dlMarksExam').value;
-            const subject = document.getElementById('dlMarksSubject').value;
-
-            if (!medium || !cls) {
-                showToast('Please select Medium and Class first.', 'error');
-                return;
-            }
-
-            const students = getStudentsForClass(medium, cls);
-            const key = `sbrs_marks_${medium}_${cls}_${exam}_${subject}`;
-            const saved = JSON.parse(localStorage.getItem(key) || '[]');
-
-            // Determine max marks based on exam
-            let maxMarks = 100;
-            if (exam.toLowerCase().includes('unit')) maxMarks = 25;
-            else if (exam.toLowerCase().includes('mid')) maxMarks = 50;
-
-            function getGrade(m, total) {
-                if (m === '' || m === null || m === undefined) return 'N/A';
-                const pct = (m / total) * 100;
-                if (pct >= 90) return 'A+';
-                if (pct >= 80) return 'A';
-                if (pct >= 70) return 'B+';
-                if (pct >= 60) return 'B';
-                if (pct >= 50) return 'C';
-                if (pct >= 35) return 'D';
-                return 'F';
-            }
-
-            // Build rows
-            const wsData = [
-                [`SBRS – ${medium} Medium – Class ${cls}`],
-                [`Exam: ${exam}   |   Subject: ${subject}   |   Max Marks: ${maxMarks}`],
-                [],
-                ['Sl.No', 'Student Name', 'Roll Number', `Marks (Out of ${maxMarks})`, 'Grade', 'Remarks']
-            ];
-
-            students.forEach((student, i) => {
-                const savedEntry = saved.find(s => s.roll === student.roll);
-                const marks = savedEntry ? savedEntry.marks : '';
-                const grade = getGrade(marks, maxMarks);
-                wsData.push([
-                    i + 1,
-                    student.name,
-                    student.roll,
-                    marks === '' ? 'Not Entered' : marks,
-                    grade,
-                    grade === 'F' ? 'Fail' : (grade === 'N/A' ? '' : 'Pass')
-                ]);
-            });
-
-            // Summary rows
-            const entered = students.filter((_, i) => {
-                const se = saved.find(s => s.roll === students[i].roll);
-                return se && se.marks !== '';
-            });
-            wsData.push([]);
-            wsData.push(['', '', 'Total Students:', students.length]);
-            wsData.push(['', '', 'Marks Entered:', entered.length]);
-            wsData.push(['', '', 'Max Marks:', maxMarks]);
-
-            const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-            // Column widths
-            ws['!cols'] = [
-                { wch: 8 }, { wch: 28 }, { wch: 16 }, { wch: 20 }, { wch: 10 }, { wch: 14 }
-            ];
-
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Marks');
-            const filename = `Marks_Class${cls}_${exam.replace(/\s+/g, '_')}_${subject.replace(/\s+/g, '_')}.xlsx`;
-            XLSX.writeFile(wb, filename);
-            showToast(`Downloaded: ${filename}`, 'success');
-        }
-
-        // ===================== DOWNLOAD ATTENDANCE EXCEL =====================
-        function downloadAttendanceExcel() {
-            const medium = document.getElementById('dlAttMedium').value;
-            const cls = document.getElementById('dlAttClass').value;
-            const month = parseInt(document.getElementById('dlAttMonth').value);
-            const year = parseInt(document.getElementById('dlAttYear').value);
-
-            if (!medium || !cls) {
-                showToast('Please select Medium and Class first.', 'error');
-                return;
-            }
-
-            const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'];
-
-            const history = JSON.parse(localStorage.getItem('sbrs_attendance_history') || '[]');
-            const students = getStudentsForClass(medium, cls);
-
-            // Filter records for this medium, class, and month/year
-            const records = history.filter(rec => {
-                if (rec.medium !== medium || String(rec.class) !== String(cls)) return false;
-                // Parse date (stored as en-IN format: dd/mm/yyyy or similar)
-                const parts = rec.date.split('/');
-                if (parts.length === 3) {
-                    const recMonth = parseInt(parts[1]);
-                    const recYear = parseInt(parts[2]);
-                    return recMonth === month && recYear === year;
-                }
-                return false;
-            });
-
-            // Get unique dates, sorted
-            const dateSet = new Set();
-            records.forEach(r => dateSet.add(r.date));
-            const dates = Array.from(dateSet).sort((a, b) => {
-                const pa = a.split('/'), pb = b.split('/');
-                return new Date(pa[2], pa[1] - 1, pa[0]) - new Date(pb[2], pb[1] - 1, pb[0]);
-            });
-
-            // Header rows
-            const header1 = [`SBRS – ${medium} Medium – Class ${cls} – Monthly Attendance`];
-            const header2 = [`Month: ${monthNames[month]} ${year}`];
-            const colHeader = ['Sl.No', 'Student Name', 'Roll Number', ...dates, 'Total Present', 'Total Absent', 'Attendance %'];
-
-            const wsData = [header1, header2, [], colHeader];
-
-            students.forEach((student, i) => {
-                let totalPresent = 0;
-                const row = [i + 1, student.name, student.roll];
-
-                dates.forEach(date => {
-                    // Find record for this date
-                    const rec = records.find(r => r.date === date);
-                    let status = '-';
-                    if (rec) {
-                        // Check if student was absent
-                        const isAbsent = rec.absentNames && rec.absentNames.includes(student.name);
-                        status = isAbsent ? 'A' : 'P';
-                        if (!isAbsent) totalPresent++;
-                    }
-                    row.push(status);
-                });
-
-                const totalDays = dates.filter(d => {
-                    const rec = records.find(r => r.date === d);
-                    return !!rec;
-                }).length;
-                const totalAbsent = totalDays - totalPresent;
-                const pct = totalDays > 0 ? ((totalPresent / totalDays) * 100).toFixed(1) + '%' : 'N/A';
-                row.push(totalPresent, totalAbsent, pct);
-                wsData.push(row);
-            });
-
-            // Summary
-            wsData.push([]);
-            wsData.push(['', '', 'Total Working Days:', dates.length]);
-            wsData.push(['', '', 'Total Students:', students.length]);
-
-            const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-            // Column widths
-            const cols = [{ wch: 7 }, { wch: 28 }, { wch: 16 }];
-            dates.forEach(() => cols.push({ wch: 10 }));
-            cols.push({ wch: 14 }, { wch: 13 }, { wch: 14 });
-            ws['!cols'] = cols;
-
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, `Attendance_${monthNames[month]}`);
-            const filename = `Attendance_Class${cls}_${monthNames[month]}_${year}.xlsx`;
-            XLSX.writeFile(wb, filename);
-            showToast(`Downloaded: ${filename}`, 'success');
-        }
-
-        // ===================== MARKS SECTION =====================
-        function onMarksMediumChange() {
-            const medium = document.getElementById('marksMedium').value;
-            const classSelect = document.getElementById('marksClass');
-            classSelect.innerHTML = '<option value="">-- Select Class --</option>';
-
-            if (medium === 'CBSE') {
-                for (let i = 1; i <= 10; i++) {
-                    classSelect.innerHTML += `<option value="${i}">Class ${i}</option>`;
-                }
-                classSelect.disabled = false;
-            } else if (medium === 'Kannada') {
-                for (let i = 7; i <= 10; i++) {
-                    classSelect.innerHTML += `<option value="${i}">Class ${i}</option>`;
-                }
-                classSelect.disabled = false;
-            } else {
-                classSelect.disabled = true;
-            }
-
-            document.getElementById('marksListContainer').innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-clipboard-list"></i>
-                    <p>Select Medium and Class to load students</p>
-                </div>`;
-        }
-
-        function loadMarksStudents() {
-            const medium = document.getElementById('marksMedium').value;
-            const cls = document.getElementById('marksClass').value;
-            if (!medium || !cls) return;
-
-            const students = getStudentsForClass(medium, cls);
-            const container = document.getElementById('marksListContainer');
-            container.innerHTML = '';
-
-            students.forEach((student, index) => {
-                const row = document.createElement('div');
-                row.className = 'marks-row';
-                row.innerHTML = `
-                    <div class="student-sl">${index + 1}</div>
-                    <div class="student-info">
-                        <div class="student-name">${student.name}</div>
-                        <div class="student-roll">${student.roll}</div>
-                    </div>
-                    <input type="number" placeholder="Marks" min="0" max="100">
-                `;
-                container.appendChild(row);
-            });
-        }
-
-        // ===================== TOAST =====================
-        function showToast(message, type = 'success') {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toastMessage');
-            toastMsg.textContent = message;
-            toast.className = `toast ${type} show`;
-
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
-
-        // ═══════════════════════════════════════════
-        // Teacher Sidebar Mobile Toggle Logic
-        // ═══════════════════════════════════════════
-        document.addEventListener('DOMContentLoaded', () => {
-            const teacherToggle = document.getElementById('teacherMenuToggle');
-            const teacherSidebar = document.querySelector('.sidebar');
-            const teacherOverlay = document.getElementById('teacherOverlay');
-
-            if (teacherToggle && teacherSidebar && teacherOverlay) {
-                function openTeacherSidebar() {
-                    teacherSidebar.classList.add('active');
-                    teacherOverlay.classList.add('active');
-                    document.body.style.overflow = 'hidden';
-                }
-
-                function closeTeacherSidebar() {
-                    teacherSidebar.classList.remove('active');
-                    teacherOverlay.classList.remove('active');
-                    document.body.style.overflow = '';
-                }
-
-                teacherToggle.addEventListener('click', openTeacherSidebar);
-                teacherOverlay.addEventListener('click', closeTeacherSidebar);
-
-                document.querySelectorAll('.sidebar-menu a').forEach(link => {
-                    link.addEventListener('click', closeTeacherSidebar);
-                });
-
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape' && teacherSidebar.classList.contains('active')) {
-                        closeTeacherSidebar();
-                    }
-                });
-            }
-        });
+const API = "http://localhost:5000/api";
+const TEACHER_NAME = "Anita Sharma";
+
+async function loadStudents(filterClass) {
+  try {
+    const url = filterClass
+      ? `${API}/students?class=${filterClass}`
+      : `${API}/students`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed');
+    const data = await res.json();
+    const selectors = [
+      '#studentSelect',
+      '#attendanceStudentSelect',
+      '#marksStudentSelect',
+      'select[name="student_code"]'
+    ];
+    selectors.forEach(sel => {
+      const el = document.querySelector(sel);
+      if (!el) return;
+      el.innerHTML = '<option value="">-- Select Student --</option>'
+        + data.map(s =>
+            `<option value="${s.student_code}">
+               ${s.name} (${s.student_code})
+             </option>`
+          ).join('');
+    });
+  } catch (e) {
+    console.error('Failed to load students', e);
+  }
+}
+
+async function loadAttendanceRecords(cls) {
+  try {
+    const classVal = cls ||
+      document.getElementById('classSelect')?.value;
+    if (!classVal) return;
+    const res = await fetch(`${API}/attendance/class/${classVal}`);
+    if (!res.ok) throw new Error('Failed');
+    const data = await res.json();
+    const container =
+      document.getElementById('attendanceList') ||
+      document.querySelector('.attendance-records') ||
+      document.querySelector('#attendanceTable tbody');
+    if (!container) return;
+    container.innerHTML = data.length
+      ? data.map(r => `
+          <tr>
+            <td>${r.student_code}</td>
+            <td>${new Date(r.date).toLocaleDateString()}</td>
+            <td>${r.status}</td>
+          </tr>`).join('')
+      : '<tr><td colspan="3">No records found</td></tr>';
+  } catch (e) {
+    console.error('Failed to load attendance records', e);
+  }
+}
+
+async function loadMarksStudents() {
+  await loadStudents();
+}
+
+async function saveAttendance() {
+  try {
+    const student_code =
+      document.getElementById('attendanceStudentSelect')?.value ||
+      document.getElementById('studentSelect')?.value ||
+      document.querySelector('select[name="student_code"]')?.value;
+    const cls =
+      document.getElementById('classSelect')?.value;
+    const status =
+      document.getElementById('attendanceStatus')?.value ||
+      document.querySelector('input[name="status"]:checked')?.value ||
+      document.querySelector('select[name="status"]')?.value;
+
+    if (!student_code || !cls || !status) {
+      alert('Please fill all required fields');
+      return;
+    }
+    const res = await fetch(`${API}/attendance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        student_code,
+        class: cls,
+        teacher_name: TEACHER_NAME,
+        date: new Date().toISOString(),
+        status
+      })
+    });
+    if (!res.ok) throw new Error('Failed');
+    alert('Attendance saved successfully');
+    loadAttendanceRecords(cls);
+  } catch (e) {
+    alert('Failed to save attendance');
+    console.error(e);
+  }
+}
+
+async function saveMarks() {
+  try {
+    const student_code =
+      document.getElementById('marksStudentSelect')?.value ||
+      document.getElementById('studentSelect')?.value ||
+      document.querySelector('select[name="student_code"]')?.value;
+    const cls =
+      document.getElementById('classSelect')?.value;
+    const subject =
+      document.getElementById('subjectSelect')?.value ||
+      document.querySelector('select[name="subject"]')?.value;
+    const exam_type =
+      document.getElementById('examType')?.value ||
+      document.querySelector('select[name="exam_type"]')?.value;
+    const marks =
+      document.getElementById('marksInput')?.value ||
+      document.querySelector('input[name="marks"]')?.value;
+
+    if (!student_code || !cls || !subject || !exam_type || !marks) {
+      alert('Please fill all required fields');
+      return;
+    }
+    if (isNaN(parseInt(marks))) {
+      alert('Marks must be a number');
+      return;
+    }
+    const res = await fetch(`${API}/marks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        student_code,
+        class: cls,
+        subject,
+        exam_type,
+        marks: parseInt(marks)
+      })
+    });
+    if (!res.ok) throw new Error('Failed');
+    alert('Marks saved successfully');
+  } catch (e) {
+    alert('Failed to save marks');
+    console.error(e);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('Teacher dashboard loaded');
+
+  // Populate dropdowns
+  const periodSelect = document.getElementById('periodSelect');
+  if (periodSelect) {
+    periodSelect.innerHTML =
+      ['1st','2nd','3rd','4th','5th','6th']
+        .map(p => `<option value="${p} Period">${p} Period</option>`)
+        .join('');
+  }
+
+  const subjectSelect = document.getElementById('subjectSelect');
+  if (subjectSelect) {
+    subjectSelect.innerHTML =
+      ['Mathematics','Science','English','Kannada',
+       'Hindi','Social Science','Computer Science',
+       'Physical Education']
+        .map(s => `<option value="${s}">${s}</option>`)
+        .join('');
+  }
+
+  const examType = document.getElementById('examType');
+  if (examType) {
+    examType.innerHTML =
+      ['Unit Test','Mid Term','Final Exam','Project']
+        .map(e => `<option value="${e}">${e}</option>`)
+        .join('');
+  }
+
+  const classSelect = document.getElementById('classSelect');
+  if (classSelect && !classSelect.options.length) {
+    classSelect.innerHTML =
+      ['1','2','3','4','5','6','7','8']
+        .map(c => `<option value="${c}">Class ${c}</option>`)
+        .join('');
+  }
+
+  loadStudents();
+
+  // Attach window functions for inline HTML attributes
+  window.onClassChange = function() {
+    const cls = document.getElementById('classSelect')?.value;
+    if (cls) { loadStudents(cls); loadAttendanceRecords(cls); }
+  };
+  window.onPeriodChange = function() {};
+  window.onSubjectChange = function() {};
+  window.onTopicInput = function() {};
+  window.markAllPresent = function() {
+    document.querySelectorAll('input[name="attendance_status"]')
+      .forEach(r => { if (r.value === 'Present') r.checked = true; });
+  };
+  window.loadStudentList = loadStudents;
+  window.loadMarksStudents = loadMarksStudents;
+  window.saveAttendance = saveAttendance;
+  window.saveMarks = saveMarks;
+
+  // Form listeners
+  const attendanceForm =
+    document.getElementById('attendanceForm') ||
+    document.querySelector('.attendance-form');
+  if (attendanceForm) {
+    attendanceForm.addEventListener('submit', e => {
+      e.preventDefault();
+      saveAttendance();
+    });
+  }
+
+  const marksForm =
+    document.getElementById('marksForm') ||
+    document.querySelector('.marks-form');
+  if (marksForm) {
+    marksForm.addEventListener('submit', e => {
+      e.preventDefault();
+      saveMarks();
+    });
+  }
+});
     </script>
 </body>
 
