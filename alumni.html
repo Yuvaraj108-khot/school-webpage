@@ -71,9 +71,11 @@
 
         <div style="margin-top: 4rem;">
             <div class="section-title">
-                <h2>Alumni Success Stories</h2>
+                <h2>Our Alumni Network</h2>
+                <p>A growing community of SBRS graduates.</p>
             </div>
-            <div class="cards-grid">
+            <div class="cards-grid" id="alumniGrid">
+                <!-- Static Placeholders -->
                 <div class="card">
                     <div
                         style="width: 80px; height: 80px; background: #ddd; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center;">
@@ -81,27 +83,7 @@
                     </div>
                     <h4>Dr. Rahul Sharma</h4>
                     <p style="font-size: 0.8rem; color: #666;">Batch of 2005</p>
-                    <p style="font-style: italic; margin-top: 10px;">"SBRS gave me the foundation of discipline that
-                        helped me become a surgeon today."</p>
-                </div>
-                <div class="card">
-                    <div
-                        style="width: 80px; height: 80px; background: #ddd; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center;">
-                        <i class="fas fa-user" style="font-size: 2rem; color: #999;"></i>
-                    </div>
-                    <h4>Priya Naik</h4>
-                    <p style="font-size: 0.8rem; color: #666;">Batch of 2010</p>
-                    <p style="font-style: italic; margin-top: 10px;">"The values I learnt here are my biggest asset in
-                        the corporate world."</p>
-                </div>
-                <div class="card">
-                    <div
-                        style="width: 80px; height: 80px; background: #ddd; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center;">
-                        <i class="fas fa-user" style="font-size: 2rem; color: #999;"></i>
-                    </div>
-                    <h4>Karthik Shetty</h4>
-                    <p style="font-size: 0.8rem; color: #666;">Batch of 2012</p>
-                    <p style="font-style: italic; margin-top: 10px;">"Grateful to the teachers who guided me."</p>
+                    <p style="font-style: italic; margin-top: 10px;">"SBRS gave me the foundation of discipline."</p>
                 </div>
             </div>
         </div>
@@ -153,6 +135,7 @@
 
     <script src="script.js"></script>
     <script>
+
         const API = "http://localhost:5000/api";
 
         async function loadAlumni() {
@@ -182,6 +165,26 @@
         }
 
         document.addEventListener('DOMContentLoaded', loadAlumni);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const grid = document.getElementById('alumniGrid');
+            const alumni = JSON.parse(localStorage.getItem('sbrs_alumni') || '[]');
+
+            alumni.forEach(a => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div style="width: 80px; height: 80px; background: #e2e8f0; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-user-graduate" style="font-size: 2rem; color: #64748b;"></i>
+                    </div>
+                    <h4>${a.name}</h4>
+                    <p style="font-size: 0.8rem; color: #666;">Batch of ${a.batch_year}</p>
+                    <p style="font-style: italic; margin-top: 10px;">${a.profession}</p>
+                `;
+                grid.appendChild(card);
+            });
+        });
+
     </script>
 </body>
 

@@ -606,10 +606,18 @@
                     </div>
                     <div id="addStudentArea" style="display:none;">
                         <div class="add-row">
-                            <input type="text" id="newStudentName" placeholder="Enter student full name">
+                            <input type="text" id="newStudentName" placeholder="Full Name">
+                            <input type="text" id="newStudentParent" placeholder="Parent Name">
                             <button class="btn-add" onclick="addStudent()">
                                 <i class="fas fa-user-plus"></i> Add Student
                             </button>
+                        </div>
+                        <div style="margin-bottom: 1.5rem;">
+                            <div class="search-bar" style="margin-bottom: 0;">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="studentSearch" oninput="renderStudents()"
+                                    placeholder="Search enrolled students...">
+                            </div>
                         </div>
                         <div class="enrolled-header">
                             <span><i class="fas fa-user-graduate"></i> Enrolled Students</span>
@@ -663,15 +671,9 @@
                             <div>
                                 <label class="field-label">Department / Category</label>
                                 <select id="teacherCategory">
-                                    <option value="science">Science</option>
-                                    <option value="maths">Mathematics</option>
-                                    <option value="english">English</option>
-                                    <option value="social">Social Science</option>
-                                    <option value="kannada">Kannada</option>
-                                    <option value="hindi">Hindi</option>
-                                    <option value="primary">Primary</option>
-                                    <option value="physical">Physical Education</option>
-                                    <option value="arts">Arts</option>
+                                    <option value="higher-primary">Higher Primary</option>
+                                    <option value="kannada-medium">Kannada Medium (Aided)</option>
+                                    <option value="english-medium">English Medium</option>
                                     <option value="other">Other</option>
                                 </select>
                             </div>
