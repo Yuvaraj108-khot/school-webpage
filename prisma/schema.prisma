@@ -30,19 +30,19 @@ model Teacher {
 
 model Gallery {
   id          Int       @id @default(autoincrement())
-  image_url   String
+  image_url   String?
   category    String?
   description String?
-  upload_date DateTime? @default(now())
+  upload_date DateTime? @default(now()) @db.Timestamp(6)
 
   @@map("gallery")
 }
 
 model Notice {
   id          Int       @id @default(autoincrement())
-  title       String
+  title       String?
   description String?
-  date        DateTime?
+  date        DateTime? @db.Timestamp(6)
 
   @@map("notices")
 }
@@ -57,33 +57,33 @@ model Alumni {
 }
 
 model Attendance {
-  id           Int      @id @default(autoincrement())
-  student_code String
-  class        String
-  teacher_name String
-  date         DateTime
-  status       String
+  id           Int       @id @default(autoincrement())
+  student_code String?
+  class        String?
+  teacher_name String?
+  date         DateTime? @db.Timestamp(6)
+  status       String?
 
   @@map("attendance")
 }
 
 model Marks {
-  id           Int    @id @default(autoincrement())
-  student_code String
-  class        String
-  subject      String
-  exam_type    String
-  marks        Int
+  id           Int     @id @default(autoincrement())
+  student_code String?
+  class        String?
+  subject      String?
+  exam_type    String?
+  marks        Int?
 
   @@map("marks")
 }
 
 model CertificateRequest {
-  id               Int      @id @default(autoincrement())
-  student_code     String
-  certificate_type String
-  status           String   @default("Pending")
-  request_date     DateTime @default(now())
+  id               Int       @id @default(autoincrement())
+  student_code     String?
+  certificate_type String?
+  status           String?   @default("Pending")
+  request_date     DateTime? @default(now()) @db.Timestamp(6)
 
   @@map("certificate_requests")
 }
