@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Dashboard | SBS</title>
-    <link rel="icon" href="/images/logo.png" type="image/png">
+    <link rel="icon" href="images/logo.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- SheetJS for Excel export -->
@@ -474,46 +474,81 @@
         .btn-submit {
             padding: 12px 32px;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            letter-spacing: 0.3px;
         }
 
         .btn-submit.primary {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            background: linear-gradient(135deg, var(--teacher-primary), #4834d4);
             color: white;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 4px 15px rgba(44, 62, 80, 0.25);
         }
 
         .btn-submit.primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 8px 25px rgba(44, 62, 80, 0.35);
+            background: linear-gradient(135deg, #34495e, #4834d4);
         }
 
         .btn-submit.secondary {
-            background: #f1f5f9;
+            background: white;
             color: #475569;
             border: 2px solid #e2e8f0;
         }
 
         .btn-submit.secondary:hover {
-            background: #e2e8f0;
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: var(--teacher-primary);
         }
 
         .btn-submit.success {
-            background: linear-gradient(135deg, #22c55e, #16a34a);
+            background: linear-gradient(135deg, var(--teacher-success), #2ecc71);
             color: white;
-            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.25);
         }
 
         .btn-submit.success:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+            box-shadow: 0 8px 25px rgba(39, 174, 96, 0.35);
+        }
+
+        .btn-submit:active {
+            transform: translateY(1px);
+        }
+
+        .btn-excel {
+            background: linear-gradient(135deg, #107c41, #1d9d56);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 1.5rem;
+            font-size: 0.92rem;
+            box-shadow: 0 4px 15px rgba(16, 124, 65, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-excel:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(16, 124, 65, 0.35);
+            background: linear-gradient(135deg, #0d6334, #107c41);
         }
 
         /* Empty State */
@@ -946,7 +981,7 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-logo">
-                <img src="/images/logo.png" alt="SBRS Logo">
+                <img src="images/logo.png" alt="SBRS Logo">
                 <h3>Teacher Panel</h3>
             </div>
             <nav class="sidebar-menu">
@@ -958,7 +993,7 @@
                     Reports</a>
             </nav>
             <div style="margin-top: auto; padding: 20px;">
-                <a href="login.html"
+                <a href="#" onclick="logout()"
                     style="color: #ea5455; display: flex; align-items: center; gap: 8px; text-decoration: none;">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </a>
@@ -990,7 +1025,44 @@
                 </div>
             </div>
 
-            <!-- ========== ATTENDANCE SECTION ========== -->
+            <!-- SESSION CONTEXT SELECTION -->
+            <div id="session-context-card" class="card-box" style="border: 2px solid var(--teacher-primary); background: #f8fafc; margin-bottom: 2rem;">
+                <h3 style="color: var(--teacher-primary);"><i class="fas fa-key"></i> Start Your Session</h3>
+                <p class="card-subtitle">Choose your Medium and Class to unlock attendance and marks management.</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label><i class="fas fa-school"></i> Select Medium <span class="required">*</span></label>
+                        <select id="sessionMedium" onchange="onSessionMediumChange()">
+                            <option value="">-- Select Medium --</option>
+                            <option value="CBSE">CBSE (English Medium)</option>
+                            <option value="Kannada">Kannada Medium</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-chalkboard"></i> Select Class <span class="required">*</span></label>
+                        <select id="sessionClass" disabled>
+                            <option value="">-- Select Class --</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <button class="btn-submit primary" id="btnSetContext" onclick="setSessionContext()" disabled>
+                        <i class="fas fa-unlock-alt"></i> Unlock Modules
+                    </button>
+                </div>
+            </div>
+
+            <!-- LOCKED CONTENT AREA -->
+            <div id="locked-content" style="display: none; opacity: 0; transition: opacity 0.5s ease;">
+                <div style="background: #e0f2fe; border: 1px solid #bae6fd; padding: 12px 20px; border-radius: 12px; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="color: #0369a1; font-weight: 600; font-size: 0.9rem;">
+                        <i class="fas fa-info-circle"></i> Active Session: <span id="activeContextDisplay">None</span>
+                    </div>
+                    <button class="btn-submit secondary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="changeSessionContext()">
+                        <i class="fas fa-sync-alt"></i> Change Context
+                    </button>
+                </div>
+
             <div id="attendance-section">
                 <div class="card-box">
                     <h3><i class="fas fa-clipboard-check"></i> Mark Attendance</h3>
@@ -1120,7 +1192,7 @@
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-chalkboard"></i> Class</label>
-                            <select id="marksClass" disabled onchange="loadMarksStudents()">
+                            <select id="marksClass" disabled onchange="onMarksClassChange()">
                                 <option value="">-- Select Class --</option>
                             </select>
                         </div>
@@ -1136,12 +1208,7 @@
                         <div class="form-group">
                             <label><i class="fas fa-book"></i> Subject</label>
                             <select id="marksSubject">
-                                <option>Mathematics</option>
-                                <option>Science</option>
-                                <option>English</option>
-                                <option>Social Science</option>
-                                <option>Kannada</option>
-                                <option>Hindi</option>
+                                <option value="">-- Select Subject --</option>
                             </select>
                         </div>
                     </div>
@@ -1279,9 +1346,9 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
+            </div> <!-- END LOCKED CONTENT -->
+        </div> <!-- END MAIN CONTENT -->
+    </div> <!-- END DASHBOARD CONTAINER -->
 
     <!-- Toast Notification -->
     <div class="toast" id="toast">
@@ -1290,228 +1357,483 @@
     </div>
 
     <script>
-const API = "http://localhost:5000/api";
-const TEACHER_NAME = "Anita Sharma";
+        const API = "http://localhost:5000/api";
+        const TEACHER_NAME = sessionStorage.getItem('teacher_name') || "Anita Sharma";
 
-async function loadStudents(filterClass) {
-  try {
-    const url = filterClass
-      ? `${API}/students?class=${filterClass}`
-      : `${API}/students`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed');
-    const data = await res.json();
-    const selectors = [
-      '#studentSelect',
-      '#attendanceStudentSelect',
-      '#marksStudentSelect',
-      'select[name="student_code"]'
-    ];
-    selectors.forEach(sel => {
-      const el = document.querySelector(sel);
-      if (!el) return;
-      el.innerHTML = '<option value="">-- Select Student --</option>'
-        + data.map(s =>
-            `<option value="${s.student_code}">
-               ${s.name} (${s.student_code})
-             </option>`
-          ).join('');
-    });
-  } catch (e) {
-    console.error('Failed to load students', e);
-  }
-}
+        // State
+        let currentStudents = [];
 
-async function loadAttendanceRecords(cls) {
-  try {
-    const classVal = cls ||
-      document.getElementById('classSelect')?.value;
-    if (!classVal) return;
-    const res = await fetch(`${API}/attendance/class/${classVal}`);
-    if (!res.ok) throw new Error('Failed');
-    const data = await res.json();
-    const container =
-      document.getElementById('attendanceList') ||
-      document.querySelector('.attendance-records') ||
-      document.querySelector('#attendanceTable tbody');
-    if (!container) return;
-    container.innerHTML = data.length
-      ? data.map(r => `
-          <tr>
-            <td>${r.student_code}</td>
-            <td>${new Date(r.date).toLocaleDateString()}</td>
-            <td>${r.status}</td>
-          </tr>`).join('')
-      : '<tr><td colspan="3">No records found</td></tr>';
-  } catch (e) {
-    console.error('Failed to load attendance records', e);
-  }
-}
+        // --- SESSION CONTEXT LOGIC ---
+        window.onSessionMediumChange = function() {
+            const med = document.getElementById('sessionMedium').value;
+            const clsSel = document.getElementById('sessionClass');
+            const btn = document.getElementById('btnSetContext');
+            
+            clsSel.innerHTML = '<option value="">-- Select Class --</option>';
+            if(med) {
+                clsSel.disabled = false;
+                ['1','2','3','4','5','6','7','8','9','10'].forEach(c => {
+                    clsSel.innerHTML += `<option value="${c}">Class ${c}</option>`;
+                });
+                clsSel.onchange = () => { btn.disabled = !clsSel.value; };
+            } else {
+                clsSel.disabled = true;
+                btn.disabled = true;
+            }
+        };
 
-async function loadMarksStudents() {
-  await loadStudents();
-}
+        window.setSessionContext = function() {
+            const med = document.getElementById('sessionMedium').value;
+            const cls = document.getElementById('sessionClass').value;
+            
+            if(!med || !cls) return;
 
-async function saveAttendance() {
-  try {
-    const student_code =
-      document.getElementById('attendanceStudentSelect')?.value ||
-      document.getElementById('studentSelect')?.value ||
-      document.querySelector('select[name="student_code"]')?.value;
-    const cls =
-      document.getElementById('classSelect')?.value;
-    const status =
-      document.getElementById('attendanceStatus')?.value ||
-      document.querySelector('input[name="status"]:checked')?.value ||
-      document.querySelector('select[name="status"]')?.value;
+            // Sync with all forms
+            document.getElementById('selectMedium').value = med;
+            onMediumChange(); // Populate classes
+            document.getElementById('selectClass').value = cls;
+            onClassChange(); // Populate periods/subjects
 
-    if (!student_code || !cls || !status) {
-      alert('Please fill all required fields');
-      return;
-    }
-    const res = await fetch(`${API}/attendance`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        student_code,
-        class: cls,
-        teacher_name: TEACHER_NAME,
-        date: new Date().toISOString(),
-        status
-      })
-    });
-    if (!res.ok) throw new Error('Failed');
-    alert('Attendance saved successfully');
-    loadAttendanceRecords(cls);
-  } catch (e) {
-    alert('Failed to save attendance');
-    console.error(e);
-  }
-}
+            document.getElementById('marksMedium').value = med;
+            onMarksMediumChange();
+            document.getElementById('marksClass').value = cls;
+            loadMarksStudents();
 
-async function saveMarks() {
-  try {
-    const student_code =
-      document.getElementById('marksStudentSelect')?.value ||
-      document.getElementById('studentSelect')?.value ||
-      document.querySelector('select[name="student_code"]')?.value;
-    const cls =
-      document.getElementById('classSelect')?.value;
-    const subject =
-      document.getElementById('subjectSelect')?.value ||
-      document.querySelector('select[name="subject"]')?.value;
-    const exam_type =
-      document.getElementById('examType')?.value ||
-      document.querySelector('select[name="exam_type"]')?.value;
-    const marks =
-      document.getElementById('marksInput')?.value ||
-      document.querySelector('input[name="marks"]')?.value;
+            document.getElementById('dlMarksMedium').value = med;
+            onDlMarksMediumChange();
+            document.getElementById('dlMarksClass').value = cls;
 
-    if (!student_code || !cls || !subject || !exam_type || !marks) {
-      alert('Please fill all required fields');
-      return;
-    }
-    if (isNaN(parseInt(marks))) {
-      alert('Marks must be a number');
-      return;
-    }
-    const res = await fetch(`${API}/marks`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        student_code,
-        class: cls,
-        subject,
-        exam_type,
-        marks: parseInt(marks)
-      })
-    });
-    if (!res.ok) throw new Error('Failed');
-    alert('Marks saved successfully');
-  } catch (e) {
-    alert('Failed to save marks');
-    console.error(e);
-  }
-}
+            document.getElementById('dlAttMedium').value = med;
+            onDlAttMediumChange();
+            document.getElementById('dlAttClass').value = cls;
 
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('Teacher dashboard loaded');
+            // UI Transitions
+            document.getElementById('session-context-card').style.display = 'none';
+            const locked = document.getElementById('locked-content');
+            locked.style.display = 'block';
+            setTimeout(() => locked.style.opacity = '1', 50);
+            
+            document.getElementById('activeContextDisplay').textContent = `${med} Medium - Class ${cls}`;
+            showSection('attendance'); 
+            showToast("Session Context Unlocked!");
+        };
 
-  // Populate dropdowns
-  const periodSelect = document.getElementById('periodSelect');
-  if (periodSelect) {
-    periodSelect.innerHTML =
-      ['1st','2nd','3rd','4th','5th','6th']
-        .map(p => `<option value="${p} Period">${p} Period</option>`)
-        .join('');
-  }
+        window.changeSessionContext = function() {
+            document.getElementById('locked-content').style.display = 'none';
+            document.getElementById('locked-content').style.opacity = '0';
+            document.getElementById('session-context-card').style.display = 'block';
+        };
 
-  const subjectSelect = document.getElementById('subjectSelect');
-  if (subjectSelect) {
-    subjectSelect.innerHTML =
-      ['Mathematics','Science','English','Kannada',
-       'Hindi','Social Science','Computer Science',
-       'Physical Education']
-        .map(s => `<option value="${s}">${s}</option>`)
-        .join('');
-  }
+        // Formatting utilities
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            toastMsg.textContent = msg;
+            toast.className = `toast active ${type === 'error' ? 'error' : ''}`;
+            setTimeout(() => toast.classList.remove('active'), 3000);
+        }
 
-  const examType = document.getElementById('examType');
-  if (examType) {
-    examType.innerHTML =
-      ['Unit Test','Mid Term','Final Exam','Project']
-        .map(e => `<option value="${e}">${e}</option>`)
-        .join('');
-  }
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        }
 
-  const classSelect = document.getElementById('classSelect');
-  if (classSelect && !classSelect.options.length) {
-    classSelect.innerHTML =
-      ['1','2','3','4','5','6','7','8']
-        .map(c => `<option value="${c}">Class ${c}</option>`)
-        .join('');
-  }
+        // --- SECTION TOGGLE ---
+        window.showSection = function (sectionId) {
+            // Hide only tab sections inside locked content
+            document.querySelectorAll('#locked-content > div').forEach(div => {
+                if (div.id && div.id.includes('-section')) div.style.display = 'none';
+            });
+            const target = document.getElementById(sectionId + '-section');
+            if(target) target.style.display = 'block';
 
-  loadStudents();
+            // Sidebar active state
+            document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
+            document.querySelector(`a[onclick*="${sectionId}"]`)?.classList.add('active');
+        };
 
-  // Attach window functions for inline HTML attributes
-  window.onClassChange = function() {
-    const cls = document.getElementById('classSelect')?.value;
-    if (cls) { loadStudents(cls); loadAttendanceRecords(cls); }
-  };
-  window.onPeriodChange = function() {};
-  window.onSubjectChange = function() {};
-  window.onTopicInput = function() {};
-  window.markAllPresent = function() {
-    document.querySelectorAll('input[name="attendance_status"]')
-      .forEach(r => { if (r.value === 'Present') r.checked = true; });
-  };
-  window.loadStudentList = loadStudents;
-  window.loadMarksStudents = loadMarksStudents;
-  window.saveAttendance = saveAttendance;
-  window.saveMarks = saveMarks;
+        // --- ATTENDANCE LOGIC ---
+        window.onMediumChange = function () {
+            const medium = document.getElementById('selectMedium').value;
+            const classSel = document.getElementById('selectClass');
+            classSel.innerHTML = '<option value="">-- Select Class --</option>';
 
-  // Form listeners
-  const attendanceForm =
-    document.getElementById('attendanceForm') ||
-    document.querySelector('.attendance-form');
-  if (attendanceForm) {
-    attendanceForm.addEventListener('submit', e => {
-      e.preventDefault();
-      saveAttendance();
-    });
-  }
+            if (medium) {
+                classSel.disabled = false;
+                const classes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+                classes.forEach(c => {
+                    classSel.innerHTML += `<option value="${c}">Class ${c}</option>`;
+                });
+            } else {
+                classSel.disabled = true;
+            }
+            updateButtonState();
+        };
 
-  const marksForm =
-    document.getElementById('marksForm') ||
-    document.querySelector('.marks-form');
-  if (marksForm) {
-    marksForm.addEventListener('submit', e => {
-      e.preventDefault();
-      saveMarks();
-    });
-  }
-});
+        window.onClassChange = function () {
+            const cls = document.getElementById('selectClass').value;
+            document.getElementById('selectPeriod').disabled = !cls;
+            
+            // Reset subject dropdown
+            const subSel = document.getElementById('selectSubject');
+            subSel.innerHTML = '<option value="">-- Select Subject --</option>';
+            subSel.disabled = true;
+
+            updateButtonState();
+        };
+
+        window.onPeriodChange = async function () {
+            const period = document.getElementById('selectPeriod').value;
+            const cls = document.getElementById('selectClass').value;
+            const medium = document.getElementById('selectMedium').value;
+            const subSel = document.getElementById('selectSubject');
+            subSel.innerHTML = '<option value="">-- Loading Subjects --</option>';
+
+            if (period && cls && medium) {
+                try {
+                    const res = await fetch(`${API}/subjects?class=${cls}&medium=${medium}`);
+                    const subjects = await res.json();
+                    subSel.innerHTML = '<option value="">-- Select Subject --</option>';
+                    if (subjects.length > 0) {
+                        subjects.forEach(s => {
+                            subSel.innerHTML += `<option value="${s.subject}">${s.subject}</option>`;
+                        });
+                        subSel.disabled = false;
+                    } else {
+                        subSel.innerHTML = '<option value="">No subjects found</option>';
+                        subSel.disabled = true;
+                    }
+                } catch (e) {
+                    console.error(e);
+                    subSel.innerHTML = '<option value="">Error loading</option>';
+                }
+            } else {
+                subSel.innerHTML = '<option value="">-- Select Subject --</option>';
+                subSel.disabled = true;
+            }
+            updateButtonState();
+        };
+
+        window.onSubjectChange = function () {
+            document.getElementById('topicInput').disabled = !document.getElementById('selectSubject').value;
+            updateButtonState();
+        };
+
+        window.onTopicInput = function () {
+            updateButtonState();
+        };
+
+        function updateButtonState() {
+            const m = document.getElementById('selectMedium').value;
+            const c = document.getElementById('selectClass').value;
+            const p = document.getElementById('selectPeriod').value;
+            const s = document.getElementById('selectSubject').value;
+            const t = document.getElementById('topicInput').value.trim();
+
+            document.getElementById('loadStudentsBtn').disabled = !(m && c && p && s && t);
+        }
+
+        window.loadStudentList = async function () {
+            const medium = document.getElementById('selectMedium').value;
+            const cls = document.getElementById('selectClass').value;
+
+            try {
+                const res = await fetch(`${API}/students?medium=${medium}&class=${cls}`);
+                if (!res.ok) throw new Error("Failed to load students");
+                currentStudents = await res.json();
+
+                const container = document.getElementById('studentListContainer');
+                container.innerHTML = '';
+
+                if (currentStudents.length === 0) {
+                    container.innerHTML = '<div class="empty-state">No students found in this class</div>';
+                } else {
+                    currentStudents.forEach((student, index) => {
+                        const row = document.createElement('div');
+                        row.className = 'student-row';
+                        row.innerHTML = `
+                            <div style="display:flex; align-items:center;">
+                                <div class="student-sl">${index + 1}</div>
+                                <div class="student-name">${student.name}</div>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span class="status-label present">P</span>
+                                <label class="attendance-toggle">
+                                    <input type="checkbox" checked onchange="updateCounts()" data-code="${student.student_code}" name="attendance_status">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="status-label absent">A</span>
+                            </div>
+                        `;
+                        container.appendChild(row);
+                    });
+                    document.getElementById('attendanceArea').style.display = 'block';
+                    updateCounts();
+                }
+            } catch (error) {
+                console.error(error);
+                showToast("Error loading students", "error");
+            }
+        };
+
+        window.updateCounts = function () {
+            const total = document.querySelectorAll('input[name="attendance_status"]').length;
+            const present = document.querySelectorAll('input[name="attendance_status"]:checked').length;
+            document.getElementById('presentCount').textContent = present;
+            document.getElementById('absentCount').textContent = total - present;
+        };
+
+        window.markAllPresent = function () {
+            document.querySelectorAll('input[name="attendance_status"]').forEach(chk => chk.checked = true);
+            updateCounts();
+        };
+
+        window.saveAttendance = async function () {
+            const cls = document.getElementById('selectClass').value;
+            const medium = document.getElementById('selectMedium').value;
+            const period = document.getElementById('selectPeriod').value;
+            const subject = document.getElementById('selectSubject').value;
+            const inputs = document.querySelectorAll('input[name="attendance_status"]');
+
+            try {
+                const results = await Promise.all(
+                    Array.from(inputs).map(input => 
+                        fetch(`${API}/attendance`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                student_code: input.getAttribute('data-code'),
+                                class: cls,
+                                medium: medium,
+                                period: period,
+                                subject: subject,
+                                teacher_name: TEACHER_NAME,
+                                date: new Date().toISOString(),
+                                status: input.checked ? 'Present' : 'Absent'
+                            })
+                        })
+                    )
+                );
+
+                const firstError = results.find(r => !r.ok);
+                if (firstError) {
+                    const data = await firstError.json();
+                    throw new Error(data.error || "Failed to save some records");
+                }
+
+                showToast("Attendance saved successfully!");
+                document.getElementById('attendanceArea').style.display = 'none';
+                loadHistory();
+            } catch (error) {
+                console.error(error);
+                showToast("Error saving attendance", "error");
+            }
+        };
+
+        // --- MARKS LOGIC ---
+        window.onMarksMediumChange = function () {
+            const medium = document.getElementById('marksMedium').value;
+            const classSel = document.getElementById('marksClass');
+            classSel.innerHTML = '<option value="">-- Select Class --</option>';
+            if (medium) {
+                classSel.disabled = false;
+                ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].forEach(c => {
+                    classSel.innerHTML += `<option value="${c}">Class ${c}</option>`;
+                });
+            } else {
+                classSel.disabled = true;
+            }
+        };
+
+        window.onMarksClassChange = async function () {
+            const cls = document.getElementById('marksClass').value;
+            const med = document.getElementById('marksMedium').value;
+            const subSel = document.getElementById('marksSubject');
+            subSel.innerHTML = '<option value="">-- Loading --</option>';
+            
+            if(cls && med) {
+                try {
+                    const res = await fetch(`${API}/subjects?class=${cls}&medium=${med}`);
+                    const subjects = await res.json();
+                    subSel.innerHTML = '<option value="">-- Select Subject --</option>';
+                    subjects.forEach(s => {
+                        subSel.innerHTML += `<option value="${s.subject}">${s.subject}</option>`;
+                    });
+                } catch (e) {
+                    console.error(e);
+                    subSel.innerHTML = '<option value="">Error</option>';
+                }
+            } else {
+                subSel.innerHTML = '<option value="">-- Select Subject --</option>';
+            }
+            loadMarksStudents();
+        };
+
+        window.loadMarksStudents = async function () {
+            const medium = document.getElementById('marksMedium').value;
+            const cls = document.getElementById('marksClass').value;
+            if (!cls) return;
+
+            try {
+                const res = await fetch(`${API}/students?medium=${medium}&class=${cls}`);
+                const data = await res.json();
+                const container = document.getElementById('marksListContainer');
+                container.innerHTML = '';
+
+                data.forEach(s => {
+                    const div = document.createElement('div');
+                    div.className = 'history-item';
+                    div.style.padding = '10px';
+                    div.innerHTML = `
+                        <span>${s.name} (${s.student_code})</span>
+                        <input type="number" data-code="${s.student_code}" placeholder="Marks" class="marks-input" style="width:80px;">
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (e) { console.error(e); }
+        };
+
+        window.saveMarks = async function () {
+            const cls = document.getElementById('marksClass').value;
+            const medium = document.getElementById('marksMedium').value;
+            const subject = document.getElementById('marksSubject').value;
+            const exam = document.getElementById('marksExam').value;
+            const inputs = document.querySelectorAll('.marks-input');
+
+            if (!cls || !medium || !subject || !exam) {
+                showToast("Please select all fields first", "error");
+                return;
+            }
+
+            try {
+                const results = await Promise.all(
+                    Array.from(inputs).map(input => {
+                        if (!input.value) return Promise.resolve({ ok: true });
+                        return fetch(`${API}/marks`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                student_code: input.getAttribute('data-code'),
+                                class: cls,
+                                medium: medium,
+                                subject: subject,
+                                exam_type: exam,
+                                marks: parseInt(input.value)
+                            })
+                        });
+                    })
+                );
+
+                const firstError = results.find(r => r && !r.ok);
+                if (firstError) {
+                    const data = await firstError.json();
+                    throw new Error(data.error || "Failed to save marks");
+                }
+
+                showToast("Marks saved successfully!");
+            } catch (e) { 
+                console.error(e); 
+                showToast(e.message, "error");
+            }
+        };
+
+        // --- HISTORY ---
+        async function loadHistory() {
+            try {
+                const res = await fetch(`${API}/attendance`);
+                const data = await res.json();
+                const container = document.getElementById('historyList');
+                container.innerHTML = '';
+
+                if (data.length === 0) {
+                    container.innerHTML = '<div class="empty-state">No records found</div>';
+                } else {
+                    // Group by date/class? Let's just show raw for now
+                    data.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10).forEach(r => {
+                        const div = document.createElement('div');
+                        div.className = 'history-item';
+                        div.innerHTML = `
+                            <div class="hist-info">
+                                <div class="hist-main">Class ${r.class} - ${r.student_code}</div>
+                                <div class="hist-sub">${new Date(r.date).toLocaleString()}</div>
+                            </div>
+                            <span class="status-label ${r.status.toLowerCase()}">${r.status}</span>
+                        `;
+                        container.appendChild(div);
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // --- DOWNLOAD REPORTS ---
+        window.onDlMarksMediumChange = function() {
+            const medium = document.getElementById('dlMarksMedium').value;
+            const classSel = document.getElementById('dlMarksClass');
+            classSel.innerHTML = '<option value="">-- Select Class --</option>';
+            if (medium) {
+                classSel.disabled = false;
+                const start = (medium === 'CBSE') ? 1 : 8;
+                for (let i = start; i <= 10; i++) {
+                    classSel.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                }
+            } else classSel.disabled = true;
+        };
+
+        window.onDlAttMediumChange = function() {
+            const medium = document.getElementById('dlAttMedium').value;
+            const classSel = document.getElementById('dlAttClass');
+            classSel.innerHTML = '<option value="">-- Select Class --</option>';
+            if (medium) {
+                classSel.disabled = false;
+                const start = (medium === 'CBSE') ? 1 : 8;
+                for (let i = start; i <= 10; i++) {
+                    classSel.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                }
+            } else classSel.disabled = true;
+        };
+
+        async function exportMarksExcel() {
+            const cls = document.getElementById('dlMarksClass').value;
+            const exam = document.getElementById('dlMarksExam').value;
+            const subject = document.getElementById('dlMarksSubject').value;
+            const med = document.getElementById('dlMarksMedium').value;
+
+            if (!cls || !med) { showToast("Select Medium and Class", "error"); return; }
+            window.open(`${API}/export/marks?class=${cls}&exam_type=${exam}&medium=${med}&subject=${subject}`);
+        }
+
+        async function exportAttendanceExcel() {
+            const cls = document.getElementById('dlAttClass').value;
+            const med = document.getElementById('dlAttMedium').value;
+            const month = document.getElementById('dlAttMonth').value;
+            const year = document.getElementById('dlAttYear').value;
+
+            if (!cls || !med) { showToast("Select Medium and Class", "error"); return; }
+            window.open(`${API}/export/attendance?class=${cls}&medium=${med}&month=${month}&year=${year}`);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('todayDate').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            loadHistory();
+
+            // Sidebar toggle
+            const toggle = document.getElementById('teacherMenuToggle');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('teacherOverlay');
+
+            if (toggle) {
+                toggle.addEventListener('click', () => {
+                    sidebar.classList.add('active');
+                    overlay.classList.add('active');
+                });
+            }
+            if (overlay) {
+                overlay.addEventListener('click', () => {
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                });
+            }
+        });
     </script>
 </body>
 

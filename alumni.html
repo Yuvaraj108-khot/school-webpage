@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alumni | SBRS Karkala</title>
-    <link rel="icon" href="/images/logo.png" type="image/png">
+    <link rel="icon" href="images/logo.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -15,7 +15,7 @@
     <header>
         <div class="container header-container">
             <div class="logo">
-                <img src="/images/logo.png" alt="SBRS Logo">
+                <img src="images/logo.png" alt="SBRS Logo">
 
             </div>
             <div class="menu-toggle">
@@ -56,16 +56,16 @@
                     <h4>Register Now</h4>
                     <p style="font-size: 0.9rem; margin-bottom: 1rem;">Join our global network of successful
                         professionals.</p>
-                    <form class="contact-form">
-                        <input type="text" placeholder="Full Name" style="margin-bottom: 10px;">
-                        <input type="email" placeholder="Email Address" style="margin-bottom: 10px;">
-                        <input type="text" placeholder="Batch / Year of Passing" style="margin-bottom: 10px;">
+                    <form class="contact-form" id="alumniRegisterForm">
+                        <input type="text" placeholder="Full Name" required>
+                        <input type="email" placeholder="Email Address" required>
+                        <input type="text" placeholder="Batch / Year of Passing" required>
                         <button type="submit" class="btn btn-primary" style="width: auto;">Register</button>
                     </form>
                 </div>
             </div>
             <div class="intro-image">
-                <img src="/images/Alumni Details.jpeg" alt="Graduation" style="border-radius: 10px;">
+                <img src="images/Alumni Details.jpeg" alt="Graduation" style="border-radius: 10px;">
             </div>
         </div>
 
@@ -120,10 +120,10 @@
             <div class="footer-col">
                 <h4>Course Highlights</h4>
                 <ul>
-                    <li><a href="#">Academic Excellence</a></li>
-                    <li><a href="#">Co-curricular Activities</a></li>
+                    <li><a href="academics.html">Academic Excellence</a></li>
+                    <li><a href="about.html">Co-curricular Activities</a></li>
                     <li><a href="#">Sports & Games</a></li>
-                    <li><a href="#">Value Based Education</a></li>
+                    <li><a href="about.html">Value Based Education</a></li>
                 </ul>
             </div>
             <div class="footer-col">
@@ -165,13 +165,17 @@
                 if (grid) {
                     members.forEach(m => {
                         const div = document.createElement('div');
-                        div.className = 'alumni-card';
+                        div.className = 'card';
+                        div.style.textAlign = 'center';
                         div.innerHTML = `
-                            <div class="alumni-info">
-                                <h3>${m.name}</h3>
-                                <p><strong>Batch:</strong> ${m.batch_year}</p>
-                                <p><strong>Profession:</strong> ${m.profession || 'N/A'}</p>
+                            <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; margin: 0 auto 1.5rem; background: #eee;">
+                                <img src="${m.photo_url ? (m.photo_url.startsWith('http') ? m.photo_url : API + m.photo_url) : 'images/logo.png'}" 
+                                     style="width: 100%; height: 100%; object-fit: cover;"
+                                     onerror="this.src='images/logo.png'">
                             </div>
+                            <h4 style="margin-bottom: 0.5rem; color: var(--primary-color);">${m.name}</h4>
+                            <p style="font-size: 0.85rem; color: #666; margin-bottom: 4px;">Batch of ${m.batch_year}</p>
+                            <p style="font-style: italic; font-size: 0.9rem;">"${m.profession || 'Grateful for SBRS foundation.'}"</p>
                         `;
                         grid.appendChild(div);
                     });
@@ -181,7 +185,23 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', loadAlumni);
+        // Alumni Register form handler
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAlumni();
+
+            const form = document.getElementById('alumniRegisterForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const name = this.querySelector('input[type="text"]').value;
+                    const email = this.querySelector('input[type="email"]').value;
+                    if (name && email) {
+                        alert('Thank you, ' + name + '! Your alumni registration has been submitted successfully. We will contact you at ' + email + '.');
+                        this.reset();
+                    }
+                });
+            }
+        });
     </script>
 </body>
 

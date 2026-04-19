@@ -1,4 +1,5 @@
 const prisma = require('../prismaClient');
+const supabase = require('../supabaseClient');
 
 exports.getGallery = async (req, res) => {
     try {
@@ -18,12 +19,24 @@ exports.uploadGalleryItem = async (req, res) => {
         }
         const { category, description } = req.body;
         
-        // Return only the path from /uploads mapping
-        const image_url = `/uploads/${req.file.filename}`;
+        // Upload to Supabase Storage
+        const fileName = `${Date.now()}-${req.file.originalname}`;
+        const { data, error } = await supabase.storage
+            .from('school-media')
+            .upload(`gallery/${fileName}`, req.file.buffer, {
+                contentType: req.file.mimetype,
+                upsert: true
+            });
+
+        if (error) throw error;
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('school-media')
+            .getPublicUrl(`gallery/${fileName}`);
         
         const galleryItem = await prisma.gallery.create({
             data: {
-                image_url,
+                image_url: publicUrl,
                 category,
                 description,
                 upload_date: new Date().toISOString()
@@ -31,7 +44,8 @@ exports.uploadGalleryItem = async (req, res) => {
         });
         res.status(201).json(galleryItem);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to upload gallery item' });
+        console.error("Supabase Upload Error:", error);
+        res.status(500).json({ error: 'Failed to upload gallery item to Supabase' });
     }
 };
 

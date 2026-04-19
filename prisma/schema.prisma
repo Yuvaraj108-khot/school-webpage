@@ -15,15 +15,22 @@ model Student {
   class        String
   medium       String
   parent_name  String?
+  roll_no      String?
+  photo_url    String?
 
   @@map("students")
 }
 
 model Teacher {
-  id      Int    @id @default(autoincrement())
-  name    String
-  subject String
-  medium  String
+  id          Int      @id @default(autoincrement())
+  name        String
+  subject     String
+  medium      String
+  designation String?
+  experience  String?
+  category    String?
+  photo_url   String?
+  joined_date DateTime @default(now())
 
   @@map("teachers")
 }
@@ -52,6 +59,7 @@ model Alumni {
   name       String?
   batch_year String?
   profession String?
+  photo_url  String?
 
   @@map("alumni")
 }
@@ -60,6 +68,9 @@ model Attendance {
   id           Int       @id @default(autoincrement())
   student_code String?
   class        String?
+  medium       String?
+  period       String?
+  subject      String?
   teacher_name String?
   date         DateTime? @db.Timestamp(6)
   status       String?
@@ -71,12 +82,15 @@ model Marks {
   id           Int     @id @default(autoincrement())
   student_code String?
   class        String?
+  medium       String?
   subject      String?
   exam_type    String?
   marks        Int?
+  total        Int?
 
   @@map("marks")
 }
+
 
 model CertificateRequest {
   id               Int       @id @default(autoincrement())
@@ -87,3 +101,14 @@ model CertificateRequest {
 
   @@map("certificate_requests")
 }
+
+model ClassSubject {
+  id      Int    @id @default(autoincrement())
+  class   String
+  medium  String
+  subject String
+
+  @@unique([class, medium, subject])
+  @@map("class_subjects")
+}
+

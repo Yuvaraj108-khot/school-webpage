@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admissions | SBRS Karkala</title>
-    <link rel="icon" href="/images/logo.png" type="image/png">
+    <link rel="icon" href="images/logo.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- jsPDF for direct PDF download -->
@@ -17,8 +17,11 @@
     <header>
         <div class="container header-container">
             <div class="logo">
-                <img src="/images/logo.png" alt="SBS Logo">
-
+                <img src="images/logo.png" alt="SBS Logo">
+                <div class="logo-text">
+                    <h1>SBRS KARKALA</h1>
+                    <span>Shaping Global Futures</span>
+                </div>
             </div>
             <div class="menu-toggle">
                 <i class="fas fa-bars"></i>
@@ -145,7 +148,7 @@
                 <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--primary-color);">Online
                     Application
                 </h3>
-                <form class="contact-form">
+                <form class="contact-form" id="admissionForm">
                     <label>Student Name</label>
                     <input type="text" placeholder="Full Name" required>
 
@@ -180,8 +183,8 @@
 
                     <button type="submit" class="btn btn-primary">Submit Application</button>
 
-                    <p style="font-size: 0.8rem; margin-top: 1rem; text-align: center;">Already applied? <a href="#"
-                            style="color: var(--secondary-color);">Track Status</a></p>
+                    <p style="font-size: 0.8rem; margin-top: 1rem; text-align: center;">Already applied? <a href="contact.html"
+                            style="color: var(--secondary-color);">Contact Office for Status</a></p>
                 </form>
             </div>
         </div>
@@ -200,10 +203,10 @@
             <div class="footer-col">
                 <h4>Course Highlights</h4>
                 <ul>
-                    <li><a href="#">Academic Excellence</a></li>
-                    <li><a href="#">Co-curricular Activities</a></li>
+                    <li><a href="academics.html">Academic Excellence</a></li>
+                    <li><a href="about.html">Co-curricular Activities</a></li>
                     <li><a href="#">Sports & Games</a></li>
-                    <li><a href="#">Value Based Education</a></li>
+                    <li><a href="about.html">Value Based Education</a></li>
                 </ul>
             </div>
             <div class="footer-col">
@@ -396,6 +399,18 @@
             // ── DOWNLOAD ─────────────────────────────────────────────
             doc.save('SBRS_Fee_Structure_2026-27.pdf');
         }
+
+        // Admission form submit handler
+        document.querySelector('#admissionForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = this.querySelector('input[type="text"]')?.value;
+            if (name) {
+                alert('Thank you, ' + name + '! Your admission application has been submitted successfully. You will receive a confirmation email shortly.');
+                this.reset();
+            } else {
+                alert('Please fill in all required fields.');
+            }
+        });
     </script>
 </body>
 
