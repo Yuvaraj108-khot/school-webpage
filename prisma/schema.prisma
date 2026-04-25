@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model Student {
@@ -33,7 +32,7 @@ model Gallery {
   image_url   String?
   category    String?
   description String?
-  upload_date DateTime? @default(now()) @db.Timestamp(6)
+  upload_date DateTime? @default(now())
 
   @@map("gallery")
 }
@@ -42,7 +41,7 @@ model Notice {
   id          Int       @id @default(autoincrement())
   title       String?
   description String?
-  date        DateTime? @db.Timestamp(6)
+  date        DateTime?
 
   @@map("notices")
 }
@@ -61,7 +60,7 @@ model Attendance {
   student_code String?
   class        String?
   teacher_name String?
-  date         DateTime? @db.Timestamp(6)
+  date         DateTime?
   status       String?
 
   @@map("attendance")
@@ -83,7 +82,7 @@ model CertificateRequest {
   student_code     String?
   certificate_type String?
   status           String?   @default("Pending")
-  request_date     DateTime? @default(now()) @db.Timestamp(6)
+  request_date     DateTime? @default(now())
 
   @@map("certificate_requests")
 }
