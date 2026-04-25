@@ -56,10 +56,10 @@
                     <h4>Register Now</h4>
                     <p style="font-size: 0.9rem; margin-bottom: 1rem;">Join our global network of successful
                         professionals.</p>
-                    <form class="contact-form">
-                        <input type="text" placeholder="Full Name" style="margin-bottom: 10px;">
-                        <input type="email" placeholder="Email Address" style="margin-bottom: 10px;">
-                        <input type="text" placeholder="Batch / Year of Passing" style="margin-bottom: 10px;">
+                    <form class="contact-form" id="alumniRegisterForm">
+                        <input type="text" placeholder="Full Name" required>
+                        <input type="email" placeholder="Email Address" required>
+                        <input type="text" placeholder="Batch / Year of Passing" required>
                         <button type="submit" class="btn btn-primary" style="width: auto;">Register</button>
                     </form>
                 </div>
@@ -71,11 +71,9 @@
 
         <div style="margin-top: 4rem;">
             <div class="section-title">
-                <h2>Our Alumni Network</h2>
-                <p>A growing community of SBRS graduates.</p>
+                <h2>Alumni Success Stories</h2>
             </div>
-            <div class="cards-grid" id="alumniGrid">
-                <!-- Static Placeholders -->
+            <div class="cards-grid">
                 <div class="card">
                     <div
                         style="width: 80px; height: 80px; background: #ddd; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center;">
@@ -83,7 +81,27 @@
                     </div>
                     <h4>Dr. Rahul Sharma</h4>
                     <p style="font-size: 0.8rem; color: #666;">Batch of 2005</p>
-                    <p style="font-style: italic; margin-top: 10px;">"SBRS gave me the foundation of discipline."</p>
+                    <p style="font-style: italic; margin-top: 10px;">"SBRS gave me the foundation of discipline that
+                        helped me become a surgeon today."</p>
+                </div>
+                <div class="card">
+                    <div
+                        style="width: 80px; height: 80px; background: #ddd; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-user" style="font-size: 2rem; color: #999;"></i>
+                    </div>
+                    <h4>Priya Naik</h4>
+                    <p style="font-size: 0.8rem; color: #666;">Batch of 2010</p>
+                    <p style="font-style: italic; margin-top: 10px;">"The values I learnt here are my biggest asset in
+                        the corporate world."</p>
+                </div>
+                <div class="card">
+                    <div
+                        style="width: 80px; height: 80px; background: #ddd; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-user" style="font-size: 2rem; color: #999;"></i>
+                    </div>
+                    <h4>Karthik Shetty</h4>
+                    <p style="font-size: 0.8rem; color: #666;">Batch of 2012</p>
+                    <p style="font-style: italic; margin-top: 10px;">"Grateful to the teachers who guided me."</p>
                 </div>
             </div>
         </div>
@@ -102,10 +120,10 @@
             <div class="footer-col">
                 <h4>Course Highlights</h4>
                 <ul>
-                    <li><a href="#">Academic Excellence</a></li>
-                    <li><a href="#">Co-curricular Activities</a></li>
+                    <li><a href="academics.html">Academic Excellence</a></li>
+                    <li><a href="about.html">Co-curricular Activities</a></li>
                     <li><a href="#">Sports & Games</a></li>
-                    <li><a href="#">Value Based Education</a></li>
+                    <li><a href="about.html">Value Based Education</a></li>
                 </ul>
             </div>
             <div class="footer-col">
@@ -135,7 +153,6 @@
 
     <script src="script.js"></script>
     <script>
-
         const API = "http://localhost:5000/api";
 
         async function loadAlumni() {
@@ -148,13 +165,17 @@
                 if (grid) {
                     members.forEach(m => {
                         const div = document.createElement('div');
-                        div.className = 'alumni-card';
+                        div.className = 'card';
+                        div.style.textAlign = 'center';
                         div.innerHTML = `
-                            <div class="alumni-info">
-                                <h3>${m.name}</h3>
-                                <p><strong>Batch:</strong> ${m.batch_year}</p>
-                                <p><strong>Profession:</strong> ${m.profession || 'N/A'}</p>
+                            <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; margin: 0 auto 1.5rem; background: #eee;">
+                                <img src="${m.photo_url ? (m.photo_url.startsWith('http') ? m.photo_url : API + m.photo_url) : 'images/logo.png'}" 
+                                     style="width: 100%; height: 100%; object-fit: cover;"
+                                     onerror="this.src='images/logo.png'">
                             </div>
+                            <h4 style="margin-bottom: 0.5rem; color: var(--primary-color);">${m.name}</h4>
+                            <p style="font-size: 0.85rem; color: #666; margin-bottom: 4px;">Batch of ${m.batch_year}</p>
+                            <p style="font-style: italic; font-size: 0.9rem;">"${m.profession || 'Grateful for SBRS foundation.'}"</p>
                         `;
                         grid.appendChild(div);
                     });
@@ -164,29 +185,24 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', loadAlumni);
-
+        // Alumni Register form handler
         document.addEventListener('DOMContentLoaded', () => {
-            const grid = document.getElementById('alumniGrid');
-            const alumni = JSON.parse(localStorage.getItem('sbrs_alumni') || '[]');
+            loadAlumni();
 
-            alumni.forEach(a => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.innerHTML = `
-                    <div style="width: 80px; height: 80px; background: #e2e8f0; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center;">
-                        <i class="fas fa-user-graduate" style="font-size: 2rem; color: #64748b;"></i>
-                    </div>
-                    <h4>${a.name}</h4>
-                    <p style="font-size: 0.8rem; color: #666;">Batch of ${a.batch_year}</p>
-                    <p style="font-style: italic; margin-top: 10px;">${a.profession}</p>
-                `;
-                grid.appendChild(card);
-            });
+            const form = document.getElementById('alumniRegisterForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const name = this.querySelector('input[type="text"]').value;
+                    const email = this.querySelector('input[type="email"]').value;
+                    if (name && email) {
+                        alert('Thank you, ' + name + '! Your alumni registration has been submitted successfully. We will contact you at ' + email + '.');
+                        this.reset();
+                    }
+                });
+            }
         });
-
     </script>
 </body>
 
 </html>
-

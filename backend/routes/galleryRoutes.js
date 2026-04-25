@@ -4,16 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const galleryController = require('../controllers/galleryController');
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, '../uploads/'));
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + "-" + file.originalname);
-    }
-});
-
-const upload = multer({ storage });
+const upload = multer({ storage: multer.memoryStorage() });
 
 router.get('/', galleryController.getGallery);
 router.post('/upload', upload.single('image'), galleryController.uploadGalleryItem);

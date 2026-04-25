@@ -115,10 +115,10 @@
             <div class="footer-col">
                 <h4>Course Highlights</h4>
                 <ul>
-                    <li><a href="#">Academic Excellence</a></li>
-                    <li><a href="#">Co-curricular Activities</a></li>
+                    <li><a href="academics.html">Academic Excellence</a></li>
+                    <li><a href="about.html">Co-curricular Activities</a></li>
                     <li><a href="#">Sports & Games</a></li>
-                    <li><a href="#">Value Based Education</a></li>
+                    <li><a href="about.html">Value Based Education</a></li>
                 </ul>
             </div>
             <div class="footer-col">
@@ -147,6 +147,17 @@
     </footer>
 
     <script src="script.js"></script>
+    <script>
+        document.querySelector('.contact-form')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = this.querySelector('input[type="text"]').value;
+            const email = this.querySelector('input[type="email"]').value;
+            if (name && email) {
+                alert('Thank you, ' + name + '! Your message has been sent successfully. We will get back to you shortly.');
+                this.reset();
+            }
+        });
+    </script>
 </body>
 
 </html>

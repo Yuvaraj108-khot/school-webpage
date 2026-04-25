@@ -1,4 +1,5 @@
 const prisma = require('../prismaClient');
+const supabase = require('../supabaseClient');
 
 exports.getTeachers = async (req, res) => {
     try {
@@ -11,13 +12,34 @@ exports.getTeachers = async (req, res) => {
 
 exports.createTeacher = async (req, res) => {
     try {
-        const { name, subject, medium } = req.body;
+        const { name, subject, medium, designation, experience, category } = req.body;
+        
+        let photo_url = null;
+        if (req.file) {
+            const fileName = `${Date.now()}-${req.file.originalname}`;
+            const { data, error } = await supabase.storage
+                .from('school-media')
+                .upload(`teachers/${fileName}`, req.file.buffer, {
+                    contentType: req.file.mimetype,
+                    upsert: true
+                });
+
+            if (error) throw error;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('school-media')
+                .getPublicUrl(`teachers/${fileName}`);
+            
+            photo_url = publicUrl;
+        }
+
         const teacher = await prisma.teacher.create({
-            data: { name, subject, medium }
+            data: { name, subject, medium, designation, experience, category, photo_url }
         });
         res.status(201).json(teacher);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to create teacher' });
+        console.error("Supabase Upload Error:", error);
+        res.status(500).json({ error: 'Failed to create teacher in Supabase' });
     }
 };
 

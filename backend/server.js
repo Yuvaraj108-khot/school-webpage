@@ -23,6 +23,8 @@ const certificateRoutes = require('./routes/certificateRoutes');
 const galleryRoutes = require('./routes/galleryRoutes');
 const noticeRoutes = require('./routes/noticeRoutes');
 const alumniRoutes = require('./routes/alumniRoutes');
+const subjectRoutes = require('./routes/subjectRoutes');
+const exportRoutes = require('./routes/exportRoutes');
 
 app.use('/api/students', studentRoutes);
 app.use('/api/teachers', teacherRoutes);
@@ -32,6 +34,8 @@ app.use('/api/certificates', certificateRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/notices', noticeRoutes);
 app.use('/api/alumni', alumniRoutes);
+app.use('/api/subjects', subjectRoutes);
+app.use('/api/export', exportRoutes);
 
 // Health Check
 app.get('/api/health', (req, res) => {

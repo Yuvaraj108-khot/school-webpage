@@ -16,7 +16,7 @@
     --font-main: 'Outfit', sans-serif;
     --font-heading: 'Playfair Display', serif;
     --transition: all 0.3s ease;
-    
+
 }
 
 * {
@@ -187,7 +187,7 @@ header {
 .hero {
     position: relative;
     height: 80vh;
-    background: linear-gradient(rgba(26, 37, 47, 0.7), rgba(26, 37, 47, 0.7)), url('/images/schoolimage.jpeg');
+    background: linear-gradient(rgba(26, 37, 47, 0.8), rgba(26, 37, 47, 0.8)), url('./images/schoolimage.jpeg'), #1a252f;
     background-size: cover;
     background-position: center;
     display: flex;
@@ -513,37 +513,33 @@ footer {
         transform: translateX(0);
     }
 
-    /* Staggered animation for each link */
-    .nav-menu.active a:nth-child(1) {
+    /* Staggered animation for each link (accounting for prepended close button) */
+    .nav-menu.active a:nth-child(2) {
         transition-delay: 0.05s;
     }
-
-    .nav-menu.active a:nth-child(2) {
+    .nav-menu.active a:nth-child(3) {
         transition-delay: 0.1s;
     }
-
-    .nav-menu.active a:nth-child(3) {
+    .nav-menu.active a:nth-child(4) {
         transition-delay: 0.15s;
     }
-
-    .nav-menu.active a:nth-child(4) {
+    .nav-menu.active a:nth-child(5) {
         transition-delay: 0.2s;
     }
-
-    .nav-menu.active a:nth-child(5) {
+    .nav-menu.active a:nth-child(6) {
         transition-delay: 0.25s;
     }
-
-    .nav-menu.active a:nth-child(6) {
+    .nav-menu.active a:nth-child(7) {
         transition-delay: 0.3s;
     }
-
-    .nav-menu.active a:nth-child(7) {
+    .nav-menu.active a:nth-child(8) {
         transition-delay: 0.35s;
     }
-
-    .nav-menu.active a:nth-child(8) {
+    .nav-menu.active a:nth-child(9) {
         transition-delay: 0.4s;
+    }
+    .nav-menu.active a:nth-child(10) {
+        transition-delay: 0.45s;
     }
 
     .nav-menu a:hover {
@@ -644,7 +640,7 @@ footer {
     }
 
     .logo-text {
-        display: none;
+        display: block;
     }
 
     .hero-content h1 {

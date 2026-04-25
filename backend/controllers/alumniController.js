@@ -1,4 +1,5 @@
 const prisma = require('../prismaClient');
+const supabase = require('../supabaseClient');
 
 exports.getAlumni = async (req, res) => {
     try {
@@ -12,12 +13,33 @@ exports.getAlumni = async (req, res) => {
 exports.createAlumni = async (req, res) => {
     try {
         const { name, batch_year, profession } = req.body;
+        
+        let photo_url = null;
+        if (req.file) {
+            const fileName = `${Date.now()}-${req.file.originalname}`;
+            const { data, error } = await supabase.storage
+                .from('school-media')
+                .upload(`alumni/${fileName}`, req.file.buffer, {
+                    contentType: req.file.mimetype,
+                    upsert: true
+                });
+
+            if (error) throw error;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('school-media')
+                .getPublicUrl(`alumni/${fileName}`);
+            
+            photo_url = publicUrl;
+        }
+
         const alumni = await prisma.alumni.create({
-            data: { name, batch_year, profession }
+            data: { name, batch_year, profession, photo_url }
         });
         res.status(201).json(alumni);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to create alumni' });
+        console.error("Supabase Upload Error:", error);
+        res.status(500).json({ error: 'Failed to create alumni in Supabase' });
     }
 };
 

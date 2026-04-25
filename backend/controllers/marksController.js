@@ -24,11 +24,33 @@ exports.getMarksByStudent = async (req, res) => {
 
 exports.createMarks = async (req, res) => {
     try {
-        const { student_code, class: className, subject, exam_type, marks } = req.body;
+        const { student_code, class: className, medium, subject, exam_type, marks } = req.body;
+        
+        // Check for existing marks for this specific student/subject/exam
+        const existing = await prisma.marks.findFirst({
+            where: {
+                student_code,
+                subject,
+                exam_type,
+                class: className,
+                medium
+            }
+        });
+
+        if (existing) {
+            // Update existing
+            const updated = await prisma.marks.update({
+                where: { id: existing.id },
+                data: { marks: parseInt(marks) }
+            });
+            return res.json(updated);
+        }
+
         const markRecord = await prisma.marks.create({
             data: {
                 student_code,
                 class: className,
+                medium,
                 subject,
                 exam_type,
                 marks: parseInt(marks)
@@ -36,6 +58,7 @@ exports.createMarks = async (req, res) => {
         });
         res.status(201).json(markRecord);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to create marks' });
+        console.error(error);
+        res.status(500).json({ error: 'Failed to save marks' });
     }
 };
