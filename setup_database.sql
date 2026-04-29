@@ -11,7 +11,7 @@ CREATE TABLE students (
     name TEXT NOT NULL,
     class TEXT NOT NULL,
     medium TEXT NOT NULL,
-    parent_name TEXT
+    
 );
 
 -- Example record:
@@ -19,7 +19,6 @@ CREATE TABLE students (
 -- name : Rahul Kumar
 -- class : 1
 -- medium : English
--- parent_name : Raj Kumar
 
 -- 3. Teachers Table
 CREATE TABLE teachers (

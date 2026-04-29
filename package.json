@@ -4,6 +4,7 @@
   "description": "Local School Webpage Server",
   "scripts": {
     "start": "node backend/server.js",
+    "dev": "concurrently \"node backend/server.js\" \"http-server -a localhost -p 8000 -c-1 -o\"",
     "seed": "node prisma/seed.js"
   },
   "prisma": {
@@ -11,6 +12,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.3.5",
+    "concurrently": "^9.2.1",
     "http-server": "^14.1.1",
     "prisma": "5.22.0"
   },
@@ -19,9 +21,11 @@
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "5.22.0",
+    "@supabase/supabase-js": "^2.105.1",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "xlsx": "^0.18.5"
   }
 }

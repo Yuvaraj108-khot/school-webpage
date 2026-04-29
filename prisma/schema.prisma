@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model Student {
@@ -15,15 +14,22 @@ model Student {
   class        String
   medium       String
   parent_name  String?
+  roll_no      String?
+  photo_url    String?
 
   @@map("students")
 }
 
 model Teacher {
-  id      Int    @id @default(autoincrement())
-  name    String
-  subject String
-  medium  String
+  id          Int      @id @default(autoincrement())
+  name        String
+  subject     String
+  medium      String
+  designation String?
+  experience  String?
+  category    String?
+  photo_url   String?
+  joined_date DateTime @default(now())
 
   @@map("teachers")
 }
@@ -33,7 +39,7 @@ model Gallery {
   image_url   String?
   category    String?
   description String?
-  upload_date DateTime? @default(now()) @db.Timestamp(6)
+  upload_date DateTime? @default(now())
 
   @@map("gallery")
 }
@@ -42,7 +48,7 @@ model Notice {
   id          Int       @id @default(autoincrement())
   title       String?
   description String?
-  date        DateTime? @db.Timestamp(6)
+  date        DateTime?
 
   @@map("notices")
 }
@@ -52,6 +58,7 @@ model Alumni {
   name       String?
   batch_year String?
   profession String?
+  photo_url  String?
 
   @@map("alumni")
 }
@@ -60,8 +67,11 @@ model Attendance {
   id           Int       @id @default(autoincrement())
   student_code String?
   class        String?
+  medium       String?
+  period       String?
+  subject      String?
   teacher_name String?
-  date         DateTime? @db.Timestamp(6)
+  date         DateTime?
   status       String?
 
   @@map("attendance")
@@ -71,19 +81,33 @@ model Marks {
   id           Int     @id @default(autoincrement())
   student_code String?
   class        String?
+  medium       String?
   subject      String?
   exam_type    String?
   marks        Int?
+  total        Int?
 
   @@map("marks")
 }
+
 
 model CertificateRequest {
   id               Int       @id @default(autoincrement())
   student_code     String?
   certificate_type String?
   status           String?   @default("Pending")
-  request_date     DateTime? @default(now()) @db.Timestamp(6)
+  request_date     DateTime? @default(now())
 
   @@map("certificate_requests")
 }
+
+model ClassSubject {
+  id      Int    @id @default(autoincrement())
+  class   String
+  medium  String
+  subject String
+
+  @@unique([class, medium, subject])
+  @@map("class_subjects")
+}
+

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | SBS Karkala</title>
-    <link rel="icon" href="/images/logo.png" type="image/png">
+    <link rel="icon" href="images/logo.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -47,7 +47,7 @@
 
         <div class="login-container">
             <div style="text-align: center; margin-bottom: 2rem;">
-                <img src="/images/logo.png" alt="Logo" style="width: 80px; margin-bottom: 1rem;">
+                <img src="images/logo.png" alt="Logo" style="width: 80px; margin-bottom: 1rem;">
                 <h2 style="color: var(--primary-color); margin-bottom: 0.5rem;">Welcome Back</h2>
                 <p style="color: #666; font-size: 0.9rem;">Sign in to access your dashboard</p>
             </div>
@@ -65,7 +65,7 @@
             </form>
 
             <div style="margin-top: 1.5rem; text-align: center; font-size: 0.8rem; color: #666;">
-                <p>Forgot user ID or password? <a href="#" style="color: var(--primary-color);">Contact Office</a></p>
+                <p>Forgot user ID or password? <a href="contact.html" style="color: var(--primary-color);">Contact Office</a></p>
             </div>
 
             <div
@@ -81,20 +81,28 @@
     <script>
         document.getElementById('loginForm').addEventListener('submit', function (e) {
             e.preventDefault();
-            const user = document.getElementById('username').value.toLowerCase();
+            const user = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value;
 
-            if (user === 'student') {
-                window.location.href = 'dashboard_student.html';
-            } else if (user === 'teacher') {
-                window.location.href = 'dashboard_teacher.html';
-            } else if (user === 'admin') {
+            // Simple demo logic - in production this would be an API call
+            if (user.toLowerCase() === 'admin' && pass === 'pass') {
+                sessionStorage.setItem('role', 'admin');
                 window.location.href = 'dashboard_admin.html';
+            } else if (user.toLowerCase() === 'teacher' && pass === 'pass') {
+                sessionStorage.setItem('role', 'teacher');
+                sessionStorage.setItem('teacher_name', 'Teacher Name');
+                 window.location.href = 'dashboard_teacher.html';
+            } else if (user.toLowerCase() === 'student' || user.startsWith('C') || user.startsWith('K')) {
+                // If it looks like a student code or generic 'student'
+                sessionStorage.setItem('role', 'student');
+                sessionStorage.setItem('student_code', user === 'student' ? 'C1-001' : user);
+                window.location.href = 'dashboard_student.html';
             } else {
-                alert('Invalid Username or Password');
+                alert('Invalid Username or Password (use demo credentials)');
             }
         });
     </script>
 </body>
 
 </html>
+

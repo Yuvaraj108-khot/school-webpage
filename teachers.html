@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Our Teachers | SBS Karkala</title>
-    <link rel="icon" href="/images/logo.png" type="image/png">
+    <link rel="icon" href="images/logo.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -225,9 +225,11 @@
     <header>
         <div class="container header-container">
             <div class="logo">
-                <img src="/images/logo.png" alt="SBS Logo">
-
-
+                <img src="images/logo.png" alt="SBS Logo">
+                <div class="logo-text">
+                    <h1>SBRS KARKALA</h1>
+                    <span>Shaping Global Futures</span>
+                </div>
             </div>
             <div class="menu-toggle">
                 <i class="fas fa-bars"></i>
@@ -293,10 +295,10 @@
             <div class="footer-col">
                 <h4>Course Highlights</h4>
                 <ul>
-                    <li><a href="#">Academic Excellence</a></li>
-                    <li><a href="#">Co-curricular Activities</a></li>
+                    <li><a href="academics.html">Academic Excellence</a></li>
+                    <li><a href="about.html">Co-curricular Activities</a></li>
                     <li><a href="#">Sports & Games</a></li>
-                    <li><a href="#">Value Based Education</a></li>
+                    <li><a href="about.html">Value Based Education</a></li>
                 </ul>
             </div>
             <div class="footer-col">
@@ -346,7 +348,7 @@
 
                         card.innerHTML = `
                             <div class="teacher-img-container">
-                                <img src="${t.photo_url || 'logo.png'}" alt="${t.name}" class="teacher-img">
+                                <img src="${t.photo_url ? (t.photo_url.startsWith('http') ? t.photo_url : API + t.photo_url) : 'images/logo.png'}" alt="${t.name}" class="teacher-img" onerror="this.src='images/logo.png'">
                             </div>
                             <div class="teacher-info">
                                 <h3>${t.name}</h3>

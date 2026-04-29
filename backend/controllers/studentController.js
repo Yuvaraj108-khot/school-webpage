@@ -27,12 +27,23 @@ exports.getStudentByCode = async (req, res) => {
 
 exports.createStudent = async (req, res) => {
     try {
-        const { student_code, name, class: className, medium, parent_name } = req.body;
+        const { student_code, name, class: className, medium, parent_name, roll_no, photo_url } = req.body;
+        
+        // Check if student code already exists
+        const existing = await prisma.student.findUnique({
+            where: { student_code }
+        });
+
+        if (existing) {
+            return res.status(400).json({ error: 'Student Code already exists' });
+        }
+
         const student = await prisma.student.create({
-            data: { student_code, name, class: className, medium, parent_name }
+            data: { student_code, name, class: className, medium, parent_name, roll_no, photo_url }
         });
         res.status(201).json(student);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Failed to create student' });
     }
 };
