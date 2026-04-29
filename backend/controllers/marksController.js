@@ -39,3 +39,12 @@ exports.createMarks = async (req, res) => {
         res.status(500).json({ error: 'Failed to create marks' });
     }
 };
+
+exports.getAllMarks = async (req, res) => {
+    try {
+        const marks = await prisma.marks.findMany();
+        res.json(marks);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch all marks' });
+    }
+};

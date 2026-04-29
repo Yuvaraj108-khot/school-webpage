@@ -13,13 +13,16 @@ exports.getGallery = async (req, res) => {
 
 exports.uploadGalleryItem = async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ error: 'No image file provided' });
+        const { category, description, image_url: body_url } = req.body;
+        let image_url = body_url;
+
+        if (req.file) {
+            image_url = `/uploads/${req.file.filename}`;
         }
-        const { category, description } = req.body;
-        
-        // Return only the path from /uploads mapping
-        const image_url = `/uploads/${req.file.filename}`;
+
+        if (!image_url) {
+            return res.status(400).json({ error: 'No image file or URL provided' });
+        }
         
         const galleryItem = await prisma.gallery.create({
             data: {
