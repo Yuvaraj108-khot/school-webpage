@@ -266,8 +266,9 @@
                         div.style.padding = '0';
                         div.style.overflow = 'hidden';
 
+                        const fullImageUrl = item.image_url.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`;
                         div.innerHTML = `
-                            <img src="http://localhost:5000${item.image_url}" alt="${item.category}" style="width: 100%; height: 200px; object-fit: cover;">
+                            <img src="${fullImageUrl}" alt="${item.category}" style="width: 100%; height: 200px; object-fit: cover;">
                             <div style="padding: 1rem;">
                                 <h4>${item.category}</h4>
                                 <p style="font-size: 0.8rem; color: #666;">${item.description || ''}</p>

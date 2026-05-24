@@ -18,6 +18,7 @@ if (!supabaseUrl || !supabaseKey) {
     };
 } else {
     supabase = createClient(supabaseUrl, supabaseKey);
+    console.log("Supabase Storage Client Initialized");
 }
 
 module.exports = supabase;

@@ -18,22 +18,44 @@ exports.uploadGalleryItem = async (req, res) => {
         let publicUrl = body_url;
 
         if (req.file) {
-            // Upload to Supabase Storage
-            const fileName = `${Date.now()}-${req.file.originalname}`;
-            const { data, error } = await supabase.storage
-                .from('school-media')
-                .upload(`gallery/${fileName}`, req.file.buffer, {
-                    contentType: req.file.mimetype,
-                    upsert: true
-                });
+            try {
+                // Try Supabase first
+                const fileName = `${Date.now()}-${req.file.originalname}`;
+                const { data, error } = await supabase.storage
+                    .from('gallery')
+                    .upload(`${fileName}`, req.file.buffer, {
+                        contentType: req.file.mimetype,
+                        upsert: true
+                    });
 
-            if (error) throw error;
+                if (error) throw error;
 
-            const { data: urlData } = supabase.storage
-                .from('school-media')
-                .getPublicUrl(`gallery/${fileName}`);
-            
-            publicUrl = urlData.publicUrl;
+                const { data: urlData } = supabase.storage
+                    .from('gallery')
+                    .getPublicUrl(`${fileName}`);
+                
+                if (urlData && urlData.publicUrl) {
+                    publicUrl = urlData.publicUrl;
+                } else {
+                    throw new Error("Failed to get public URL");
+                }
+            } catch (supabaseError) {
+                console.warn("Supabase Upload Failed, falling back to local storage:", supabaseError.message);
+                // Fallback to local storage
+                // Note: multer handles saving to memory, we need to save it to disk for local fallback
+                const fs = require('fs');
+                const path = require('path');
+                const localFileName = `${Date.now()}-${req.file.originalname}`;
+                const localPath = path.join(__dirname, '../uploads', localFileName);
+                
+                // Ensure uploads directory exists
+                if (!fs.existsSync(path.join(__dirname, '../uploads'))) {
+                    fs.mkdirSync(path.join(__dirname, '../uploads'), { recursive: true });
+                }
+
+                fs.writeFileSync(localPath, req.file.buffer);
+                publicUrl = `/uploads/${localFileName}`;
+            }
         }
 
         if (!publicUrl) {
