@@ -1126,34 +1126,30 @@
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-file-alt"></i> Exam</label>
-                            <select id="marksExam" onchange="checkMarksReady()">
-                                <option value="">-- Select Exam --</option>
+                            <select id="marksExam">
+                                <option>Mid-Term Exam 2026</option>
+                                <option>Unit Test 1</option>
+                                <option>Unit Test 2</option>
+                                <option>Final Exam 2026</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-book"></i> Subject</label>
-                             <select id="marksSubject" disabled onchange="checkMarksReady()">
+                             <select id="marksSubject">
                                  <option value="">-- Select Subject --</option>
                              </select>
                         </div>
                     </div>
 
-                    <!-- Load Students Button -->
-                    <div style="text-align: center; margin: 1.5rem 0;">
-                        <button class="btn-submit primary" id="loadMarksStudentsBtn" onclick="loadMarksStudents()" disabled>
-                            <i class="fas fa-users"></i> Load Student List
-                        </button>
-                    </div>
-
                     <div id="marksListContainer" class="marks-grid">
                         <div class="empty-state">
                             <i class="fas fa-clipboard-list"></i>
-                            <p>Select Medium, Class, Exam and Subject to load students</p>
+                            <p>Select Medium and Class to load students</p>
                         </div>
                     </div>
 
                     <div class="btn-group" style="justify-content: center;">
-                        <button class="btn-submit primary" onclick="saveMarks()" id="submitMarksBtn" style="display: none;">
+                        <button class="btn-submit primary" onclick="saveMarks()">
                             <i class="fas fa-paper-plane"></i> Submit Marks
                         </button>
                     </div>
@@ -1285,125 +1281,19 @@
     <!-- Toast Notification -->
     <div class="toast" id="toast">
         <i class="fas fa-check-circle"></i>
-<script>
+        <span id="toastMessage">Success!</span>
+    </div>
+
+    <script>
         // ===================== INITIALIZATION =====================
-        const API_BASE = 'http://localhost:5000/api';
         const today = new Date();
         document.getElementById('todayDate').textContent = today.toLocaleDateString('en-IN', {
             weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
         });
 
-        // Cache objects
-        let allMediums = [];
-        let classesByMedium = {}; // medium_id -> classes array
-        let relationalSubjects = {}; // class_id -> subjects array
-        let activeStudentList = [];
-
-        // Dynamic API fetchers
-        async function apiFetch(endpoint) {
-            try {
-                const res = await fetch(`${API_BASE}${endpoint}`);
-                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-                return await res.json();
-            } catch (e) {
-                console.error(`API Fetch failed for ${endpoint}:`, e);
-                showToast(`Server Connection Failure: ${e.message}`, 'error');
-                return null;
-            }
-        }
-
-        async function apiPost(endpoint, data) {
-            try {
-                const res = await fetch(`${API_BASE}${endpoint}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                const result = await res.json();
-                if (!res.ok) throw new Error(result.error || `Server returned error ${res.status}`);
-                return result;
-            } catch (e) {
-                console.error(`API Post failed for ${endpoint}:`, e);
-                showToast(`Failed: ${e.message}`, 'error');
-                return null;
-            }
-        }
-
-        // ===================== ON LOAD DROPDOWNS POPULATION =====================
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Fetch mediums
-            const mediums = await apiFetch('/mediums');
-            if (mediums) {
-                allMediums = mediums;
-                populateMediumDropdowns();
-            }
-
-            // Fetch exams
-            const exams = await apiFetch('/exams');
-            if (exams && exams.length > 0) {
-                populateExamDropdowns(exams);
-            }
-
-            // Setup Mobile Menu Drawer
-            const teacherToggle = document.getElementById('teacherMenuToggle');
-            const teacherSidebar = document.querySelector('.sidebar');
-            const teacherOverlay = document.getElementById('teacherOverlay');
-
-            if (teacherToggle && teacherSidebar && teacherOverlay) {
-                function openTeacherSidebar() {
-                    teacherSidebar.classList.add('active');
-                    teacherOverlay.classList.add('active');
-                    document.body.style.overflow = 'hidden';
-                }
-
-                function closeTeacherSidebar() {
-                    teacherSidebar.classList.remove('active');
-                    teacherOverlay.classList.remove('active');
-                    document.body.style.overflow = '';
-                }
-
-                teacherToggle.addEventListener('click', openTeacherSidebar);
-                teacherOverlay.addEventListener('click', closeTeacherSidebar);
-
-                document.querySelectorAll('.sidebar-menu a').forEach(link => {
-                    link.addEventListener('click', closeTeacherSidebar);
-                });
-
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape' && teacherSidebar.classList.contains('active')) {
-                        closeTeacherSidebar();
-                    }
-                });
-            }
-        });
-
-        function populateMediumDropdowns() {
-            const dropdownIds = ['selectMedium', 'marksMedium', 'dlMarksMedium', 'dlAttMedium'];
-            dropdownIds.forEach(id => {
-                const select = document.getElementById(id);
-                if (select) {
-                    select.innerHTML = '<option value="">-- Select Medium --</option>';
-                    allMediums.forEach(med => {
-                        // Map internal name to display CBSE for English Medium to match existing layout
-                        const displayName = med.name === 'English' ? 'CBSE (English Medium)' : `${med.name} Medium`;
-                        select.innerHTML += `<option value="${med.name}">${displayName}</option>`;
-                    });
-                }
-            });
-        }
-
-        function populateExamDropdowns(exams) {
-            const dropdownIds = ['marksExam', 'dlMarksExam'];
-            dropdownIds.forEach(id => {
-                const select = document.getElementById(id);
-                if (select) {
-                    select.innerHTML = '<option value="">-- Select Exam --</option>';
-                    exams.forEach(ex => {
-                        select.innerHTML += `<option value="${ex.name}">${ex.name}</option>`;
-                    });
-                }
-            });
-        }
+        // Subject lists
+        const subjectsCBSE = ['Mathematics', 'Science', 'English', 'Social Science', 'Hindi', 'Kannada', 'Computer Science', 'Physical Education'];
+        const subjectsKannada = ['Ganitha (Mathematics)', 'Vigyana (Science)', 'English', 'Samaja Vigyana (Social Science)', 'Kannada', 'Hindi'];
 
         // ===================== SECTION NAVIGATION =====================
         function showSection(section) {
@@ -1450,37 +1340,25 @@
             }
         }
 
-        // ===================== MEDIUM / CLASS / SUBJECT DYNAMIC LOADS =====================
-        async function fetchClassesForMedium(mediumName) {
-            const medRecord = allMediums.find(m => m.name === mediumName);
-            if (!medRecord) return [];
-            
-            if (classesByMedium[medRecord.id]) return classesByMedium[medRecord.id];
-            
-            const classes = await apiFetch(`/classes?medium_id=${medRecord.id}&is_active=true`);
-            if (classes) {
-                classesByMedium[medRecord.id] = classes;
-                return classes;
-            }
-            return [];
-        }
-
-        async function fetchSubjectsForClass(classId) {
-            if (relationalSubjects[classId]) return relationalSubjects[classId];
-
-            const subjects = await apiFetch(`/subjects/relational?class_id=${classId}&is_active=true`);
-            if (subjects) {
-                relationalSubjects[classId] = subjects;
-                return subjects;
-            }
-            return [];
-        }
-
-        async function onMediumChange() {
-            const mediumName = document.getElementById('selectMedium').value;
+        // ===================== MEDIUM & CLASS LOGIC =====================
+        function onMediumChange() {
+            const medium = document.getElementById('selectMedium').value;
             const classSelect = document.getElementById('selectClass');
             classSelect.innerHTML = '<option value="">-- Select Class --</option>';
-            classSelect.disabled = true;
+
+            if (medium === 'CBSE') {
+                for (let i = 1; i <= 10; i++) {
+                    classSelect.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                }
+                classSelect.disabled = false;
+            } else if (medium === 'Kannada') {
+                for (let i = 7; i <= 10; i++) {
+                    classSelect.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                }
+                classSelect.disabled = false;
+            } else {
+                classSelect.disabled = true;
+            }
 
             // Reset downstream
             document.getElementById('selectPeriod').disabled = true;
@@ -1492,24 +1370,31 @@
             document.getElementById('loadStudentsBtn').disabled = true;
             document.getElementById('attendanceArea').style.display = 'none';
 
-            if (mediumName) {
-                const classes = await fetchClassesForMedium(mediumName);
-                classes.forEach(c => {
-                    classSelect.innerHTML += `<option value="${c.name}" data-id="${c.id}">Class ${c.name}</option>`;
-                });
-                classSelect.disabled = false;
-            }
             updateSteps();
         }
 
-        async function onClassChange() {
-            const clsSelect = document.getElementById('selectClass');
-            const selectedOpt = clsSelect.options[clsSelect.selectedIndex];
-            const classId = selectedOpt ? selectedOpt.getAttribute('data-id') : null;
-            const subjectSelect = document.getElementById('selectSubject');
-            
-            subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
-            subjectSelect.disabled = true;
+        function onClassChange() {
+            const cls = document.getElementById('selectClass').value;
+            const medium = document.getElementById('selectMedium').value;
+
+            if (cls) {
+                document.getElementById('selectPeriod').disabled = false;
+
+                // Populate subjects based on class (from admin) or medium defaults
+                const subjectSelect = document.getElementById('selectSubject');
+                subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
+                
+                var subjects = JSON.parse(localStorage.getItem('sbrs_subjects_' + medium + '_' + cls) || '[]');
+                if (subjects.length === 0) {
+                    // Fallback to defaults if none defined
+                    subjects = medium === 'CBSE' ? subjectsCBSE : subjectsKannada;
+                }
+                
+                subjects.forEach(sub => {
+                    subjectSelect.innerHTML += `<option value="${sub}">${sub}</option>`;
+                });
+                subjectSelect.disabled = false;
+            }
 
             // Reset downstream
             document.getElementById('selectPeriod').value = '';
@@ -1518,103 +1403,25 @@
             document.getElementById('loadStudentsBtn').disabled = true;
             document.getElementById('attendanceArea').style.display = 'none';
 
-            if (classId) {
-                document.getElementById('selectPeriod').disabled = false;
-                
-                const subjects = await fetchSubjectsForClass(classId);
-                subjects.forEach(s => {
-                    subjectSelect.innerHTML += `<option value="${s.name}">${s.name}</option>`;
-                });
-                subjectSelect.disabled = false;
-            }
             updateSteps();
         }
 
-        async function onMarksMediumChange() {
-            const mediumName = document.getElementById('marksMedium').value;
-            const classSelect = document.getElementById('marksClass');
-            classSelect.innerHTML = '<option value="">-- Select Class --</option>';
-            classSelect.disabled = true;
-
-            document.getElementById('marksSubject').innerHTML = '<option value="">-- Select Subject --</option>';
-            document.getElementById('marksSubject').disabled = true;
-            document.getElementById('marksExam').value = '';
-            document.getElementById('loadMarksStudentsBtn').disabled = true;
-            document.getElementById('submitMarksBtn').style.display = 'none';
-
-            document.getElementById('marksListContainer').innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-clipboard-list"></i>
-                    <p>Select Medium, Class, Exam and Subject to load students</p>
-                </div>`;
-
-            if (mediumName) {
-                const classes = await fetchClassesForMedium(mediumName);
-                classes.forEach(c => {
-                    classSelect.innerHTML += `<option value="${c.name}" data-id="${c.id}">Class ${c.name}</option>`;
-                });
-                classSelect.disabled = false;
-            }
-        }
-
-        async function onMarksClassChange() {
-            const clsSelect = document.getElementById('marksClass');
-            const selectedOpt = clsSelect.options[clsSelect.selectedIndex];
-            const classId = selectedOpt ? selectedOpt.getAttribute('data-id') : null;
-            const subjectSelect = document.getElementById('marksSubject');
-
-            subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
-            subjectSelect.disabled = true;
-            document.getElementById('marksExam').value = '';
-            document.getElementById('loadMarksStudentsBtn').disabled = true;
-            document.getElementById('submitMarksBtn').style.display = 'none';
-
-            if (classId) {
-                const subjects = await fetchSubjectsForClass(classId);
-                subjects.forEach(s => {
-                    subjectSelect.innerHTML += `<option value="${s.name}">${s.name}</option>`;
-                });
-                subjectSelect.disabled = false;
-            }
-        }
-
-        function checkMarksReady() {
-            const medium = document.getElementById('marksMedium').value;
+        function onMarksClassChange() {
             const cls = document.getElementById('marksClass').value;
-            const exam = document.getElementById('marksExam').value;
-            const subject = document.getElementById('marksSubject').value;
+            const medium = document.getElementById('marksMedium').value;
+            const subSel = document.getElementById('marksSubject');
+            subSel.innerHTML = '<option value="">-- Select Subject --</option>';
 
-            document.getElementById('loadMarksStudentsBtn').disabled = !(medium && cls && exam && subject);
-        }
-
-        async function onDlMarksMediumChange() {
-            const mediumName = document.getElementById('dlMarksMedium').value;
-            const classSelect = document.getElementById('dlMarksClass');
-            classSelect.innerHTML = '<option value="">-- Select Class --</option>';
-            classSelect.disabled = true;
-
-            if (mediumName) {
-                const classes = await fetchClassesForMedium(mediumName);
-                classes.forEach(c => {
-                    classSelect.innerHTML += `<option value="${c.name}">Class ${c.name}</option>`;
+            if (cls) {
+                var subjects = JSON.parse(localStorage.getItem('sbrs_subjects_' + medium + '_' + cls) || '[]');
+                if (subjects.length === 0) {
+                    subjects = medium === 'CBSE' ? subjectsCBSE : subjectsKannada;
+                }
+                subjects.forEach(sub => {
+                    subSel.innerHTML += `<option value="${sub}">${sub}</option>`;
                 });
-                classSelect.disabled = false;
             }
-        }
-
-        async function onDlAttMediumChange() {
-            const mediumName = document.getElementById('dlAttMedium').value;
-            const classSelect = document.getElementById('dlAttClass');
-            classSelect.innerHTML = '<option value="">-- Select Class --</option>';
-            classSelect.disabled = true;
-
-            if (mediumName) {
-                const classes = await fetchClassesForMedium(mediumName);
-                classes.forEach(c => {
-                    classSelect.innerHTML += `<option value="${c.name}">Class ${c.name}</option>`;
-                });
-                classSelect.disabled = false;
-            }
+            loadMarksStudents();
         }
 
         function onPeriodChange() {
@@ -1639,18 +1446,69 @@
             updateSteps();
         }
 
-        // ===================== STUDENT LIST LOADING =====================
-        async function fetchStudents(mediumName, classNum) {
-            // Map display medium CBSE back to DB English
-            const queryMedium = mediumName === 'CBSE' ? 'English' : mediumName;
-            const res = await apiFetch(`/students?class=${classNum}&medium=${queryMedium}&limit=100`);
-            if (res && res.data) {
-                return res.data;
-            }
-            return [];
+        // ===================== DOWNLOAD REPORTS HANDLERS =====================
+        window.onDlAttMediumChange = function() {
+            const med = document.getElementById('dlAttMedium').value;
+            const clsSel = document.getElementById('dlAttClass');
+            clsSel.innerHTML = '<option value="">-- Select Class --</option>';
+            if (med) {
+                clsSel.disabled = false;
+                const start = (med === 'CBSE') ? 1 : 8;
+                for (let i = start; i <= 10; i++) {
+                    clsSel.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                }
+            } else clsSel.disabled = true;
         }
 
-        async function loadStudentList() {
+        window.onDlMarksMediumChange = function() {
+            const med = document.getElementById('dlMarksMedium').value;
+            const clsSel = document.getElementById('dlMarksClass');
+            clsSel.innerHTML = '<option value="">-- Select Class --</option>';
+            if (med) {
+                clsSel.disabled = false;
+                const start = (med === 'CBSE') ? 1 : 8;
+                for (let i = start; i <= 10; i++) {
+                    clsSel.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                }
+            } else clsSel.disabled = true;
+        }
+
+        function onMarksMediumChange() {
+            const medium = document.getElementById('marksMedium').value;
+            const classSelect = document.getElementById('marksClass');
+            classSelect.innerHTML = '<option value="">-- Select Class --</option>';
+
+            if (medium) {
+                classSelect.disabled = false;
+                const start = (medium === 'CBSE') ? 1 : 8;
+                for (let i = start; i <= 10; i++) {
+                    classSelect.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                }
+            } else {
+                classSelect.disabled = true;
+            }
+        }
+
+        // ===================== STUDENT LIST LOADING =====================
+        function getStudentsForClass(medium, classNum) {
+            const key = `sbrs_students_${medium}_${classNum}`;
+            const stored = localStorage.getItem(key);
+            if (stored) return JSON.parse(stored);
+
+            // Default sample students if none added yet
+            const defaults = [];
+            const sampleNames = [
+                'Rahul Kumar', 'Priya Sharma', 'Ananya S', 'Vikram R', 'Sneha Patil',
+                'Aditya Hegde', 'Kavya M', 'Rohan Desai', 'Meera Kulkarni', 'Arjun Nayak'
+            ];
+            sampleNames.forEach((name, i) => {
+                defaults.push({ id: i + 1, name: name, roll: `${medium.substring(0, 1)}${classNum}-${String(i + 1).padStart(3, '0')}` });
+            });
+            localStorage.setItem(key, JSON.stringify(defaults));
+            return defaults;
+        }
+
+        function loadStudentList() {
             const medium = document.getElementById('selectMedium').value;
             const cls = document.getElementById('selectClass').value;
 
@@ -1659,9 +1517,7 @@
                 return;
             }
 
-            const students = await fetchStudents(medium, cls);
-            activeStudentList = students;
-            
+            const students = getStudentsForClass(medium, cls);
             const container = document.getElementById('studentListContainer');
             container.innerHTML = '';
 
@@ -1669,7 +1525,7 @@
                 container.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-user-slash"></i>
-                        <p>No students found for this class in Supabase database.</p>
+                        <p>No students found for this class. Ask Admin to add students.</p>
                     </div>`;
                 document.getElementById('attendanceArea').style.display = 'block';
                 return;
@@ -1683,7 +1539,7 @@
                     <div class="student-sl">${index + 1}</div>
                     <div class="student-info">
                         <div class="student-name">${student.name}</div>
-                        <div class="student-roll">${student.student_code}</div>
+                        <div class="student-roll">${student.roll}</div>
                     </div>
                     <label class="attendance-toggle">
                         <input type="checkbox" checked id="att-${index}" onchange="toggleAttendance(${index})">
@@ -1691,7 +1547,7 @@
                     </label>
                     <span class="status-label present" id="status-${index}">Present</span>
                 `;
-
+                // Click row to toggle (except the toggle itself)
                 row.addEventListener('click', (e) => {
                     if (e.target.type !== 'checkbox' && !e.target.classList.contains('toggle-slider')) {
                         const cb = document.getElementById(`att-${index}`);
@@ -1703,6 +1559,7 @@
             });
 
             document.getElementById('attendanceArea').style.display = 'block';
+            updateCounts();
             updateSteps();
         }
 
@@ -1720,6 +1577,18 @@
                 label.className = 'status-label absent';
                 row.classList.add('absent-row');
             }
+            updateCounts();
+        }
+
+        function updateCounts() {
+            const checkboxes = document.querySelectorAll('#studentListContainer input[type="checkbox"]');
+            let present = 0, absent = 0;
+            checkboxes.forEach(cb => {
+                if (cb.checked) present++;
+                else absent++;
+            });
+            document.getElementById('presentCount').textContent = present;
+            document.getElementById('absentCount').textContent = absent;
         }
 
         function markAllPresent() {
@@ -1731,7 +1600,7 @@
         }
 
         // ===================== SAVE ATTENDANCE =====================
-        async function saveAttendance() {
+        function saveAttendance() {
             const medium = document.getElementById('selectMedium').value;
             const cls = document.getElementById('selectClass').value;
             const period = document.getElementById('selectPeriod').value;
@@ -1744,62 +1613,330 @@
             }
 
             const checkboxes = document.querySelectorAll('#studentListContainer input[type="checkbox"]');
-            if (checkboxes.length === 0) {
-                showToast('No students loaded to submit attendance.', 'error');
+            const students = getStudentsForClass(medium, cls);
+            const presentList = [];
+            const absentList = [];
+
+            checkboxes.forEach((cb, i) => {
+                if (cb.checked) presentList.push(students[i].name);
+                else absentList.push(students[i].name);
+            });
+
+            // Validate: Check if attendance for this session already exists
+            const history = JSON.parse(localStorage.getItem('sbrs_attendance_history') || '[]');
+            const dateStr = today.toLocaleDateString('en-IN');
+            const duplicate = history.find(rec => 
+                rec.date === dateStr && 
+                rec.medium === medium && 
+                rec.class === cls && 
+                String(rec.period) === String(period)
+            );
+
+            if (duplicate) {
+                showToast(`Attendance for Period ${period} (${cls}, ${medium}) has already been recorded today!`, 'error');
                 return;
             }
 
-            const attendance_list = [];
-            checkboxes.forEach((cb, i) => {
-                attendance_list.push({
-                    student_code: activeStudentList[i].student_code,
-                    status: cb.checked ? 'Present' : 'Absent'
-                });
-            });
-
-            const queryMedium = medium === 'CBSE' ? 'English' : medium;
-
-            const payload = {
+            const record = {
+                date: dateStr,
+                medium,
                 class: cls,
-                medium: queryMedium,
-                period: period,
-                subject: subject,
-                teacher_name: 'Audit Teacher',
-                date: new Date().toISOString(),
-                attendance_list
+                period,
+                subject,
+                topic,
+                present: presentList.length,
+                absent: absentList.length,
+                total: students.length,
+                absentNames: absentList,
+                timestamp: Date.now()
             };
 
-            const result = await apiPost('/attendance/bulk', payload);
-            if (result) {
-                showToast(`Attendance saved successfully! Recs: ${result.results.length}`, 'success');
-                // Reset form
-                setTimeout(() => {
-                    document.getElementById('selectMedium').value = '';
-                    onMediumChange();
-                }, 1500);
+            // Save to localStorage
+            history.unshift(record);
+            localStorage.setItem('sbrs_attendance_history', JSON.stringify(history));
+
+            showToast(`Attendance saved! Present: ${presentList.length}, Absent: ${absentList.length}`, 'success');
+
+            // Reset form
+            setTimeout(() => {
+                document.getElementById('selectMedium').value = '';
+                onMediumChange();
+            }, 1500);
+        }
+
+        // ===================== HISTORY =====================
+        function loadHistory() {
+            const history = JSON.parse(localStorage.getItem('sbrs_attendance_history') || '[]');
+            const list = document.getElementById('historyList');
+
+            if (history.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard-list"></i>
+                        <p>No attendance records yet. Records will appear after you save attendance.</p>
+                    </div>`;
+                return;
+            }
+
+            list.innerHTML = '';
+            history.forEach(rec => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.innerHTML = `
+                    <div class="hi-info">
+                        <div class="hi-title">${rec.medium} - Class ${rec.class} | Period ${rec.period}</div>
+                        <div class="hi-meta"><i class="fas fa-calendar-alt"></i> ${rec.date} &nbsp;|&nbsp; <i class="fas fa-book"></i> ${rec.subject} &nbsp;|&nbsp; <i class="fas fa-pen"></i> ${rec.topic}</div>
+                    </div>
+                    <div class="hi-stats">
+                        <span class="hi-stat p"><i class="fas fa-check"></i> ${rec.present}</span>
+                        <span class="hi-stat a"><i class="fas fa-times"></i> ${rec.absent}</span>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        // ===================== SAVE MARKS =====================
+        function saveMarks() {
+            const medium = document.getElementById('marksMedium').value;
+            const cls = document.getElementById('marksClass').value;
+            const exam = document.getElementById('marksExam').value;
+            const subject = document.getElementById('marksSubject').value;
+
+            if (!medium || !cls) {
+                showToast('Please select Medium and Class first.', 'error');
+                return;
+            }
+
+            const students = getStudentsForClass(medium, cls);
+            const inputs = document.querySelectorAll('#marksListContainer input[type="number"]');
+            const marksData = [];
+
+            students.forEach((student, i) => {
+                const val = inputs[i] ? parseFloat(inputs[i].value) : null;
+                marksData.push({ ...student, marks: isNaN(val) ? '' : val });
+            });
+
+            const key = `sbrs_marks_${medium}_${cls}_${exam}_${subject}`;
+            localStorage.setItem(key, JSON.stringify(marksData));
+            showToast(`Marks saved for Class ${cls} ΓÇô ${exam} (${subject})!`, 'success');
+        }
+
+        // ===================== DOWNLOAD SECTION HELPERS =====================
+        function onDlMarksMediumChange() {
+            const medium = document.getElementById('dlMarksMedium').value;
+            const cls = document.getElementById('dlMarksClass');
+            cls.innerHTML = '<option value="">-- Select Class --</option>';
+            if (medium === 'CBSE') {
+                for (let i = 1; i <= 10; i++) cls.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                cls.disabled = false;
+            } else if (medium === 'Kannada') {
+                for (let i = 7; i <= 10; i++) cls.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                cls.disabled = false;
+            } else {
+                cls.disabled = true;
             }
         }
 
-        // ===================== MARKS LOAD & SUBMIT =====================
-        async function loadMarksStudents() {
+        // ===================== DOWNLOAD MARKS EXCEL =====================
+        window.downloadMarksExcel = function() {
+            const medium = document.getElementById('dlMarksMedium').value;
+            const cls = document.getElementById('dlMarksClass').value;
+            const exam = document.getElementById('dlMarksExam').value;
+            const subject = document.getElementById('dlMarksSubject').value;
+
+            if (!medium || !cls) {
+                showToast('Please select Medium and Class first.', 'error');
+                return;
+            }
+
+            const students = getStudentsForClass(medium, cls);
+            const key = `sbrs_marks_${medium}_${cls}_${exam}_${subject}`;
+            const saved = JSON.parse(localStorage.getItem(key) || '[]');
+
+            // Determine max marks based on exam
+            let maxMarks = 100;
+            if (exam.toLowerCase().includes('unit')) maxMarks = 25;
+            else if (exam.toLowerCase().includes('mid')) maxMarks = 50;
+
+            function getGrade(m, total) {
+                if (m === '' || m === null || m === undefined) return 'N/A';
+                const pct = (m / total) * 100;
+                if (pct >= 90) return 'A+';
+                if (pct >= 80) return 'A';
+                if (pct >= 70) return 'B+';
+                if (pct >= 60) return 'B';
+                if (pct >= 50) return 'C';
+                if (pct >= 35) return 'D';
+                return 'F';
+            }
+
+            // Build rows
+            const wsData = [
+                [`SBRS ΓÇô ${medium} Medium ΓÇô Class ${cls}`],
+                [`Exam: ${exam}   |   Subject: ${subject}   |   Max Marks: ${maxMarks}`],
+                [],
+                ['Sl.No', 'Student Name', 'Roll Number', `Marks (Out of ${maxMarks})`, 'Grade', 'Remarks']
+            ];
+
+            students.forEach((student, i) => {
+                const savedEntry = saved.find(s => s.roll === student.roll);
+                const marks = savedEntry ? savedEntry.marks : '';
+                const grade = getGrade(marks, maxMarks);
+                wsData.push([
+                    i + 1,
+                    student.name,
+                    student.roll,
+                    marks === '' ? 'Not Entered' : marks,
+                    grade,
+                    grade === 'F' ? 'Fail' : (grade === 'N/A' ? '' : 'Pass')
+                ]);
+            });
+
+            // Summary rows
+            const entered = students.filter((_, i) => {
+                const se = saved.find(s => s.roll === students[i].roll);
+                return se && se.marks !== '';
+            });
+            wsData.push([]);
+            wsData.push(['', '', 'Total Students:', students.length]);
+            wsData.push(['', '', 'Marks Entered:', entered.length]);
+            wsData.push(['', '', 'Max Marks:', maxMarks]);
+
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+            // Column widths
+            ws['!cols'] = [
+                { wch: 8 }, { wch: 28 }, { wch: 16 }, { wch: 20 }, { wch: 10 }, { wch: 14 }
+            ];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Marks');
+            const filename = `Marks_Class${cls}_${exam.replace(/\s+/g, '_')}_${subject.replace(/\s+/g, '_')}.xlsx`;
+            XLSX.writeFile(wb, filename);
+            showToast(`Downloaded: ${filename}`, 'success');
+        }
+
+        // ===================== DOWNLOAD ATTENDANCE EXCEL =====================
+        window.downloadAttendanceExcel = function() {
+            const medium = document.getElementById('dlAttMedium').value;
+            const cls = document.getElementById('dlAttClass').value;
+            const month = parseInt(document.getElementById('dlAttMonth').value);
+            const year = parseInt(document.getElementById('dlAttYear').value);
+
+            if (!medium || !cls) {
+                showToast('Please select Medium and Class first.', 'error');
+                return;
+            }
+
+            const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+
+            const history = JSON.parse(localStorage.getItem('sbrs_attendance_history') || '[]');
+            const students = getStudentsForClass(medium, cls);
+
+            // 1. Filter and sort records chronologically
+            const records = history.filter(rec => {
+                if (rec.medium !== medium || String(rec.class) !== String(cls)) return false;
+                const parts = rec.date.split('/');
+                if (parts.length === 3) {
+                    const recMonth = parseInt(parts[1]);
+                    const recYear = parseInt(parts[2]);
+                    return recMonth === month && recYear === year;
+                }
+                return false;
+            }).sort((a, b) => {
+                const pa = a.date.split('/'), pb = b.date.split('/');
+                const dateCompare = new Date(pa[2], pa[1] - 1, pa[0]) - new Date(pb[2], pb[1] - 1, pb[0]);
+                if (dateCompare !== 0) return dateCompare;
+                return a.period - b.period;
+            });
+
+            if (records.length === 0) {
+                showToast('No attendance records found for the selected month.', 'error');
+                return;
+            }
+
+            // 2. Build the Excel Data (Vertical Layout: One row per student per session)
+            const header1 = [`SBRS ΓÇô ${medium} Medium ΓÇô Class ${cls} ΓÇô Attendance Register`];
+            const header2 = [`Month: ${monthNames[month]} ${year}`];
+            const colHeader = ['Date', 'Period', 'Subject', 'Roll Number', 'Student Name', 'Status'];
+
+            const wsData = [header1, header2, [], colHeader];
+
+            records.forEach(session => {
+                students.forEach(student => {
+                    const isAbsent = session.absentNames && session.absentNames.includes(student.name);
+                    const status = isAbsent ? 'Absent' : 'Present';
+                    
+                    wsData.push([
+                        session.date,
+                        `Period ${session.period}`,
+                        session.subject,
+                        student.roll,
+                        student.name,
+                        status
+                    ]);
+                });
+                // Add an empty line between sessions for readability
+                wsData.push([]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+            // Merge titles
+            ws['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } }
+            ];
+
+            // Column widths
+            ws['!cols'] = [
+                { wch: 12 }, { wch: 10 }, { wch: 20 }, { wch: 15 }, { wch: 28 }, { wch: 10 }
+            ];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, `Attendance_Register`);
+            const filename = `Attendance_Register_Class${cls}_${monthNames[month]}_${year}.xlsx`;
+            XLSX.writeFile(wb, filename);
+            showToast(`Downloaded: ${filename}`, 'success');
+        }
+
+        // ===================== MARKS SECTION =====================
+        function onMarksMediumChange() {
+            const medium = document.getElementById('marksMedium').value;
+            const classSelect = document.getElementById('marksClass');
+            classSelect.innerHTML = '<option value="">-- Select Class --</option>';
+
+            if (medium === 'CBSE') {
+                for (let i = 1; i <= 10; i++) {
+                    classSelect.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                }
+                classSelect.disabled = false;
+            } else if (medium === 'Kannada') {
+                for (let i = 7; i <= 10; i++) {
+                    classSelect.innerHTML += `<option value="${i}">Class ${i}</option>`;
+                }
+                classSelect.disabled = false;
+            } else {
+                classSelect.disabled = true;
+            }
+
+            document.getElementById('marksListContainer').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>Select Medium and Class to load students</p>
+                </div>`;
+        }
+
+        function loadMarksStudents() {
             const medium = document.getElementById('marksMedium').value;
             const cls = document.getElementById('marksClass').value;
             if (!medium || !cls) return;
 
-            const students = await fetchStudents(medium, cls);
-            activeStudentList = students;
-
+            const students = getStudentsForClass(medium, cls);
             const container = document.getElementById('marksListContainer');
             container.innerHTML = '';
-
-            if (students.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-user-slash"></i>
-                        <p>No students found for this class.</p>
-                    </div>`;
-                return;
-            }
 
             students.forEach((student, index) => {
                 const row = document.createElement('div');
@@ -1808,142 +1945,13 @@
                     <div class="student-sl">${index + 1}</div>
                     <div class="student-info">
                         <div class="student-name">${student.name}</div>
-                        <div class="student-roll">${student.student_code}</div>
+                        <div class="student-roll">${student.roll}</div>
                     </div>
-                    <input type="number" placeholder="Marks" min="0" max="100" id="mark-input-${index}">
+                    <input type="number" placeholder="Marks" min="0" max="100">
                 `;
                 container.appendChild(row);
             });
-
-            document.getElementById('submitMarksBtn').style.display = 'block';
         }
-
-        async function saveMarks() {
-            const medium = document.getElementById('marksMedium').value;
-            const cls = document.getElementById('marksClass').value;
-            const exam = document.getElementById('marksExam').value;
-            const subject = document.getElementById('marksSubject').value;
-
-            if (!medium || !cls || !exam || !subject) {
-                showToast('Please fill all options first.', 'error');
-                return;
-            }
-
-            if (activeStudentList.length === 0) {
-                showToast('No students loaded to submit marks.', 'error');
-                return;
-            }
-
-            const marks_list = [];
-            let hasInvalid = false;
-
-            activeStudentList.forEach((student, i) => {
-                const input = document.getElementById(`mark-input-${i}`);
-                const markVal = input ? parseFloat(input.value) : NaN;
-                if (isNaN(markVal) || markVal < 0 || markVal > 100) {
-                    hasInvalid = true;
-                } else {
-                    marks_list.push({
-                        student_code: student.student_code,
-                        marks: markVal
-                    });
-                }
-            });
-
-            if (hasInvalid) {
-                showToast('Please enter valid marks (0-100) for all students.', 'error');
-                return;
-            }
-
-            const queryMedium = medium === 'CBSE' ? 'English' : medium;
-
-            const payload = {
-                class: cls,
-                medium: queryMedium,
-                subject: subject,
-                exam_type: exam,
-                marks_list
-            };
-
-            const result = await apiPost('/marks/bulk', payload);
-            if (result) {
-                showToast(`Marks submitted successfully for ${result.results.length} students!`, 'success');
-                // Reset marks inputs
-                activeStudentList.forEach((_, i) => {
-                    const input = document.getElementById(`mark-input-${i}`);
-                    if (input) input.value = '';
-                });
-            }
-        }
-
-        // ===================== HISTORY =====================
-        async function loadHistory() {
-            const res = await apiFetch('/attendance?limit=25');
-            const list = document.getElementById('historyList');
-
-            if (!res || !res.data || res.data.length === 0) {
-                list.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-clipboard-list"></i>
-                        <p>No attendance records found in Supabase.</p>
-                    </div>`;
-                return;
-            }
-
-            list.innerHTML = '';
-            res.data.forEach(rec => {
-                const dateStr = new Date(rec.date).toLocaleDateString('en-IN');
-                const item = document.createElement('div');
-                item.className = 'history-item';
-                item.innerHTML = `
-                    <div class="hi-info">
-                        <div class="hi-title">${rec.medium} - Class ${rec.class} | Period ${rec.period}</div>
-                        <div class="hi-meta"><i class="fas fa-calendar-alt"></i> ${dateStr} &nbsp;|&nbsp; <i class="fas fa-book"></i> ${rec.subject} &nbsp;|&nbsp; <i class="fas fa-user-tie"></i> ${rec.teacher_name || '-'}</div>
-                    </div>
-                    <div class="hi-stats">
-                        <span class="hi-stat p"><i class="fas fa-check"></i> ${rec.status}</span>
-                    </div>
-                `;
-                list.appendChild(item);
-            });
-        }
-
-        // ===================== EXCEL EXPORTS =====================
-        window.downloadMarksExcel = function() {
-            const medium = document.getElementById('dlMarksMedium').value;
-            const cls = document.getElementById('dlMarksClass').value;
-            const exam = document.getElementById('dlMarksExam').value;
-            const subject = document.getElementById('dlMarksSubject').value;
-
-            if (!medium || !cls || !exam || !subject) {
-                showToast('Please select all options.', 'error');
-                return;
-            }
-
-            const queryMedium = medium === 'CBSE' ? 'English' : medium;
-            const downloadUrl = `${API_BASE}/export/marks?class=${cls}&medium=${queryMedium}&exam_type=${encodeURIComponent(exam)}&subject=${encodeURIComponent(subject)}`;
-            
-            showToast('Generating marks excel report...', 'success');
-            window.location.href = downloadUrl;
-        };
-
-        window.downloadAttendanceExcel = function() {
-            const medium = document.getElementById('dlAttMedium').value;
-            const cls = document.getElementById('dlAttClass').value;
-            const month = document.getElementById('dlAttMonth').value;
-            const year = document.getElementById('dlAttYear').value;
-
-            if (!medium || !cls || !month || !year) {
-                showToast('Please select all options.', 'error');
-                return;
-            }
-
-            const queryMedium = medium === 'CBSE' ? 'English' : medium;
-            const downloadUrl = `${API_BASE}/export/attendance?class=${cls}&medium=${queryMedium}&month=${month}&year=${year}`;
-            
-            showToast('Generating attendance register report...', 'success');
-            window.location.href = downloadUrl;
-        };
 
         // ===================== TOAST =====================
         function showToast(message, type = 'success') {
@@ -1956,6 +1964,42 @@
                 toast.classList.remove('show');
             }, 3000);
         }
+
+        // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+        // Teacher Sidebar Mobile Toggle Logic
+        // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+        document.addEventListener('DOMContentLoaded', () => {
+            const teacherToggle = document.getElementById('teacherMenuToggle');
+            const teacherSidebar = document.querySelector('.sidebar');
+            const teacherOverlay = document.getElementById('teacherOverlay');
+
+            if (teacherToggle && teacherSidebar && teacherOverlay) {
+                function openTeacherSidebar() {
+                    teacherSidebar.classList.add('active');
+                    teacherOverlay.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+
+                function closeTeacherSidebar() {
+                    teacherSidebar.classList.remove('active');
+                    teacherOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+
+                teacherToggle.addEventListener('click', openTeacherSidebar);
+                teacherOverlay.addEventListener('click', closeTeacherSidebar);
+
+                document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                    link.addEventListener('click', closeTeacherSidebar);
+                });
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && teacherSidebar.classList.contains('active')) {
+                        closeTeacherSidebar();
+                    }
+                });
+            }
+        });
     </script>
 </body>
 

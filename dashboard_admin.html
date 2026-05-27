@@ -1030,7 +1030,8 @@
                 if (!response.ok) {
                     throw new Error(`HTTP Error: status ${response.status}`);
                 }
-                loadedStudentsList = await response.json();
+                const rawData = await response.json();
+                loadedStudentsList = rawData.data || rawData || [];
                 console.log('[DEBUG] Students fetch response data:', loadedStudentsList);
                 renderStudents();
             } catch (err) {
@@ -1213,147 +1214,169 @@
             reader.readAsDataURL(file);
         }
 
-        function loadTeachers() {
-            var teachers = JSON.parse(localStorage.getItem('sbrs_teachers') || '[]');
+        async function loadTeachers() {
             var list = document.getElementById('teachersList');
-            document.getElementById('totalTeachers').textContent = teachers.length;
-            if (teachers.length === 0) {
-                list.innerHTML = '<div class="empty-state"><i class="fas fa-user-tie"></i><p>No teachers added yet.</p></div>';
-                return;
+            try {
+                const res = await fetch('/api/teachers');
+                const teachers = await res.json();
+                document.getElementById('totalTeachers').textContent = teachers.length;
+                if (teachers.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><i class="fas fa-user-tie"></i><p>No teachers added yet.</p></div>';
+                    return;
+                }
+                list.innerHTML = '';
+                teachers.forEach(function (t, i) {
+                    var row = document.createElement('div');
+                    row.className = 'enrolled-row';
+                    const photoHtml = t.photo_url ? `<img src="${t.photo_url.startsWith('http') ? t.photo_url : 'http://localhost:5000' + t.photo_url}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:15px;">` : `<div style="width:40px;height:40px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;margin-right:15px;"><i class="fas fa-user" style="color:#94a3b8;"></i></div>`;
+                    row.innerHTML = '<div class="enrolled-info" style="align-items:center;">' +
+                        '<div class="enrolled-num">' + (i + 1) + '</div>' + photoHtml +
+                        '<div><div class="enrolled-name">' + t.name + '</div>' +
+                        '<div class="enrolled-sub">' + (t.designation || 'N/A') + ' | ' + (t.category || 'N/A') + ' | ' + (t.experience || '0') + ' yrs</div></div></div>' +
+                        '<div style="display:flex; gap:10px;">' +
+                        '<button class="btn-remove" onclick="removeTeacher(' + t.id + ', \'' + t.name + '\')"><i class="fas fa-trash-alt"></i> Remove</button>' +
+                        '</div>';
+                    list.appendChild(row);
+                });
+            } catch (err) {
+                console.error(err);
+                toast('Failed to load teachers', 'error');
             }
-            list.innerHTML = '';
-            teachers.forEach(function (t, i) {
-                var row = document.createElement('div');
-                row.className = 'enrolled-row';
-                row.innerHTML = '<div class="enrolled-info"><div class="enrolled-num">' + (i + 1) + '</div>' +
-                    '<div><div class="enrolled-name">' + t.name + '</div>' +
-                    '<div class="enrolled-sub">' + t.designation + ' | ' + t.category + ' | ' + t.experience + ' yrs</div></div></div>' +
-                    '<div style="display:flex; gap:10px;">' +
-                    '<button class="btn-remove" style="border-color:#cbd5e1; color:#64748b;" onclick="editTeacher(' + i + ')"><i class="fas fa-edit"></i> Edit</button>' +
-                    '<button class="btn-remove" onclick="removeTeacher(' + i + ')"><i class="fas fa-trash-alt"></i> Remove</button>' +
-                    '</div>';
-                list.appendChild(row);
-            });
         }
 
-        function addTeacher() {
+        async function addTeacher() {
             var name = document.getElementById('teacherName').value.trim();
             var designation = document.getElementById('teacherDesignation').value.trim();
             var experience = document.getElementById('teacherExperience').value.trim();
             var category = document.getElementById('teacherCategory').value;
             var subject = document.getElementById('teacherSubject').value.trim();
             var medium = document.getElementById('teacherMedium').value;
+            var photoInput = document.getElementById('teacherPhoto');
 
             if (!name || !designation || !experience) {
                 toast('Please fill Name, Designation, and Experience.', 'error');
                 return;
             }
 
-            var teachers = JSON.parse(localStorage.getItem('sbrs_teachers') || '[]');
-            teachers.push({ name: name, designation: designation, experience: experience, category: category, subject: subject, medium: medium, photo: teacherPhotoBase64, id: Date.now() });
-            localStorage.setItem('sbrs_teachers', JSON.stringify(teachers));
-            loadTeachers();
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('designation', designation);
+            formData.append('experience', experience);
+            formData.append('category', category);
+            formData.append('subject', subject);
+            formData.append('medium', medium);
+            if (photoInput.files[0]) {
+                formData.append('photo', photoInput.files[0]);
+            }
 
-            document.getElementById('teacherName').value = '';
-            document.getElementById('teacherDesignation').value = '';
-            document.getElementById('teacherExperience').value = '';
-            document.getElementById('teacherSubject').value = '';
-            document.getElementById('teacherPhoto').value = '';
-            teacherPhotoBase64 = null;
-            document.getElementById('teacherPhotoPreview').innerHTML = '<i class="fas fa-user" style="font-size:2rem;color:#94a3b8;"></i>';
-            toast('"' + name + '" registered!');
+            try {
+                const res = await fetch('/api/teachers', { method: 'POST', body: formData });
+                if (!res.ok) throw new Error('Failed to add teacher');
+                loadTeachers();
+
+                document.getElementById('teacherName').value = '';
+                document.getElementById('teacherDesignation').value = '';
+                document.getElementById('teacherExperience').value = '';
+                document.getElementById('teacherSubject').value = '';
+                document.getElementById('teacherPhoto').value = '';
+                teacherPhotoBase64 = null;
+                document.getElementById('teacherPhotoPreview').innerHTML = '<i class="fas fa-user" style="font-size:2rem;color:#94a3b8;"></i>';
+                toast('"' + name + '" registered!');
+            } catch (err) {
+                console.error(err);
+                toast(err.message, 'error');
+            }
         }
 
-        function removeTeacher(idx) {
-            var teachers = JSON.parse(localStorage.getItem('sbrs_teachers') || '[]');
-            if (!confirm('Remove "' + teachers[idx].name + '" from faculty?')) return;
-            teachers.splice(idx, 1);
-            localStorage.setItem('sbrs_teachers', JSON.stringify(teachers));
-            loadTeachers();
-            toast('Teacher removed.', 'error');
+        async function removeTeacher(id, name) {
+            if (!confirm('Remove "' + name + '" from faculty?')) return;
+            try {
+                const res = await fetch('/api/teachers/' + id, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Failed to remove teacher');
+                loadTeachers();
+                toast('Teacher removed.', 'error');
+            } catch (err) {
+                console.error(err);
+                toast(err.message, 'error');
+            }
         }
 
         function editTeacher(idx) {
-            var teachers = JSON.parse(localStorage.getItem('sbrs_teachers') || '[]');
-            var t = teachers[idx];
-
-            var newName = prompt('Update Name:', t.name);
-            if (newName === null) return;
-
-            t.name = newName;
-            t.designation = prompt('Update Designation:', t.designation) || t.designation;
-            t.experience = prompt('Update Experience (Years):', t.experience) || t.experience;
-            t.subject = prompt('Update Subject:', t.subject) || t.subject;
-
-            localStorage.setItem('sbrs_teachers', JSON.stringify(teachers));
-            loadTeachers();
-            toast('Teacher updated!');
+            // Not supported in this simplified fetch version for now
+            toast('Edit API not implemented here.', 'error');
         }
 
         /* ============================================================
            ALUMNI
         ============================================================ */
-        function loadAlumni() {
-            var alumni = JSON.parse(localStorage.getItem('sbrs_alumni') || '[]');
+        async function loadAlumni() {
             var list = document.getElementById('alumniList');
-            document.getElementById('totalAlumni').textContent = alumni.length;
-            if (alumni.length === 0) {
-                list.innerHTML = '<div class="empty-state"><i class="fas fa-graduation-cap"></i><p>No alumni registered yet.</p></div>';
-                return;
+            try {
+                const res = await fetch('/api/alumni');
+                const alumni = await res.json();
+                document.getElementById('totalAlumni').textContent = alumni.length;
+                if (alumni.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><i class="fas fa-graduation-cap"></i><p>No alumni registered yet.</p></div>';
+                    return;
+                }
+                list.innerHTML = '';
+                alumni.forEach(function (a, i) {
+                    var row = document.createElement('div');
+                    row.className = 'enrolled-row';
+                    row.innerHTML = '<div class="enrolled-info"><div class="enrolled-num">' + (i + 1) + '</div>' +
+                        '<div><div class="enrolled-name">' + a.name + ' (' + a.batch_year + ')</div>' +
+                        '<div class="enrolled-sub">' + a.profession + '</div></div></div>' +
+                        '<div style="display:flex; gap:10px;">' +
+                        '<button class="btn-remove" onclick="removeAlumni(' + a.id + ', \'' + a.name + '\')"><i class="fas fa-trash-alt"></i> Remove</button>' +
+                        '</div>';
+                    list.appendChild(row);
+                });
+            } catch (err) {
+                console.error(err);
+                toast('Failed to load alumni', 'error');
             }
-            list.innerHTML = '';
-            alumni.forEach(function (a, i) {
-                var row = document.createElement('div');
-                row.className = 'enrolled-row';
-                row.innerHTML = '<div class="enrolled-info"><div class="enrolled-num">' + (i + 1) + '</div>' +
-                    '<div><div class="enrolled-name">' + a.name + ' (' + a.batch_year + ')</div>' +
-                    '<div class="enrolled-sub">' + a.profession + '</div></div></div>' +
-                    '<div style="display:flex; gap:10px;">' +
-                    '<button class="btn-remove" style="border-color:#cbd5e1; color:#64748b;" onclick="editAlumni(' + i + ')"><i class="fas fa-edit"></i> Edit</button>' +
-                    '<button class="btn-remove" onclick="removeAlumni(' + i + ')"><i class="fas fa-trash-alt"></i> Remove</button>' +
-                    '</div>';
-                list.appendChild(row);
-            });
         }
 
-        function addAlumni() {
+        async function addAlumni() {
             var name = document.getElementById('alumniName').value.trim();
             var batch = document.getElementById('alumniBatch').value.trim();
             var profession = document.getElementById('alumniProfession').value.trim();
             if (!name || !batch) { toast('Name and Batch year are required.', 'error'); return; }
-            var alumni = JSON.parse(localStorage.getItem('sbrs_alumni') || '[]');
-            alumni.push({ name: name, batch_year: batch, profession: profession || 'N/A' });
-            localStorage.setItem('sbrs_alumni', JSON.stringify(alumni));
-            loadAlumni();
-            document.getElementById('alumniName').value = '';
-            document.getElementById('alumniBatch').value = '';
-            document.getElementById('alumniProfession').value = '';
-            toast('"' + name + '" added!');
+            
+            try {
+                const res = await fetch('/api/alumni', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name, batch_year: batch, profession: profession })
+                });
+                if (!res.ok) throw new Error('Failed to add alumni');
+                
+                loadAlumni();
+                document.getElementById('alumniName').value = '';
+                document.getElementById('alumniBatch').value = '';
+                document.getElementById('alumniProfession').value = '';
+                toast('"' + name + '" added!');
+            } catch (err) {
+                console.error(err);
+                toast(err.message, 'error');
+            }
         }
 
-        function removeAlumni(idx) {
-            var alumni = JSON.parse(localStorage.getItem('sbrs_alumni') || '[]');
-            if (!confirm('Remove "' + alumni[idx].name + '"?')) return;
-            alumni.splice(idx, 1);
-            localStorage.setItem('sbrs_alumni', JSON.stringify(alumni));
-            loadAlumni();
-            toast('Removed.', 'error');
+        async function removeAlumni(id, name) {
+            if (!confirm('Remove "' + name + '"?')) return;
+            try {
+                const res = await fetch('/api/alumni/' + id, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Failed to remove alumni');
+                loadAlumni();
+                toast('Alumni removed.', 'error');
+            } catch (err) {
+                console.error(err);
+                toast(err.message, 'error');
+            }
         }
 
         function editAlumni(idx) {
-            var alumni = JSON.parse(localStorage.getItem('sbrs_alumni') || '[]');
-            var a = alumni[idx];
-
-            var newName = prompt('Update Name:', a.name);
-            if (newName === null) return;
-
-            a.name = newName;
-            a.batch_year = prompt('Update Batch Year:', a.batch_year) || a.batch_year;
-            a.profession = prompt('Update Profession:', a.profession) || a.profession;
-
-            localStorage.setItem('sbrs_alumni', JSON.stringify(alumni));
-            loadAlumni();
-            toast('Alumni updated!');
+            toast('Edit API not implemented here.', 'error');
         }
 
         /* ============================================================
@@ -1376,7 +1399,7 @@
             loadClassSubjects();
         }
 
-        function loadClassSubjects() {
+        async function loadClassSubjects() {
             var med = document.getElementById('subjectMgmtMedium').value;
             var cls = document.getElementById('subjectMgmtClass').value;
             var list = document.getElementById('classSubjectsList');
@@ -1389,22 +1412,29 @@
             }
 
             display.textContent = med + ' - Class ' + cls;
-            var subjects = JSON.parse(localStorage.getItem('sbrs_subjects_' + med + '_' + cls) || '[]');
             
-            if (subjects.length === 0) {
-                list.innerHTML = '<div class="empty-state"><i class="fas fa-tasks"></i><p>No subjects added for Class ' + cls + ' yet.</p></div>';
-                return;
-            }
+            try {
+                const res = await fetch(`/api/subjects?medium=${encodeURIComponent(med)}&class=${encodeURIComponent(cls)}`);
+                const subjects = await res.json();
+                
+                if (subjects.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><i class="fas fa-tasks"></i><p>No subjects added for Class ' + cls + ' yet.</p></div>';
+                    return;
+                }
 
-            list.innerHTML = '';
-            subjects.forEach(function (s, i) {
-                var row = document.createElement('div');
-                row.className = 'enrolled-row';
-                row.innerHTML = '<div class="enrolled-info"><div class="enrolled-num">' + (i + 1) + '</div>' +
-                    '<div class="enrolled-name">' + s + '</div></div>' +
-                    '<button class="btn-remove" onclick="removeSubjectFromClass(' + i + ')"><i class="fas fa-trash-alt"></i></button>';
-                list.appendChild(row);
-            });
+                list.innerHTML = '';
+                subjects.forEach(function (s, i) {
+                    var row = document.createElement('div');
+                    row.className = 'enrolled-row';
+                    row.innerHTML = '<div class="enrolled-info"><div class="enrolled-num">' + (i + 1) + '</div>' +
+                        '<div class="enrolled-name">' + s.subject + '</div></div>' +
+                        '<button class="btn-remove" onclick="removeSubjectFromClass(' + s.id + ', \'' + s.subject + '\')"><i class="fas fa-trash-alt"></i></button>';
+                    list.appendChild(row);
+                });
+            } catch (err) {
+                console.error(err);
+                toast('Failed to load subjects', 'error');
+            }
         }
 
         function toggleCustomSubject() {
@@ -1418,7 +1448,7 @@
             }
         }
 
-        function addSubjectToClass() {
+        async function addSubjectToClass() {
             var med = document.getElementById('subjectMgmtMedium').value;
             var cls = document.getElementById('subjectMgmtClass').value;
             var sel = document.getElementById('subjectSelectMain').value;
@@ -1429,30 +1459,44 @@
             var sub = (sel === 'Other') ? custom : sel;
             if (!sub) { toast('Please select or type a subject name.', 'error'); return; }
 
-            var subjects = JSON.parse(localStorage.getItem('sbrs_subjects_' + med + '_' + cls) || '[]');
-            if (subjects.indexOf(sub) !== -1) { toast('Subject already exists.', 'error'); return; }
-            
-            subjects.push(sub);
-            localStorage.setItem('sbrs_subjects_' + med + '_' + cls, JSON.stringify(subjects));
-            
-            // Reset
-            document.getElementById('subjectSelectMain').value = '';
-            document.getElementById('newSubjectName').value = '';
-            document.getElementById('newSubjectName').style.display = 'none';
-            
-            loadClassSubjects();
-            toast('Subject added!');
+            try {
+                const res = await fetch('/api/subjects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ class: cls, medium: med, subject: sub })
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.error || 'Failed to add subject');
+                }
+                
+                // Reset
+                document.getElementById('subjectSelectMain').value = '';
+                document.getElementById('newSubjectName').value = '';
+                document.getElementById('newSubjectName').style.display = 'none';
+                
+                loadClassSubjects();
+                toast('Subject added!');
+            } catch (error) {
+                console.error(error);
+                toast(error.message, 'error');
+            }
         }
 
-        function removeSubjectFromClass(idx) {
-            var med = document.getElementById('subjectMgmtMedium').value;
-            var cls = document.getElementById('subjectMgmtClass').value;
-            var subjects = JSON.parse(localStorage.getItem('sbrs_subjects_' + med + '_' + cls) || '[]');
-            if (!confirm('Remove "' + subjects[idx] + '"?')) return;
-            subjects.splice(idx, 1);
-            localStorage.setItem('sbrs_subjects_' + med + '_' + cls, JSON.stringify(subjects));
-            loadClassSubjects();
-            toast('Subject removed.', 'error');
+        async function removeSubjectFromClass(id, name) {
+            if (!confirm('Remove "' + name + '"?')) return;
+            
+            try {
+                const res = await fetch(`/api/subjects/${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Failed to remove subject');
+                
+                loadClassSubjects();
+                toast('Subject removed.', 'error');
+            } catch (err) {
+                console.error(err);
+                toast(err.message, 'error');
+            }
         }
 
         /* ============================================================

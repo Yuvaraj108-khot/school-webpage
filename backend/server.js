@@ -14,7 +14,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Serve frontend static files
 app.use(express.static(path.join(__dirname, '../')));
 
-// Routes
+// Routes Imports
 const studentRoutes = require('./routes/studentRoutes');
 const teacherRoutes = require('./routes/teacherRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
@@ -26,6 +26,13 @@ const alumniRoutes = require('./routes/alumniRoutes');
 const subjectRoutes = require('./routes/subjectRoutes');
 const exportRoutes = require('./routes/exportRoutes');
 
+// New Relational Routes Imports
+const mediumRoutes = require('./routes/mediumRoutes');
+const classRoutes = require('./routes/classRoutes');
+const examRoutes = require('./routes/examRoutes');
+const subjectTeacherRoutes = require('./routes/subjectTeacherRoutes');
+
+// Route Registrations
 app.use('/api/students', studentRoutes);
 app.use('/api/teachers', teacherRoutes);
 app.use('/api/attendance', attendanceRoutes);
@@ -36,6 +43,12 @@ app.use('/api/notices', noticeRoutes);
 app.use('/api/alumni', alumniRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/export', exportRoutes);
+
+// New Relational Route Registrations
+app.use('/api/mediums', mediumRoutes);
+app.use('/api/classes', classRoutes);
+app.use('/api/exams', examRoutes);
+app.use('/api/subject-teachers', subjectTeacherRoutes);
 
 // Health Check
 app.get('/api/health', (req, res) => {

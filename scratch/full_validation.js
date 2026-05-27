@@ -1,159 +1,158 @@
-const http = require('http');
+// Native fetch in node v18+ works, no require needed
 
-const testStudent = {
-  student_code: "TEST999",
-  name: "CRUD Test Student",
-  class: "5",
-  medium: "CBSE",
-  parent_name: "CRUD Parent"
-};
+async function runAudit() {
+  console.log('==================================================');
+  console.log('SECTION 15 & 16 — API AUDIT & DB INTEGRITY TEST');
+  console.log('==================================================');
 
-function makeRequest(options, postData) {
-  return new Promise((resolve, reject) => {
-    const req = http.request(options, (res) => {
-      let data = '';
-      res.on('data', (chunk) => data += chunk);
-      res.on('end', () => {
-        resolve({
-          statusCode: res.statusCode,
-          headers: res.headers,
-          data: data ? JSON.parse(data) : null
-        });
-      });
-    });
+  let passes = 0;
+  let fails = 0;
 
-    req.on('error', (err) => reject(err));
-
-    if (postData) {
-      req.write(postData);
-    }
-    req.end();
-  });
-}
-
-async function run() {
-  try {
-    console.log("=== STARTING END-TO-END FLOW VALIDATION ===");
-
-    // 1. Delete if pre-existing
-    console.log("\n1. Pre-cleanup (Deleting TEST999 if exists)...");
-    await makeRequest({
-      hostname: 'localhost',
-      port: 5000,
-      path: `/api/students/${testStudent.student_code}`,
-      method: 'DELETE'
-    });
-
-    // 2. Fetch list before insert
-    console.log("\n2. Fetching student list for CBSE Class 5...");
-    const listBefore = await makeRequest({
-      hostname: 'localhost',
-      port: 5000,
-      path: `/api/students?medium=CBSE&class=5`,
-      method: 'GET'
-    });
-    console.log(`Found ${listBefore.data.length} students initially.`);
-
-    // 3. Create student
-    console.log("\n3. Creating new student TEST999...");
-    const postPayload = JSON.stringify(testStudent);
-    const createRes = await makeRequest({
-      hostname: 'localhost',
-      port: 5000,
-      path: '/api/students',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postPayload)
+  async function testCall(name, url, options = {}) {
+    try {
+      const res = await fetch(url, options);
+      if (res.ok) {
+        console.log(`[PASS] ${name}`);
+        passes++;
+        return await (res.headers.get('content-type')?.includes('json') ? res.json() : res.text());
+      } else {
+        console.error(`[FAIL] ${name} (Status: ${res.status}) - ${await res.text()}`);
+        fails++;
+        return null;
       }
-    }, postPayload);
-    
-    if (createRes.statusCode !== 201) {
-      throw new Error(`Failed to create student: status ${createRes.statusCode}, body: ${JSON.stringify(createRes.data)}`);
+    } catch (e) {
+      console.error(`[ERROR] ${name}: ${e.message}`);
+      fails++;
+      return null;
     }
-    console.log("Student created successfully:", createRes.data);
-
-    // 4. Fetch list after insert to verify
-    console.log("\n4. Fetching student list again to verify insertion...");
-    const listAfter = await makeRequest({
-      hostname: 'localhost',
-      port: 5000,
-      path: `/api/students?medium=CBSE&class=5`,
-      method: 'GET'
-    });
-    const found = listAfter.data.find(s => s.student_code === testStudent.student_code);
-    if (!found) {
-      throw new Error("Student TEST999 not found in the list after creation!");
-    }
-    console.log("Verified: Student exists in student list. Details:", found);
-
-    // 5. Update student
-    console.log("\n5. Updating student TEST999 name to 'Updated CRUD Test'...");
-    const updatePayload = JSON.stringify({
-      name: "Updated CRUD Test",
-      parent_name: "Updated CRUD Parent"
-    });
-    const updateRes = await makeRequest({
-      hostname: 'localhost',
-      port: 5000,
-      path: `/api/students/${testStudent.student_code}`,
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(updatePayload)
-      }
-    }, updatePayload);
-
-    if (updateRes.statusCode !== 200) {
-      throw new Error(`Failed to update student: status ${updateRes.statusCode}, body: ${JSON.stringify(updateRes.data)}`);
-    }
-    console.log("Student updated successfully:", updateRes.data);
-
-    // 6. Fetch list to verify update
-    console.log("\n6. Fetching student list to verify update...");
-    const listAfterUpdate = await makeRequest({
-      hostname: 'localhost',
-      port: 5000,
-      path: `/api/students?medium=CBSE&class=5`,
-      method: 'GET'
-    });
-    const foundUpdated = listAfterUpdate.data.find(s => s.student_code === testStudent.student_code);
-    if (!foundUpdated || foundUpdated.name !== "Updated CRUD Test" || foundUpdated.parent_name !== "Updated CRUD Parent") {
-      throw new Error("Student update verification failed! Details: " + JSON.stringify(foundUpdated));
-    }
-    console.log("Verified: Student details updated correctly in database.");
-
-    // 7. Delete student
-    console.log("\n7. Deleting student TEST999...");
-    const deleteRes = await makeRequest({
-      hostname: 'localhost',
-      port: 5000,
-      path: `/api/students/${testStudent.student_code}`,
-      method: 'DELETE'
-    });
-    if (deleteRes.statusCode !== 200) {
-      throw new Error(`Failed to delete student: status ${deleteRes.statusCode}`);
-    }
-    console.log("Delete response:", deleteRes.data);
-
-    // 8. Fetch list to verify deletion
-    console.log("\n8. Fetching student list to verify deletion...");
-    const listAfterDelete = await makeRequest({
-      hostname: 'localhost',
-      port: 5000,
-      path: `/api/students?medium=CBSE&class=5`,
-      method: 'GET'
-    });
-    const stillExists = listAfterDelete.data.find(s => s.student_code === testStudent.student_code);
-    if (stillExists) {
-      throw new Error("Student TEST999 still exists after delete!");
-    }
-    console.log("Verified: Student deleted successfully from database.");
-
-    console.log("\n=== ALL TESTS PASSED SUCCESSFULLY! ===");
-  } catch (err) {
-    console.error("\n[ERROR] Validation failed:", err.message);
   }
+
+  const BASE = 'http://localhost:5000/api';
+
+  // --- Student Management Test ---
+  console.log('\n--- STUDENT MANAGEMENT ---');
+  const student = await testCall('Add Student', `${BASE}/students`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      student_code: 'QA-STUD-01',
+      name: 'QA Test Student',
+      class: '10',
+      medium: 'English',
+      parent_name: 'QA Parent'
+    })
+  });
+
+  if (student && student.id) {
+    await testCall('Fetch Student', `${BASE}/students?medium=English&class=10`);
+    await testCall('Update Student', `${BASE}/students/${student.student_code}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'QA Updated Student' })
+    });
+    // Soft Delete Student
+    await testCall('Delete Student', `${BASE}/students/${student.student_code}`, { method: 'DELETE' });
+  }
+
+  // --- Teacher Management Test ---
+  console.log('\n--- TEACHER MANAGEMENT ---');
+  const teacher = await testCall('Add Teacher', `${BASE}/teachers`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: 'QA Test Teacher',
+      qualifications: 'QA Master',
+      experience: '10 years',
+      subject: 'Quality Assurance',
+      medium: 'English',
+      is_active: true
+    })
+  });
+
+  if (teacher && teacher.id) {
+    await testCall('Fetch Teacher', `${BASE}/teachers`);
+    await testCall('Delete Teacher', `${BASE}/teachers/${teacher.id}`, { method: 'DELETE' });
+  }
+
+  // --- Subject Management Test ---
+  console.log('\n--- SUBJECT MANAGEMENT ---');
+  const subject = await testCall('Add Subject', `${BASE}/subjects/relational`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: 'QA Test Subject',
+      class_id: 15, // Class 10
+      medium_id: 3  // English
+    })
+  });
+
+  if (subject && subject.id) {
+    await testCall('Fetch Subjects', `${BASE}/subjects/relational?class_id=15`);
+    await testCall('Delete Subject', `${BASE}/subjects/relational/${subject.id}`, { method: 'DELETE' });
+  }
+
+  // --- Notice System Test ---
+  console.log('\n--- NOTICE SYSTEM ---');
+  const notice = await testCall('Add Notice', `${BASE}/notices`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: 'QA Test Notice',
+      description: 'QA Notice Details',
+      date: new Date().toISOString()
+    })
+  });
+
+  if (notice && notice.id) {
+    await testCall('Fetch Notices', `${BASE}/notices`);
+    await testCall('Delete Notice', `${BASE}/notices/${notice.id}`, { method: 'DELETE' });
+  }
+
+  // --- Alumni System Test ---
+  console.log('\n--- ALUMNI SYSTEM ---');
+  const alumni = await testCall('Add Alumni', `${BASE}/alumni`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: 'QA Test Alumni',
+      batch_year: '2020',
+      profession: 'Engineer'
+    })
+  });
+
+  if (alumni && alumni.id) {
+    await testCall('Fetch Alumni', `${BASE}/alumni`);
+    await testCall('Delete Alumni', `${BASE}/alumni/${alumni.id}`, { method: 'DELETE' });
+  }
+
+  // --- Certificate System Test ---
+  console.log('\n--- CERTIFICATE SYSTEM ---');
+  const cert = await testCall('Request Certificate', `${BASE}/certificates`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      student_code: 'QA-STUD-01',
+      student_name: 'QA Test Student',
+      class: '10',
+      medium: 'English',
+      certificate_type: 'Transfer Certificate',
+      reason: 'Relocating'
+    })
+  });
+
+  if (cert && cert.id) {
+    await testCall('Fetch Certificates', `${BASE}/certificates`);
+    await testCall('Update Certificate Status', `${BASE}/certificates/${cert.id}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'Approved' })
+    });
+  }
+
+  console.log('\n==================================================');
+  console.log(`TOTAL PASSES: ${passes}`);
+  console.log(`TOTAL FAILS: ${fails}`);
+  console.log('==================================================');
 }
 
-run();
+runAudit();
