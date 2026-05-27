@@ -5,30 +5,77 @@ exports.exportAttendance = async (req, res) => {
     try {
         const { class: cls, medium, month, year } = req.query;
         
+        const studentWhere = { AND: [] };
+        if (cls) {
+            const numericCls = cls.replace(/\D/g, '');
+            studentWhere.AND.push({
+                OR: [
+                    { class: { equals: cls, mode: 'insensitive' } },
+                    { class: { equals: numericCls, mode: 'insensitive' } },
+                    { class: { equals: `Class ${numericCls}`, mode: 'insensitive' } }
+                ]
+            });
+        }
+        if (medium) {
+            const normalized = (medium === 'CBSE' ? 'English' : medium);
+            studentWhere.AND.push({
+                OR: [
+                    { medium: { equals: medium, mode: 'insensitive' } },
+                    { medium: { equals: normalized, mode: 'insensitive' } }
+                ]
+            });
+        }
+        studentWhere.AND.push({ is_active: true });
+
         // Fetch students
         const students = await prisma.student.findMany({
-            where: { class: cls, medium },
+            where: studentWhere,
             orderBy: { roll_no: 'asc' }
         });
 
-        // Date range filtering
-        let dateFilter = {};
+        // Fetch attendance records
+        const attWhere = { AND: [] };
+        if (cls) {
+            const numericCls = cls.replace(/\D/g, '');
+            attWhere.AND.push({
+                OR: [
+                    { class: { equals: cls, mode: 'insensitive' } },
+                    { class: { equals: numericCls, mode: 'insensitive' } },
+                    { class: { equals: `Class ${numericCls}`, mode: 'insensitive' } }
+                ]
+            });
+        }
+        if (medium) {
+            const normalized = (medium === 'CBSE' ? 'English' : medium);
+            attWhere.AND.push({
+                OR: [
+                    { medium: { equals: medium, mode: 'insensitive' } },
+                    { medium: { equals: normalized, mode: 'insensitive' } }
+                ]
+            });
+        }
         if (month && year) {
             const startDate = new Date(year, month - 1, 1);
             const endDate = new Date(year, month, 0, 23, 59, 59, 999);
-            dateFilter = {
+            attWhere.AND.push({
                 date: { gte: startDate, lte: endDate }
-            };
+            });
         }
+        attWhere.AND.push({ is_active: true });
 
-        // Fetch attendance records
         const attendanceRecords = await prisma.attendance.findMany({
-            where: { class: cls, medium, ...dateFilter },
+            where: attWhere,
             orderBy: [{ date: 'asc' }, { period: 'asc' }]
         });
 
         if (attendanceRecords.length === 0) {
-            return res.status(404).json({ error: 'No attendance records found for this period.' });
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Attendance Register');
+            sheet.getCell('A1').value = 'No attendance records found for this period.';
+            res.setHeader('Content-Disposition', `attachment; filename=Register_Attendance_${cls || 'Class'}_${medium || 'Medium'}.xlsx`);
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            await workbook.xlsx.write(res);
+            return res.end();
         }
 
         // Create workbook & worksheet
@@ -88,14 +135,14 @@ exports.exportAttendance = async (req, res) => {
             students.forEach(s => {
                 const studentRec = attendanceRecords.find(r => 
                     r.student_code === s.student_code && 
-                    r.date.getTime() === rec.date.getTime() &&
+                    r.date && rec.date && r.date.getTime() === rec.date.getTime() &&
                     r.period === rec.period &&
                     r.subject === rec.subject
                 );
 
                 const status = (studentRec && studentRec.status === 'Present') ? 'Present' : (studentRec ? 'Absent' : '-');
                 const row = sheet.addRow([
-                    rec.date.toLocaleDateString(),
+                    rec.date ? rec.date.toLocaleDateString() : '-',
                     `Period ${rec.period}`,
                     rec.subject,
                     s.roll_no,
@@ -152,18 +199,63 @@ exports.exportMarks = async (req, res) => {
     try {
         const { class: cls, medium, exam_type, subject } = req.query;
         
+        const studentWhere = { AND: [] };
+        if (cls) {
+            const numericCls = cls.replace(/\D/g, '');
+            studentWhere.AND.push({
+                OR: [
+                    { class: { equals: cls, mode: 'insensitive' } },
+                    { class: { equals: numericCls, mode: 'insensitive' } },
+                    { class: { equals: `Class ${numericCls}`, mode: 'insensitive' } }
+                ]
+            });
+        }
+        if (medium) {
+            const normalized = (medium === 'CBSE' ? 'English' : medium);
+            studentWhere.AND.push({
+                OR: [
+                    { medium: { equals: medium, mode: 'insensitive' } },
+                    { medium: { equals: normalized, mode: 'insensitive' } }
+                ]
+            });
+        }
+        studentWhere.AND.push({ is_active: true });
+
         const students = await prisma.student.findMany({
-            where: { class: cls, medium },
+            where: studentWhere,
             orderBy: { roll_no: 'asc' }
         });
 
+        const marksWhere = { AND: [] };
+        if (cls) {
+            const numericCls = cls.replace(/\D/g, '');
+            marksWhere.AND.push({
+                OR: [
+                    { class: { equals: cls, mode: 'insensitive' } },
+                    { class: { equals: numericCls, mode: 'insensitive' } },
+                    { class: { equals: `Class ${numericCls}`, mode: 'insensitive' } }
+                ]
+            });
+        }
+        if (medium) {
+            const normalized = (medium === 'CBSE' ? 'English' : medium);
+            marksWhere.AND.push({
+                OR: [
+                    { medium: { equals: medium, mode: 'insensitive' } },
+                    { medium: { equals: normalized, mode: 'insensitive' } }
+                ]
+            });
+        }
+        if (exam_type) {
+            marksWhere.AND.push({ exam_type });
+        }
+        if (subject) {
+            marksWhere.AND.push({ subject });
+        }
+        marksWhere.AND.push({ is_active: true });
+
         const marksData = await prisma.marks.findMany({
-            where: { 
-                class: cls, 
-                medium, 
-                exam_type,
-                ...(subject && { subject })
-            }
+            where: marksWhere
         });
 
         const workbook = new ExcelJS.Workbook();

@@ -1285,7 +1285,10 @@
     <!-- Toast Notification -->
     <div class="toast" id="toast">
         <i class="fas fa-check-circle"></i>
-<script>
+        <span id="toastMessage">Done!</span>
+    </div>
+
+    <script>
         // ===================== INITIALIZATION =====================
         const API_BASE = 'http://localhost:5000/api';
         const today = new Date();
@@ -1386,7 +1389,8 @@
                     allMediums.forEach(med => {
                         // Map internal name to display CBSE for English Medium to match existing layout
                         const displayName = med.name === 'English' ? 'CBSE (English Medium)' : `${med.name} Medium`;
-                        select.innerHTML += `<option value="${med.name}">${displayName}</option>`;
+                        const optVal = med.name === 'English' ? 'CBSE' : med.name;
+                        select.innerHTML += `<option value="${optVal}">${displayName}</option>`;
                     });
                 }
             });
@@ -1452,7 +1456,8 @@
 
         // ===================== MEDIUM / CLASS / SUBJECT DYNAMIC LOADS =====================
         async function fetchClassesForMedium(mediumName) {
-            const medRecord = allMediums.find(m => m.name === mediumName);
+            const normalized = mediumName === 'CBSE' ? 'English' : mediumName;
+            const medRecord = allMediums.find(m => m.name === normalized || m.name.toLowerCase() === normalized.toLowerCase());
             if (!medRecord) return [];
             
             if (classesByMedium[medRecord.id]) return classesByMedium[medRecord.id];
@@ -1639,15 +1644,11 @@
             updateSteps();
         }
 
-        // ===================== STUDENT LIST LOADING =====================
         async function fetchStudents(mediumName, classNum) {
-            // Map display medium CBSE back to DB English
-            const queryMedium = mediumName === 'CBSE' ? 'English' : mediumName;
-            const res = await apiFetch(`/students?class=${classNum}&medium=${queryMedium}&limit=100`);
-            if (res && res.data) {
-                return res.data;
-            }
-            return [];
+            const m = mediumName;
+            const c = String(classNum).replace(/[^0-9]/g, ''); // Ensure only numeric part is sent
+            const res = await apiFetch(`/students?medium=${encodeURIComponent(m)}&class=${encodeURIComponent(c)}&limit=100`);
+            return res?.data || res || [];
         }
 
         async function loadStudentList() {
@@ -1702,8 +1703,23 @@
                 container.appendChild(row);
             });
 
+            updateAttendanceStats();
             document.getElementById('attendanceArea').style.display = 'block';
             updateSteps();
+        }
+
+        function updateAttendanceStats() {
+            const checkboxes = document.querySelectorAll('#studentListContainer input[type="checkbox"]');
+            let present = 0;
+            let absent = 0;
+            checkboxes.forEach(cb => {
+                if (cb.checked) present++;
+                else absent++;
+            });
+            const pCount = document.getElementById('presentCount');
+            const aCount = document.getElementById('absentCount');
+            if (pCount) pCount.textContent = present;
+            if (aCount) aCount.textContent = absent;
         }
 
         function toggleAttendance(index) {
@@ -1720,14 +1736,24 @@
                 label.className = 'status-label absent';
                 row.classList.add('absent-row');
             }
+            updateAttendanceStats();
         }
 
         function markAllPresent() {
             const checkboxes = document.querySelectorAll('#studentListContainer input[type="checkbox"]');
             checkboxes.forEach((cb, i) => {
                 cb.checked = true;
-                toggleAttendance(i);
+                const label = document.getElementById(`status-${i}`);
+                const row = document.getElementById(`student-row-${i}`);
+                if (label) {
+                    label.textContent = 'Present';
+                    label.className = 'status-label present';
+                }
+                if (row) {
+                    row.classList.remove('absent-row');
+                }
             });
+            updateAttendanceStats();
         }
 
         // ===================== SAVE ATTENDANCE =====================
@@ -1757,10 +1783,11 @@
                 });
             });
 
-            const queryMedium = medium === 'CBSE' ? 'English' : medium;
+            const queryMedium = medium;
+            const queryClass = String(cls).replace(/[^0-9]/g, '');
 
             const payload = {
-                class: cls,
+                class: queryClass,
                 medium: queryMedium,
                 period: period,
                 subject: subject,
@@ -1855,10 +1882,11 @@
                 return;
             }
 
-            const queryMedium = medium === 'CBSE' ? 'English' : medium;
+            const queryMedium = medium;
+            const queryClass = String(cls).replace(/[^0-9]/g, '');
 
             const payload = {
-                class: cls,
+                class: queryClass,
                 medium: queryMedium,
                 subject: subject,
                 exam_type: exam,
@@ -1920,8 +1948,9 @@
                 return;
             }
 
-            const queryMedium = medium === 'CBSE' ? 'English' : medium;
-            const downloadUrl = `${API_BASE}/export/marks?class=${cls}&medium=${queryMedium}&exam_type=${encodeURIComponent(exam)}&subject=${encodeURIComponent(subject)}`;
+            const queryMedium = medium;
+            const queryClass = String(cls).replace(/[^0-9]/g, '');
+            const downloadUrl = `${API_BASE}/export/marks?class=${encodeURIComponent(queryClass)}&medium=${encodeURIComponent(queryMedium)}&exam_type=${encodeURIComponent(exam)}&subject=${encodeURIComponent(subject)}`;
             
             showToast('Generating marks excel report...', 'success');
             window.location.href = downloadUrl;
@@ -1938,8 +1967,9 @@
                 return;
             }
 
-            const queryMedium = medium === 'CBSE' ? 'English' : medium;
-            const downloadUrl = `${API_BASE}/export/attendance?class=${cls}&medium=${queryMedium}&month=${month}&year=${year}`;
+            const queryMedium = medium;
+            const queryClass = String(cls).replace(/[^0-9]/g, '');
+            const downloadUrl = `${API_BASE}/export/attendance?class=${encodeURIComponent(queryClass)}&medium=${encodeURIComponent(queryMedium)}&month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}`;
             
             showToast('Generating attendance register report...', 'success');
             window.location.href = downloadUrl;

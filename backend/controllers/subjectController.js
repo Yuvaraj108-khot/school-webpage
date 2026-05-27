@@ -5,6 +5,9 @@ const prisma = require('../prismaClient');
 exports.getSubjectsByClass = async (req, res) => {
     try {
         const { class: className, medium } = req.query;
+        if (!className || !medium) {
+            return res.json([]);
+        }
         
         // Resolve medium_id
         const medName = medium === 'CBSE' ? 'English' : medium;
@@ -43,6 +46,9 @@ exports.getSubjectsByClass = async (req, res) => {
 exports.addSubjectToClass = async (req, res) => {
     try {
         const { class: className, medium, subject } = req.body;
+        if (!className || !medium || !subject) {
+            return res.status(400).json({ error: 'Class, medium, and subject are required' });
+        }
         
         // Resolve medium_id
         const medName = medium === 'CBSE' ? 'English' : medium;

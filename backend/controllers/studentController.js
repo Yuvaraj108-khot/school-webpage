@@ -37,20 +37,34 @@ exports.getStudents = async (req, res) => {
   try {
     const { class: cls, medium, page = 1, limit = 50, include_inactive = 'false' } = req.query;
     
-    const where = {};
-    if (cls) where.class = cls;
-    if (medium) {
-        const normalized = (medium === 'CBSE' ? 'English' : medium);
-        where.OR = [
-            { medium: { equals: medium, mode: 'insensitive' } },
-            { medium: { equals: normalized, mode: 'insensitive' } }
-        ];
+    const andConditions = [];
+    
+    if (cls) {
+        const numericCls = cls.replace(/\D/g, '');
+        andConditions.push({
+            OR: [
+                { class: { equals: cls, mode: 'insensitive' } },
+                { class: { equals: numericCls, mode: 'insensitive' } },
+                { class: { equals: `Class ${numericCls}`, mode: 'insensitive' } }
+            ]
+        });
     }
     
-    // Soft delete filtering
-    if (include_inactive !== 'true') {
-        where.is_active = true;
+    if (medium) {
+        const normalized = (medium === 'CBSE' ? 'English' : medium);
+        andConditions.push({
+            OR: [
+                { medium: { equals: medium, mode: 'insensitive' } },
+                { medium: { equals: normalized, mode: 'insensitive' } }
+            ]
+        });
     }
+    
+    if (include_inactive !== 'true') {
+        andConditions.push({ is_active: true });
+    }
+
+    const where = andConditions.length > 0 ? { AND: andConditions } : {};
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const totalItems = await prisma.student.count({ where });
