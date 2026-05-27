@@ -63,3 +63,33 @@ exports.deleteStudent = async (req, res) => {
         res.status(500).json({ error: 'Failed to delete student' });
     }
 };
+
+exports.updateStudent = async (req, res) => {
+    try {
+        const { student_code, name, class: className, medium, parent_name, roll_no, photo_url } = req.body;
+        const code = req.params.code;
+
+        const existing = await prisma.student.findUnique({
+            where: { student_code: code }
+        });
+        if (!existing) return res.status(404).json({ error: 'Student not found' });
+
+        const updated = await prisma.student.update({
+            where: { student_code: code },
+            data: {
+                student_code: student_code !== undefined ? student_code : existing.student_code,
+                name: name !== undefined ? name : existing.name,
+                class: className !== undefined ? className : existing.class,
+                medium: medium !== undefined ? medium : existing.medium,
+                parent_name: parent_name !== undefined ? parent_name : existing.parent_name,
+                roll_no: roll_no !== undefined ? roll_no : existing.roll_no,
+                photo_url: photo_url !== undefined ? photo_url : existing.photo_url
+            }
+        });
+        res.json(updated);
+    } catch (error) {
+        console.error("Update Student Error:", error);
+        res.status(500).json({ error: 'Failed to update student' });
+    }
+};
+
