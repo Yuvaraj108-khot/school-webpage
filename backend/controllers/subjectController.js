@@ -21,7 +21,8 @@ exports.getSubjectsByClass = async (req, res) => {
         const subjects = await prisma.subject.findMany({
             where: { 
                 class_id: cls.id,
-                medium_id: med.id
+                medium_id: med.id,
+                is_active: true
             }
         });
         

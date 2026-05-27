@@ -5,7 +5,9 @@
   "scripts": {
     "start": "node backend/server.js",
     "dev": "concurrently \"node backend/server.js\" \"http-server -a localhost -p 8000 -c-1 -o\"",
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seed.js",
+    "check-db": "node check-db.js",
+    "full-validation": "node full-validation.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

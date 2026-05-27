@@ -811,6 +811,8 @@
     </div>
 
     <script>
+        const API_BASE = 'http://localhost:5000/api';
+
         /* ============================================================
            SECTION NAVIGATION
         ============================================================ */
@@ -881,7 +883,7 @@
 
         async function loadGallery() {
             try {
-                const res = await fetch('/api/gallery');
+                const res = await fetch(API_BASE + '/gallery');
                 const gallery = await res.json();
                 var grid = document.getElementById('previewGrid');
                 if (!grid) return;
@@ -917,7 +919,7 @@
             formData.append('description', desc);
 
             try {
-                const res = await fetch('/api/gallery/upload', {
+                const res = await fetch(API_BASE + '/gallery/upload', {
                     method: 'POST',
                     body: formData
                 });
@@ -938,7 +940,7 @@
         async function deleteImage(id) {
             if (!confirm('Remove this image?')) return;
             try {
-                const res = await fetch('/api/gallery/' + id, { method: 'DELETE' });
+                const res = await fetch(API_BASE + '/gallery/' + id, { method: 'DELETE' });
                 if (!res.ok) throw new Error('Delete failed');
                 toast('Removed.', 'error');
                 loadGallery();
@@ -951,50 +953,73 @@
           /* ============================================================
              NOTICES / EVENTS
           ============================================================ */
-        function loadNotices() {
-            var notices = JSON.parse(localStorage.getItem('sbrs_notices') || '[]');
+        async function loadNotices() {
             var list = document.getElementById('noticeList');
             if (!list) return;
-            if (notices.length === 0) {
-                list.innerHTML = '<p style="color:#888;text-align:center;">No active notices.</p>';
-                return;
+            try {
+                const res = await fetch(API_BASE + '/events');
+                const notices = await res.json();
+                if (notices.length === 0) {
+                    list.innerHTML = '<p style="color:#888;text-align:center;">No active notices.</p>';
+                    return;
+                }
+                list.innerHTML = '';
+                notices.forEach(function (n) {
+                    var div = document.createElement('div');
+                    div.className = 'notice-item';
+                    const noticeDate = n.date ? new Date(n.date).toLocaleDateString() : '';
+                    div.innerHTML = '<div><h4 style="margin:0 0 5px;">' + n.title + '</h4>' +
+                        '<p style="font-size:0.8rem;color:#666;margin:0;">' + noticeDate + '</p></div>' +
+                        '<button onclick="deleteNotice(' + n.id + ')" style="background:#ea5455;color:white;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;">Remove</button>';
+                    list.appendChild(div);
+                });
+            } catch (err) {
+                console.error(err);
+                toast('Failed to load notices', 'error');
             }
-            list.innerHTML = '';
-            notices.forEach(function (n, i) {
-                var div = document.createElement('div');
-                div.className = 'notice-item';
-                div.innerHTML = '<div><h4 style="margin:0 0 5px;">' + n.title + '</h4>' +
-                    '<p style="font-size:0.8rem;color:#666;margin:0;">' + (n.date || '') + '</p></div>' +
-                    '<button onclick="deleteNotice(' + i + ')" style="background:#ea5455;color:white;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;">Remove</button>';
-                list.appendChild(div);
-            });
         }
 
-        function publishNotice() {
+        async function publishNotice() {
             var title = document.getElementById('eventTitle').value.trim();
             if (!title) { toast('Title is required!', 'error'); return; }
-            var notices = JSON.parse(localStorage.getItem('sbrs_notices') || '[]');
-            notices.unshift({
-                title: title,
-                date: document.getElementById('eventDate').value || new Date().toLocaleDateString(),
-                expiryDate: document.getElementById('eventExpiryDate').value || null,
-                description: document.getElementById('eventDetails').value
-            });
-            localStorage.setItem('sbrs_notices', JSON.stringify(notices));
-            loadNotices();
-            document.getElementById('eventTitle').value = '';
-            document.getElementById('eventDate').value = '';
-            document.getElementById('eventExpiryDate').value = '';
-            document.getElementById('eventDetails').value = '';
-            toast('Notice published!');
+            const date = document.getElementById('eventDate').value || new Date().toISOString();
+            const description = document.getElementById('eventDetails').value;
+            
+            try {
+                const res = await fetch(API_BASE + '/events', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: title,
+                        date: date,
+                        description: description
+                    })
+                });
+                if (!res.ok) throw new Error('Publish failed');
+                
+                loadNotices();
+                document.getElementById('eventTitle').value = '';
+                document.getElementById('eventDate').value = '';
+                document.getElementById('eventExpiryDate').value = '';
+                document.getElementById('eventDetails').value = '';
+                toast('Notice published!');
+            } catch (err) {
+                console.error(err);
+                toast('Failed to publish notice', 'error');
+            }
         }
 
-        function deleteNotice(idx) {
-            var notices = JSON.parse(localStorage.getItem('sbrs_notices') || '[]');
-            notices.splice(idx, 1);
-            localStorage.setItem('sbrs_notices', JSON.stringify(notices));
-            loadNotices();
-            toast('Notice removed.', 'error');
+        async function deleteNotice(id) {
+            if (!confirm('Remove this notice?')) return;
+            try {
+                const res = await fetch(API_BASE + '/events/' + id, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Delete failed');
+                loadNotices();
+                toast('Notice removed.', 'error');
+            } catch (err) {
+                console.error(err);
+                toast('Failed to remove notice', 'error');
+            }
         }
 
         /* ============================================================
@@ -1026,7 +1051,7 @@
             
             try {
                 console.log(`[DEBUG] Fetching students from DB: medium=${m}, class=${c}`);
-                const response = await fetch(`/api/students?medium=${encodeURIComponent(m)}&class=${encodeURIComponent(c)}`);
+                const response = await fetch(API_BASE + `/students?medium=${encodeURIComponent(m)}&class=${encodeURIComponent(c)}`);
                 if (!response.ok) {
                     throw new Error(`HTTP Error: status ${response.status}`);
                 }
@@ -1105,7 +1130,7 @@
             console.log('[DEBUG] Add Student request payload:', payload);
 
             try {
-                const response = await fetch('/api/students', {
+                const response = await fetch(API_BASE + '/students', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1138,7 +1163,7 @@
 
             console.log(`[DEBUG] Sending delete request for student_code: ${studentCode}`);
             try {
-                const response = await fetch(`/api/students/${encodeURIComponent(studentCode)}`, {
+                const response = await fetch(API_BASE + `/students/${encodeURIComponent(studentCode)}`, {
                     method: 'DELETE'
                 });
 
@@ -1172,7 +1197,7 @@
 
                 console.log(`[DEBUG] Sending update request for student_code: ${studentCode}, payload:`, payload);
                 try {
-                    const response = await fetch(`/api/students/${encodeURIComponent(studentCode)}`, {
+                    const response = await fetch(API_BASE + `/students/${encodeURIComponent(studentCode)}`, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json'
@@ -1217,7 +1242,7 @@
         async function loadTeachers() {
             var list = document.getElementById('teachersList');
             try {
-                const res = await fetch('/api/teachers');
+                const res = await fetch(API_BASE + '/teachers');
                 const teachers = await res.json();
                 document.getElementById('totalTeachers').textContent = teachers.length;
                 if (teachers.length === 0) {
@@ -1270,7 +1295,7 @@
             }
 
             try {
-                const res = await fetch('/api/teachers', { method: 'POST', body: formData });
+                const res = await fetch(API_BASE + '/teachers', { method: 'POST', body: formData });
                 if (!res.ok) throw new Error('Failed to add teacher');
                 loadTeachers();
 
@@ -1291,7 +1316,7 @@
         async function removeTeacher(id, name) {
             if (!confirm('Remove "' + name + '" from faculty?')) return;
             try {
-                const res = await fetch('/api/teachers/' + id, { method: 'DELETE' });
+                const res = await fetch(API_BASE + '/teachers/' + id, { method: 'DELETE' });
                 if (!res.ok) throw new Error('Failed to remove teacher');
                 loadTeachers();
                 toast('Teacher removed.', 'error');
@@ -1312,7 +1337,7 @@
         async function loadAlumni() {
             var list = document.getElementById('alumniList');
             try {
-                const res = await fetch('/api/alumni');
+                const res = await fetch(API_BASE + '/alumni');
                 const alumni = await res.json();
                 document.getElementById('totalAlumni').textContent = alumni.length;
                 if (alumni.length === 0) {
@@ -1344,7 +1369,7 @@
             if (!name || !batch) { toast('Name and Batch year are required.', 'error'); return; }
             
             try {
-                const res = await fetch('/api/alumni', {
+                const res = await fetch(API_BASE + '/alumni', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: name, batch_year: batch, profession: profession })
@@ -1365,7 +1390,7 @@
         async function removeAlumni(id, name) {
             if (!confirm('Remove "' + name + '"?')) return;
             try {
-                const res = await fetch('/api/alumni/' + id, { method: 'DELETE' });
+                const res = await fetch(API_BASE + '/alumni/' + id, { method: 'DELETE' });
                 if (!res.ok) throw new Error('Failed to remove alumni');
                 loadAlumni();
                 toast('Alumni removed.', 'error');
@@ -1414,7 +1439,7 @@
             display.textContent = med + ' - Class ' + cls;
             
             try {
-                const res = await fetch(`/api/subjects?medium=${encodeURIComponent(med)}&class=${encodeURIComponent(cls)}`);
+                const res = await fetch(API_BASE + `/subjects?medium=${encodeURIComponent(med)}&class=${encodeURIComponent(cls)}`);
                 const subjects = await res.json();
                 
                 if (subjects.length === 0) {
@@ -1460,7 +1485,7 @@
             if (!sub) { toast('Please select or type a subject name.', 'error'); return; }
 
             try {
-                const res = await fetch('/api/subjects', {
+                const res = await fetch(API_BASE + '/subjects', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ class: cls, medium: med, subject: sub })
@@ -1488,7 +1513,7 @@
             if (!confirm('Remove "' + name + '"?')) return;
             
             try {
-                const res = await fetch(`/api/subjects/${id}`, { method: 'DELETE' });
+                const res = await fetch(API_BASE + `/subjects/${id}`, { method: 'DELETE' });
                 if (!res.ok) throw new Error('Failed to remove subject');
                 
                 loadClassSubjects();

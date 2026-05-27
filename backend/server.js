@@ -40,6 +40,7 @@ app.use('/api/marks', marksRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/notices', noticeRoutes);
+app.use('/api/events', noticeRoutes);
 app.use('/api/alumni', alumniRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/export', exportRoutes);

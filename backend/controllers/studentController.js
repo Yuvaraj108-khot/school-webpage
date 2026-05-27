@@ -40,7 +40,11 @@ exports.getStudents = async (req, res) => {
     const where = {};
     if (cls) where.class = cls;
     if (medium) {
-        where.medium = medium === 'CBSE' ? 'English' : medium;
+        const normalized = (medium === 'CBSE' ? 'English' : medium);
+        where.OR = [
+            { medium: { equals: medium, mode: 'insensitive' } },
+            { medium: { equals: normalized, mode: 'insensitive' } }
+        ];
     }
     
     // Soft delete filtering
