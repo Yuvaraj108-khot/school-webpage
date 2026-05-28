@@ -115,22 +115,35 @@ exports.getStudentByCode = async (req, res) => {
 
 exports.createStudent = async (req, res) => {
     try {
+<<<<<<< HEAD
         const { student_code, name, class: className, medium, parent_name, roll_no, photo_url } = req.body;
         
         // Validation
         if (!student_code || !name || !className || !medium) {
+=======
+        const { student_code, name, class: className, medium, parent_name, roll_no, photo_url, email, password } = req.body;
+        const cleanStudentCode = typeof student_code === 'string' ? student_code.trim() : '';
+        const cleanName = typeof name === 'string' ? name.trim() : '';
+        const cleanClass = typeof className === 'string' ? className.trim() : '';
+        const cleanMedium = typeof medium === 'string' ? medium.trim() : '';
+        const cleanEmail = typeof email === 'string' && email.trim() ? email.trim().toLowerCase() : null;
+        const cleanPassword = typeof password === 'string' && password.trim() ? password.trim() : cleanStudentCode;
+
+        if (!cleanStudentCode || !cleanName || !cleanClass || !cleanMedium) {
+>>>>>>> 79642c3 (my local changes)
             return res.status(400).json({ error: 'Student code, name, class, and medium are required' });
         }
 
         // Check if student code already exists
         const existing = await prisma.student.findUnique({
-            where: { student_code }
+            where: { student_code: cleanStudentCode }
         });
 
         if (existing) {
             return res.status(400).json({ error: 'Student Code already exists' });
         }
 
+<<<<<<< HEAD
         // Resolve relational mapping fields
         const rel = await resolveStudentClassAndMedium(className, medium);
 
@@ -151,6 +164,35 @@ exports.createStudent = async (req, res) => {
             include: {
                 class_rel: true,
                 medium_rel: true
+=======
+        if (cleanEmail) {
+            const existingEmail = await prisma.student.findUnique({
+                where: { email: cleanEmail }
+            });
+            if (existingEmail) {
+                return res.status(400).json({ error: 'Student email already exists' });
+            }
+
+            const existingTeacherEmail = await prisma.teacher.findUnique({
+                where: { email: cleanEmail }
+            });
+            if (existingTeacherEmail) {
+                return res.status(400).json({ error: 'Email is already used by a teacher' });
+            }
+        }
+
+        const student = await prisma.student.create({
+            data: { 
+                student_code: cleanStudentCode,
+                name: cleanName,
+                class: cleanClass,
+                medium: cleanMedium,
+                parent_name: parent_name || null,
+                roll_no: roll_no || null,
+                photo_url: photo_url || null,
+                email: cleanEmail,
+                password: cleanPassword
+>>>>>>> 79642c3 (my local changes)
             }
         });
         res.status(201).json(student);
@@ -180,6 +222,7 @@ exports.deleteStudent = async (req, res) => {
 
 exports.updateStudent = async (req, res) => {
     try {
+<<<<<<< HEAD
         const { student_code, name, class: className, medium, parent_name, roll_no, photo_url, is_active } = req.body;
         const code = req.params.code;
 
@@ -210,11 +253,47 @@ exports.updateStudent = async (req, res) => {
             include: {
                 class_rel: true,
                 medium_rel: true
+=======
+        const { name, parent_name, email, password } = req.body;
+        const student = await prisma.student.findUnique({
+            where: { student_code: req.params.code }
+        });
+        if (!student) return res.status(404).json({ error: 'Student not found' });
+
+        const cleanEmail = typeof email === 'string' && email.trim() ? email.trim().toLowerCase() : null;
+        if (cleanEmail && cleanEmail !== student.email) {
+            const existingEmail = await prisma.student.findUnique({
+                where: { email: cleanEmail }
+            });
+            if (existingEmail) {
+                return res.status(400).json({ error: 'Student email already exists' });
+            }
+
+            const existingTeacherEmail = await prisma.teacher.findUnique({
+                where: { email: cleanEmail }
+            });
+            if (existingTeacherEmail) {
+                return res.status(400).json({ error: 'Email is already used by a teacher' });
+            }
+        }
+
+        const updated = await prisma.student.update({
+            where: { student_code: req.params.code },
+            data: {
+                name: name !== undefined ? name.trim() : student.name,
+                parent_name: parent_name !== undefined ? parent_name.trim() || null : student.parent_name,
+                email: email !== undefined ? cleanEmail : student.email,
+                password: password !== undefined && password.trim() ? password.trim() : student.password
+>>>>>>> 79642c3 (my local changes)
             }
         });
         res.json(updated);
     } catch (error) {
+<<<<<<< HEAD
         console.error("Update Student Error:", error);
+=======
+        console.error(error);
+>>>>>>> 79642c3 (my local changes)
         res.status(500).json({ error: 'Failed to update student' });
     }
 };

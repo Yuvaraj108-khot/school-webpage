@@ -13,7 +13,7 @@ const endpoints = [
 
 function get(path) {
     return new Promise((resolve, reject) => {
-        http.get(`http://localhost:5000${path}`, (res) => {
+        http.get(`http://localhost:5001${path}`, (res) => {
             let data = '';
             res.on('data', (chunk) => data += chunk);
             res.on('end', () => {

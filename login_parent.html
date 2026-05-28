@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parent Portal | SBS Karkala</title>
+    <title>Student / Parent Portal | SBS Karkala</title>
     <link rel="icon" href="images/logo.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -20,12 +20,12 @@
             <p>Student / Parent Portal</p>
         </div>
 
-        <form class="contact-form">
+        <form class="contact-form" id="studentLoginForm">
             <div style="margin-bottom: 1rem; text-align: left;">
-                <label style="display: block; margin-bottom: 5px;">Student / Parent ID</label>
+                <label style="display: block; margin-bottom: 5px;">Student ID / Name / Email</label>
                 <div style="position: relative;">
                     <i class="fas fa-user" style="position: absolute; left: 10px; top: 12px; color: #999;"></i>
-                    <input type="text" placeholder="Enter ID" style="padding-left: 35px;" required>
+                    <input type="text" id="studentId" placeholder="e.g. C10-001, yuvaraj, or email" style="padding-left: 35px;" required>
                 </div>
             </div>
 
@@ -33,14 +33,16 @@
                 <label style="display: block; margin-bottom: 5px;">Password</label>
                 <div style="position: relative;">
                     <i class="fas fa-lock" style="position: absolute; left: 10px; top: 12px; color: #999;"></i>
-                    <input type="password" placeholder="Enter Password" style="padding-left: 35px;" required>
+                    <input type="password" id="studentPassword" placeholder="Enter Password" style="padding-left: 35px;" required>
                 </div>
             </div>
+
+            <div id="loginError" style="display:none; color:#ea5455; font-size:0.85rem; margin-bottom:10px; text-align:center;"></div>
 
             <button type="submit" class="btn btn-primary" style="width: 100%;">Secure Login</button>
 
             <div style="margin-top: 1rem; text-align: center; font-size: 0.9rem;">
-                <a href="#" style="color: var(--secondary-color);">Forgot Password?</a>
+                <a href="reset_password.html" style="color: var(--secondary-color);">Forgot Password?</a>
             </div>
         </form>
 
@@ -50,9 +52,97 @@
                 style="border-color: var(--primary-color); color: var(--primary-color); padding: 5px 15px; font-size: 0.8rem; margin-top: 5px;">Teacher
                 Login</a>
         </div>
+
+        <div style="margin-top: 1.5rem; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 0.75rem; color: #888;">
+            <p><strong>Login:</strong> Use the Student ID shown in Admin Panel, the student's name, or email.<br>
+            Default password for new students is their Student ID unless admin set a password.</p>
+        </div>
     </div>
 
+    <script>
+        // Redirect if already logged in
+        (function () {
+            var role = sessionStorage.getItem('role');
+            if (role === 'student') window.location.href = 'dashboard_student.html';
+        })();
+
+        document.getElementById('studentLoginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            var id = document.getElementById('studentId').value.trim();
+            var pass = document.getElementById('studentPassword').value;
+            var errDiv = document.getElementById('loginError');
+            errDiv.style.display = 'none';
+
+            // Resolve API Endpoint dynamically with fallback to 5001
+            const API = `${window.location.protocol}//${window.location.hostname}:5001/api`;
+
+            // Try backend login first
+            try {
+                const response = await fetch(`${API}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: id, password: pass })
+                });
+                const data = await response.json();
+                if (response.ok && data.success && data.role === 'student') {
+                    sessionStorage.setItem('role', 'student');
+                    sessionStorage.setItem('student_code', data.student_code);
+                    sessionStorage.setItem('student_name', data.student_name);
+                    sessionStorage.setItem('student_class', data.student_class || '');
+                    sessionStorage.setItem('student_medium', data.student_medium || '');
+                    window.location.href = 'dashboard_student.html';
+                    return;
+                } else if (!response.ok && data.error && !data.error.includes('User ID / email not found')) {
+                    // Wrong password, show server error directly
+                    errDiv.textContent = data.error;
+                    errDiv.style.display = 'block';
+                    return;
+                }
+            } catch (err) {
+                console.warn('Backend login unavailable, falling back to localStorage:', err);
+            }
+
+            // Search all student lists in localStorage (fallback)
+            var found = false;
+            for (var i = 0; i < localStorage.length; i++) {
+                var key = localStorage.key(i);
+                if (!key || !key.startsWith('sbrs_students_')) continue;
+                try {
+                    var students = JSON.parse(localStorage.getItem(key) || '[]');
+                    var idLower = id.toLowerCase();
+                    var student = students.find(function (s) {
+                        return (s.student_code && s.student_code.toLowerCase() === idLower) ||
+                               (s.email && s.email.toLowerCase() === idLower) ||
+                               (s.name && s.name.toLowerCase() === idLower);
+                    });
+                    if (student) {
+                        // Password: stored password OR default = student_code itself
+                        var correctPass = student.password || student.student_code;
+                        if (pass === correctPass) {
+                            sessionStorage.setItem('role', 'student');
+                            sessionStorage.setItem('student_code', student.student_code);
+                            sessionStorage.setItem('student_name', student.name);
+                            sessionStorage.setItem('student_class', student.class || '');
+                            sessionStorage.setItem('student_medium', student.medium || '');
+                            found = true;
+                            window.location.href = 'dashboard_student.html';
+                            break;
+                        } else {
+                            errDiv.textContent = 'Incorrect password. Default password is your Student ID.';
+                            errDiv.style.display = 'block';
+                            found = true; // found the student but wrong password
+                            break;
+                        }
+                    }
+                } catch (err) { /* skip corrupt entries */ }
+            }
+
+            if (!found) {
+                errDiv.textContent = 'Student not found. Try Student ID (example C10-001), name, or email.';
+                errDiv.style.display = 'block';
+            }
+        });
+    </script>
 </body>
 
 </html>
-

@@ -18,6 +18,7 @@ model Student {
   medium       String
   parent_name  String?
   photo_url    String?
+<<<<<<< HEAD
   roll_no      String?
 
   // Additive fields & relations
@@ -31,6 +32,10 @@ model Student {
   marks                 Marks[]
   attendance            Attendance[]
   certificate_requests  CertificateRequest[]
+=======
+  email        String? @unique
+  password     String?
+>>>>>>> 79642c3 (my local changes)
 
   @@map("students")
   @@schema("public")
@@ -38,6 +43,9 @@ model Student {
 
 model Teacher {
   id          Int      @id @default(autoincrement())
+  staff_id    String?  @unique
+  email       String?  @unique
+  password    String?
   name        String
   subject     String
   medium      String
