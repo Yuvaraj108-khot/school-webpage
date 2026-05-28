@@ -1,7 +1,7 @@
-﻿document.addEventListener('DOMContentLoaded', () => {
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+document.addEventListener('DOMContentLoaded', () => {
+    // ═══════════════════════════════════════════════
     // Premium Slide-in Sidebar Navigation Logic
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ═══════════════════════════════════════════════
     const menuToggle = document.querySelector('.menu-toggle');
     const navMenu = document.querySelector('.nav-menu');
 
@@ -78,9 +78,7 @@
     // Load Notices Logic (for Index Page)
     const publicNoticeList = document.getElementById('publicNoticeList');
     if (publicNoticeList) {
-        const API = `${window.location.protocol}//${window.location.hostname}:5001/api`;
-
-        fetch(`${API}/notices`)
+        fetch('http://localhost:5000/api/notices')
             .then(res => res.json())
             .then(notices => {
                 const today = new Date();

@@ -115,12 +115,6 @@ exports.getStudentByCode = async (req, res) => {
 
 exports.createStudent = async (req, res) => {
     try {
-<<<<<<< HEAD
-        const { student_code, name, class: className, medium, parent_name, roll_no, photo_url } = req.body;
-        
-        // Validation
-        if (!student_code || !name || !className || !medium) {
-=======
         const { student_code, name, class: className, medium, parent_name, roll_no, photo_url, email, password } = req.body;
         const cleanStudentCode = typeof student_code === 'string' ? student_code.trim() : '';
         const cleanName = typeof name === 'string' ? name.trim() : '';
@@ -130,7 +124,6 @@ exports.createStudent = async (req, res) => {
         const cleanPassword = typeof password === 'string' && password.trim() ? password.trim() : cleanStudentCode;
 
         if (!cleanStudentCode || !cleanName || !cleanClass || !cleanMedium) {
->>>>>>> 79642c3 (my local changes)
             return res.status(400).json({ error: 'Student code, name, class, and medium are required' });
         }
 
@@ -143,28 +136,9 @@ exports.createStudent = async (req, res) => {
             return res.status(400).json({ error: 'Student Code already exists' });
         }
 
-<<<<<<< HEAD
         // Resolve relational mapping fields
-        const rel = await resolveStudentClassAndMedium(className, medium);
+        const rel = await resolveStudentClassAndMedium(cleanClass, cleanMedium);
 
-        const student = await prisma.student.create({
-            data: { 
-                student_code, 
-                name, 
-                class: className, 
-                medium, 
-                parent_name, 
-                roll_no, 
-                photo_url,
-                class_id: rel.class_id,
-                medium_id: rel.medium_id,
-                is_active: true,
-                academic_year: '2025-2026'
-            },
-            include: {
-                class_rel: true,
-                medium_rel: true
-=======
         if (cleanEmail) {
             const existingEmail = await prisma.student.findUnique({
                 where: { email: cleanEmail }
@@ -191,8 +165,15 @@ exports.createStudent = async (req, res) => {
                 roll_no: roll_no || null,
                 photo_url: photo_url || null,
                 email: cleanEmail,
-                password: cleanPassword
->>>>>>> 79642c3 (my local changes)
+                password: cleanPassword,
+                class_id: rel.class_id,
+                medium_id: rel.medium_id,
+                is_active: true,
+                academic_year: '2025-2026'
+            },
+            include: {
+                class_rel: true,
+                medium_rel: true
             }
         });
         res.status(201).json(student);
@@ -222,8 +203,7 @@ exports.deleteStudent = async (req, res) => {
 
 exports.updateStudent = async (req, res) => {
     try {
-<<<<<<< HEAD
-        const { student_code, name, class: className, medium, parent_name, roll_no, photo_url, is_active } = req.body;
+        const { student_code, name, class: className, medium, parent_name, roll_no, photo_url, is_active, email, password } = req.body;
         const code = req.params.code;
 
         const existing = await prisma.student.findUnique({
@@ -231,37 +211,8 @@ exports.updateStudent = async (req, res) => {
         });
         if (!existing) return res.status(404).json({ error: 'Student not found' });
 
-        // Resolve new class/medium relation IDs if updated
-        const targetClass = className !== undefined ? className : existing.class;
-        const targetMedium = medium !== undefined ? medium : existing.medium;
-        const rel = await resolveStudentClassAndMedium(targetClass, targetMedium);
-
-        const updated = await prisma.student.update({
-            where: { student_code: code },
-            data: {
-                student_code: student_code !== undefined ? student_code : existing.student_code,
-                name: name !== undefined ? name : existing.name,
-                class: className !== undefined ? className : existing.class,
-                medium: medium !== undefined ? medium : existing.medium,
-                parent_name: parent_name !== undefined ? parent_name : existing.parent_name,
-                roll_no: roll_no !== undefined ? roll_no : existing.roll_no,
-                photo_url: photo_url !== undefined ? photo_url : existing.photo_url,
-                is_active: is_active !== undefined ? is_active : existing.is_active,
-                class_id: rel.class_id,
-                medium_id: rel.medium_id
-            },
-            include: {
-                class_rel: true,
-                medium_rel: true
-=======
-        const { name, parent_name, email, password } = req.body;
-        const student = await prisma.student.findUnique({
-            where: { student_code: req.params.code }
-        });
-        if (!student) return res.status(404).json({ error: 'Student not found' });
-
         const cleanEmail = typeof email === 'string' && email.trim() ? email.trim().toLowerCase() : null;
-        if (cleanEmail && cleanEmail !== student.email) {
+        if (cleanEmail && cleanEmail !== existing.email) {
             const existingEmail = await prisma.student.findUnique({
                 where: { email: cleanEmail }
             });
@@ -277,23 +228,35 @@ exports.updateStudent = async (req, res) => {
             }
         }
 
+        // Resolve new class/medium relation IDs if updated
+        const targetClass = className !== undefined ? className : existing.class;
+        const targetMedium = medium !== undefined ? medium : existing.medium;
+        const rel = await resolveStudentClassAndMedium(targetClass, targetMedium);
+
         const updated = await prisma.student.update({
-            where: { student_code: req.params.code },
+            where: { student_code: code },
             data: {
-                name: name !== undefined ? name.trim() : student.name,
-                parent_name: parent_name !== undefined ? parent_name.trim() || null : student.parent_name,
-                email: email !== undefined ? cleanEmail : student.email,
-                password: password !== undefined && password.trim() ? password.trim() : student.password
->>>>>>> 79642c3 (my local changes)
+                student_code: student_code !== undefined ? student_code : existing.student_code,
+                name: name !== undefined ? name.trim() : existing.name,
+                class: className !== undefined ? className.trim() : existing.class,
+                medium: medium !== undefined ? medium.trim() : existing.medium,
+                parent_name: parent_name !== undefined ? parent_name.trim() || null : existing.parent_name,
+                roll_no: roll_no !== undefined ? roll_no : existing.roll_no,
+                photo_url: photo_url !== undefined ? photo_url : existing.photo_url,
+                is_active: is_active !== undefined ? is_active : existing.is_active,
+                email: email !== undefined ? cleanEmail : existing.email,
+                password: password !== undefined && password.trim() ? password.trim() : existing.password,
+                class_id: rel.class_id,
+                medium_id: rel.medium_id
+            },
+            include: {
+                class_rel: true,
+                medium_rel: true
             }
         });
         res.json(updated);
     } catch (error) {
-<<<<<<< HEAD
         console.error("Update Student Error:", error);
-=======
-        console.error(error);
->>>>>>> 79642c3 (my local changes)
         res.status(500).json({ error: 'Failed to update student' });
     }
 };

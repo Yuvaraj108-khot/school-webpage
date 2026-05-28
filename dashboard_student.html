@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -79,7 +79,7 @@
             border-bottom: 1px solid #eee;
         }
 
-        /* â”€â”€ Absence Alert Banner â”€â”€ */
+        /* ── Absence Alert Banner ── */
         .absence-alert {
             background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
             color: white;
@@ -210,7 +210,7 @@
             }
         }
 
-        /* â”€â”€ Attendance History Section â”€â”€ */
+        /* ── Attendance History Section ── */
         .attendance-section {
             margin-top: 2rem;
         }
@@ -508,7 +508,7 @@
             }
         }
 
-        /* â”€â”€ Student Section Visibility â”€â”€ */
+        /* ── Student Section Visibility ── */
         .student-section {
             display: none;
         }
@@ -537,7 +537,7 @@
                 <a href="#" onclick="showSection('certificates')" id="link-certificates"><i class="fas fa-certificate"></i> Certificates</a>
             </nav>
             <div style="margin-top: auto; padding: 20px;">
-                <a href="#" onclick="logout(); return false;" style="color: #ea5455;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <a href="login.html" style="color: #ea5455;"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
         </div>
 
@@ -558,7 +558,7 @@
                 </div>
             </div>
 
-            <!-- â•â• ABSENCE ALERT BANNER â•â• -->
+            <!-- ══ ABSENCE ALERT BANNER ══ -->
             <div class="absence-alert" id="absenceAlert" style="display: none;">
                 <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
                 <div class="alert-body">
@@ -572,7 +572,7 @@
                 </button>
             </div>
 
-            <!-- â•â• OVERVIEW SECTION â•â• -->
+            <!-- ══ OVERVIEW SECTION ══ -->
             <div id="section-overview" class="student-section active">
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
                     <div class="stat-card" style="border-left: 5px solid var(--secondary-color);">
@@ -593,7 +593,7 @@
                 </div>
             </div>
 
-            <!-- â•â• MARKS SECTION â•â• -->
+            <!-- ══ MARKS SECTION ══ -->
             <div id="section-marks" class="student-section">
                 <div class="stat-card">
                     <h3>Exam Results & Marks Card</h3>
@@ -615,7 +615,7 @@
                 </div>
             </div>
 
-            <!-- â•â• ATTENDANCE SECTION â•â• -->
+            <!-- ══ ATTENDANCE SECTION ══ -->
             <div id="section-attendance" class="student-section">
                 <div class="stat-card">
                     <h3>Attendance History</h3>
@@ -668,24 +668,23 @@
                 </div>
             </div>
 
-            <!-- Certificates Section -->
+            <!-- ══ CERTIFICATES SECTION ══ -->
             <div id="section-certificates" class="student-section">
                 <div class="stat-card">
                     <h3>Online Certificate Portal</h3>
                     <p style="margin-bottom: 1.5rem; color: #666;">Apply for official documents and track their status.</p>
-                    <form class="contact-form" id="certForm" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <select id="certTypeSelect" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
-                            <option value="">Select Certificate Type</option>
+                    <form class="contact-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <select style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                            <option>Select Certificate Type</option>
                             <option>Study Certificate</option>
                             <option>Transfer Certificate (TC)</option>
                             <option>Marks Card Copy</option>
                             <option>Conduct Certificate</option>
                         </select>
-                        <button type="submit" class="btn btn-primary" style="background: var(--primary-color); color: white; border: none; border-radius: 8px; font-weight: 600;">
+                        <button class="btn btn-primary" style="background: var(--primary-color); color: white; border: none; border-radius: 8px; font-weight: 600;">
                             Submit Request
                         </button>
                     </form>
-                    <div id="certStatus" style="margin-top:1rem;"></div>
                 </div>
             </div>
 
@@ -693,17 +692,7 @@
     </div>
 
     <script>
-        /* ============================================================
-           AUTH GUARD
-        ============================================================ */
-        (function () {
-            var role = sessionStorage.getItem('role');
-            if (role !== 'student') {
-                window.location.href = 'login_parent.html';
-            }
-        })();
-
-        const API = `${window.location.protocol}//${window.location.hostname}:5001/api`;
+        const API = "http://localhost:5000/api";
         const params = new URLSearchParams(window.location.search);
         const STUDENT_CODE =
             params.get("code") ||
@@ -725,28 +714,17 @@
         }
 
         async function loadStudentInfo() {
-            // First, try loading from sessionStorage (always available)
-            const nameFromSession = sessionStorage.getItem('student_name');
-            const classFromSession = sessionStorage.getItem('student_class');
-            if (nameFromSession) {
-                document.querySelector('.header-bar h2').textContent = `Welcome, ${nameFromSession}`;
-            }
-            if (classFromSession) {
-                document.querySelector('.user-info span:first-child').textContent = `Class ${classFromSession}`;
-            }
-            document.querySelector('.user-info span:nth-child(2)').textContent = `ID: ${STUDENT_CODE}`;
-
-            // Also try the API for richer data
             try {
                 const res = await fetch(`${API}/students/${STUDENT_CODE}`);
                 if (!res.ok) throw new Error("Student not found");
                 const student = await res.json();
+                
                 document.querySelector('.header-bar h2').textContent = `Welcome, ${student.name}`;
                 document.querySelector('.user-info span:first-child').textContent = `Class ${student.class}`;
                 document.querySelector('.user-info span:nth-child(2)').textContent = `ID: ${student.student_code}`;
             } catch (e) {
-                // Already set from sessionStorage above, silently ignore API failure
-                console.log("API offline, using sessionStorage data.");
+                console.error("Failed to load student info", e);
+                // Fallback or alert
             }
         }
 
@@ -764,16 +742,13 @@
                         return;
                     }
                     marks.forEach(m => {
-                        const pct = m.total > 0 ? (m.marks / m.total) * 100 : 0;
-                        const grade = pct >= 90 ? 'A+' : pct >= 80 ? 'A' : pct >= 70 ? 'B' : pct >= 60 ? 'C' : pct >= 50 ? 'D' : 'F';
-                        const gradeColor = pct >= 70 ? 'green' : pct >= 50 ? 'orange' : 'red';
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td>${m.subject}</td>
                             <td>${m.exam_type}</td>
                             <td>${m.marks}</td>
-                            <td>${m.total || 100}</td>
-                            <td style="color: ${gradeColor}; font-weight: bold;">${grade}</td>
+                            <td>100</td>
+                            <td style="color: green; font-weight: bold;">${m.marks >= 90 ? 'A+' : m.marks >= 80 ? 'A' : 'B'}</td>
                         `;
                         tbody.appendChild(tr);
                     });
@@ -868,7 +843,7 @@
 
         function logout() {
             sessionStorage.clear();
-            window.location.href = 'login_parent.html';
+            window.location.href = 'login.html';
         }
 
         async function loadNotices() {
@@ -914,17 +889,17 @@
             loadStudentInfo();
             loadMarks();
             loadAttendance();
+            loadNotices();
 
-            // Certificate form
-            const certForm = document.getElementById('certForm');
-            if (certForm) {
-                certForm.addEventListener('submit', (e) => {
+            const contactForm = document.querySelector('.contact-form');
+            if (contactForm) {
+                contactForm.addEventListener('submit', (e) => {
                     e.preventDefault();
-                    const certType = document.getElementById('certTypeSelect').value;
-                    if (certType && certType !== '' && certType !== 'Select Certificate Type') {
+                    const certType = e.target.querySelector('select').value;
+                    if (certType && certType !== "Select Certificate Type") {
                         submitCertificate(certType);
                     } else {
-                        alert('Please select a certificate type.');
+                        alert("Please select a certificate type");
                     }
                 });
             }

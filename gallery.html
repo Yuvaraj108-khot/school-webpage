@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -184,17 +184,6 @@
         </div>
 
         <div class="cards-grid" id="galleryGrid" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
-            <!-- Updated Placeholders -->
-            <!-- No Results -->
-            <div class="gallery-no-results" id="galleryNoResults">
-                <i class="fas fa-images"></i>
-                <p>No photos found matching your search</p>
-            </div>
-
-
-
-
-
             <!-- No Results -->
             <div class="gallery-no-results" id="galleryNoResults">
                 <i class="fas fa-images"></i>
@@ -267,13 +256,9 @@
                         div.style.padding = '0';
                         div.style.overflow = 'hidden';
 
-                        const fullImageUrl = item.image_url.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`;
+                        const fullImageUrl = item.image_url.startsWith('http') ? item.image_url : `${API.replace('/api', '')}${item.image_url}`;
                         div.innerHTML = `
-<<<<<<< HEAD
                             <img src="${fullImageUrl}" alt="${item.category}" style="width: 100%; height: 200px; object-fit: cover;">
-=======
-                            <img src="${API.replace('/api', '')}${item.image_url}" alt="${item.category}" style="width: 100%; height: 200px; object-fit: cover;">
->>>>>>> 79642c3 (my local changes)
                             <div style="padding: 1rem;">
                                 <h4>${item.category}</h4>
                                 <p style="font-size: 0.8rem; color: #666;">${item.description || ''}</p>
