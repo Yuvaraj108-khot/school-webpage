@@ -508,9 +508,12 @@
                 <a href="#" onclick="showSection('subject-mgmt'); return false;" id="link-subject-mgmt">
                     <i class="fas fa-book"></i> Subject Management
                 </a>
+                <a href="#" onclick="showSection('certificates'); return false;" id="link-certificates">
+                    <i class="fas fa-certificate"></i> Certificates
+                </a>
             </nav>
             <div style="margin-top:auto; padding:20px;">
-                <a href="login.html" style="color:#ea5455;">
+                <a href="#" onclick="sessionStorage.clear(); window.location.href='index.html'; return false;" style="color:#ea5455;">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </a>
             </div>
@@ -611,6 +614,10 @@
                         <div class="add-row">
                             <input type="text" id="newStudentName" placeholder="Full Name">
                             <input type="text" id="newStudentParent" placeholder="Parent Name">
+                        </div>
+                        <div class="add-row">
+                            <input type="email" id="newStudentEmail" placeholder="Email (Optional)">
+                            <input type="text" id="newStudentPassword" placeholder="Password (Optional)">
                             <button class="btn-add" onclick="addStudent()">
                                 <i class="fas fa-user-plus"></i> Add Student
                             </button>
@@ -691,6 +698,14 @@
                                     <option value="Kannada">Kannada Medium</option>
                                     <option value="Both">Both</option>
                                 </select>
+                            </div>
+                            <div>
+                                <label class="field-label">Email Address (Optional)</label>
+                                <input type="email" id="teacherEmail" placeholder="e.g., teacher@school.com">
+                            </div>
+                            <div>
+                                <label class="field-label">Password (Optional)</label>
+                                <input type="text" id="teacherPassword" placeholder="e.g., secret123">
                             </div>
                         </div>
                         <button class="btn-full" onclick="addTeacher()">
@@ -801,6 +816,31 @@
                     </div>
                 </div>
             </div>
+
+            <!-- ══ CERTIFICATES SECTION ══ -->
+            <div id="section-certificates" class="admin-section">
+                <div class="card-box">
+                    <h3><i class="fas fa-certificate" style="color:var(--primary-color);"></i> Certificate Requests</h3>
+                    <p style="color:#666; margin-bottom:1.5rem;">Manage student requests for official certificates.</p>
+                    
+                    <div id="adminCertificatesListArea">
+                        <div class="enrolled-header">
+                            <span style="display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-list"></i> Pending & Recent Requests
+                                <select id="adminCertificateMediumFilter" onchange="loadAllCertificates()" style="margin-bottom: 0; padding: 4px 8px; font-size: 0.8rem; border-radius: 6px; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4);">
+                                    <option value="All" style="color: black;">All Mediums</option>
+                                    <option value="Kannada" style="color: black;">Kannada Medium</option>
+                                    <option value="CBSE" style="color: black;">CBSE Medium</option>
+                                </select>
+                            </span>
+                            <button class="btn-full" style="padding: 5px 15px; margin-top: 0; width: auto; font-size: 0.8rem;" onclick="loadAllCertificates()"><i class="fas fa-sync"></i> Refresh</button>
+                        </div>
+                        <div class="enrolled-list" id="adminCertificatesList">
+                            <!-- Loaded via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div><!-- end .main-content -->
     </div><!-- end .dashboard-container -->
 
@@ -820,7 +860,7 @@
 
         function showSection(name) {
             // Hide all sections
-            var sections = ['gallery', 'events', 'students', 'teachers', 'alumni', 'subject-mgmt'];
+            var sections = ['gallery', 'events', 'students', 'teachers', 'alumni', 'subject-mgmt', 'certificates'];
             for (var i = 0; i < sections.length; i++) {
                 var el = document.getElementById('section-' + sections[i]);
                 var link = document.getElementById('link-' + sections[i]);
@@ -840,6 +880,7 @@
             if (name === 'teachers') loadTeachers();
             if (name === 'alumni') loadAlumni();
             if (name === 'subject-mgmt') loadClassSubjects();
+            if (name === 'certificates') loadAllCertificates();
 
             // Close mobile sidebar
             closeSidebar();
@@ -1101,6 +1142,8 @@
             var c = document.getElementById('adminClass').value;
             var name = document.getElementById('newStudentName').value.trim();
             var parent = document.getElementById('newStudentParent').value.trim();
+            var email = document.getElementById('newStudentEmail').value.trim();
+            var password = document.getElementById('newStudentPassword').value;
             if (!name) { toast('Enter student name.', 'error'); return; }
             if (!m || !c) { toast('Select medium and class.', 'error'); return; }
             
@@ -1123,6 +1166,8 @@
                 class: c,
                 medium: m,
                 parent_name: parent || null,
+                email: email || null,
+                password: password || null,
                 roll_no: null,
                 photo_url: null
             };
@@ -1148,6 +1193,8 @@
                 toast('"' + name + '" added!');
                 document.getElementById('newStudentName').value = '';
                 document.getElementById('newStudentParent').value = '';
+                document.getElementById('newStudentEmail').value = '';
+                document.getElementById('newStudentPassword').value = '';
                 
                 await loadStudents();
             } catch (err) {
@@ -1276,6 +1323,8 @@
             var category = document.getElementById('teacherCategory').value;
             var subject = document.getElementById('teacherSubject').value.trim();
             var medium = document.getElementById('teacherMedium').value;
+            var email = document.getElementById('teacherEmail').value.trim();
+            var password = document.getElementById('teacherPassword').value;
             var photoInput = document.getElementById('teacherPhoto');
 
             if (!name || !designation || !experience) {
@@ -1290,6 +1339,8 @@
             formData.append('category', category);
             formData.append('subject', subject);
             formData.append('medium', medium);
+            if (email) formData.append('email', email);
+            if (password) formData.append('password', password);
             if (photoInput.files[0]) {
                 formData.append('photo', photoInput.files[0]);
             }
@@ -1303,6 +1354,8 @@
                 document.getElementById('teacherDesignation').value = '';
                 document.getElementById('teacherExperience').value = '';
                 document.getElementById('teacherSubject').value = '';
+                document.getElementById('teacherEmail').value = '';
+                document.getElementById('teacherPassword').value = '';
                 document.getElementById('teacherPhoto').value = '';
                 teacherPhotoBase64 = null;
                 document.getElementById('teacherPhotoPreview').innerHTML = '<i class="fas fa-user" style="font-size:2rem;color:#94a3b8;"></i>';
@@ -1536,6 +1589,88 @@
                 if (e.key === 'Enter') addStudent();
             });
         });
+        /* ============================================================
+           CERTIFICATES MANAGEMENT
+        ============================================================ */
+        async function loadAllCertificates() {
+            try {
+                const res = await fetch(`${API_BASE}/certificates`);
+                let certs = await res.json();
+                
+                const filterMedium = document.getElementById('adminCertificateMediumFilter').value;
+                if (filterMedium && filterMedium !== 'All') {
+                    certs = certs.filter(c => c.medium === filterMedium);
+                }
+
+                const list = document.getElementById('adminCertificatesList');
+                list.innerHTML = '';
+
+                if (certs.length === 0) {
+                    list.innerHTML = `<div class="empty-state">
+                        <i class="fas fa-check-circle" style="color: #28c76f;"></i>
+                        <p>No certificate requests found.</p>
+                    </div>`;
+                    return;
+                }
+
+                certs.sort((a, b) => new Date(b.request_date) - new Date(a.request_date)).forEach(c => {
+                    const row = document.createElement('div');
+                    row.className = 'enrolled-row'; // Switched to enrolled-row for better flex layout
+                    
+                    const statusColor = c.status === 'Accepted' ? '#28c76f' : c.status === 'Rejected' ? '#ea5455' : '#f39c12';
+                    const displayStatus = c.status === 'Pending' ? 'Under Process' : c.status;
+                    
+                    let actionButtons = '';
+                    if (c.status === 'Pending') {
+                        actionButtons = `
+                            <button class="btn-full" style="background:#28c76f; padding:5px 10px; margin-top:0; width:auto; font-size:0.8rem; display: flex; align-items: center; gap: 5px;" onclick="updateCertificateStatus(${c.id}, 'Accepted')"><i class="fas fa-check"></i> Accept</button>
+                            <button class="btn-remove" style="padding:5px 10px; font-size:0.8rem; margin:0;" onclick="updateCertificateStatus(${c.id}, 'Rejected')"><i class="fas fa-times"></i> Reject</button>
+                        `;
+                    }
+                    
+                    row.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:15px; flex: 1; min-width: 0;">
+                            <div style="width:40px;height:40px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fas fa-file-alt" style="color:#94a3b8;"></i>
+                            </div>
+                            <div style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                <div class="enrolled-name" style="display: flex; align-items: center; gap: 8px;">
+                                    ${c.certificate_type}
+                                    <span style="font-size: 0.75rem; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #475569;">${c.medium}</span>
+                                </div>
+                                <div class="enrolled-sub">Student ID: ${c.student_code} | Date: ${new Date(c.request_date).toLocaleDateString()}</div>
+                                <div class="enrolled-sub" style="color:${statusColor}; font-weight:600;">Status: ${displayStatus}</div>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:center; flex-shrink: 0; justify-content: flex-end;">
+                            ${actionButtons}
+                        </div>
+                    `;
+                    list.appendChild(row);
+                });
+            } catch (err) {
+                console.error(err);
+                toast('Failed to load certificates.', 'error');
+            }
+        }
+
+        async function updateCertificateStatus(id, newStatus) {
+            if (!confirm(`Are you sure you want to mark this request as ${newStatus}?`)) return;
+            try {
+                const res = await fetch(`${API_BASE}/certificates/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (!res.ok) throw new Error("Failed to update status");
+                toast(`Certificate request marked as ${newStatus}`);
+                loadAllCertificates();
+            } catch (err) {
+                console.error(err);
+                toast('Failed to update certificate status', 'error');
+            }
+        }
+
     </script>
 </body>
 

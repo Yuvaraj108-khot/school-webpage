@@ -25,6 +25,7 @@ const noticeRoutes = require('./routes/noticeRoutes');
 const alumniRoutes = require('./routes/alumniRoutes');
 const subjectRoutes = require('./routes/subjectRoutes');
 const exportRoutes = require('./routes/exportRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 // New Relational Routes Imports
 const mediumRoutes = require('./routes/mediumRoutes');
@@ -44,12 +45,7 @@ app.use('/api/events', noticeRoutes);
 app.use('/api/alumni', alumniRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/export', exportRoutes);
-
-// New Relational Route Registrations
-app.use('/api/mediums', mediumRoutes);
-app.use('/api/classes', classRoutes);
-app.use('/api/exams', examRoutes);
-app.use('/api/subject-teachers', subjectTeacherRoutes);
+app.use('/api/auth', authRoutes);
 
 // New Relational Route Registrations
 app.use('/api/mediums', mediumRoutes);

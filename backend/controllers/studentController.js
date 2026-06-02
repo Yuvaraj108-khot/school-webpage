@@ -136,9 +136,6 @@ exports.createStudent = async (req, res) => {
             return res.status(400).json({ error: 'Student Code already exists' });
         }
 
-        // Resolve relational mapping fields
-        const rel = await resolveStudentClassAndMedium(cleanClass, cleanMedium);
-
         if (cleanEmail) {
             const existingEmail = await prisma.student.findUnique({
                 where: { email: cleanEmail }
@@ -154,6 +151,9 @@ exports.createStudent = async (req, res) => {
                 return res.status(400).json({ error: 'Email is already used by a teacher' });
             }
         }
+
+        // Resolve relational mapping fields
+        const rel = await resolveStudentClassAndMedium(cleanClass, cleanMedium);
 
         const student = await prisma.student.create({
             data: { 
@@ -238,8 +238,8 @@ exports.updateStudent = async (req, res) => {
             data: {
                 student_code: student_code !== undefined ? student_code : existing.student_code,
                 name: name !== undefined ? name.trim() : existing.name,
-                class: className !== undefined ? className.trim() : existing.class,
-                medium: medium !== undefined ? medium.trim() : existing.medium,
+                class: className !== undefined ? className : existing.class,
+                medium: medium !== undefined ? medium : existing.medium,
                 parent_name: parent_name !== undefined ? parent_name.trim() || null : existing.parent_name,
                 roll_no: roll_no !== undefined ? roll_no : existing.roll_no,
                 photo_url: photo_url !== undefined ? photo_url : existing.photo_url,

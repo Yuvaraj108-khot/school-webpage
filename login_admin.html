@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Portal | SBS Karkala</title>
+    <title>Admin / Teacher Portal | SBS Karkala</title>
     <link rel="icon" href="images/logo.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -20,13 +20,13 @@
             <p style="color: var(--accent-color); font-weight: bold;">Teacher / Admin Portal</p>
         </div>
 
-        <form class="contact-form">
+        <form class="contact-form" id="adminLoginForm">
             <div style="margin-bottom: 1rem; text-align: left;">
                 <label style="display: block; margin-bottom: 5px;">Staff ID</label>
                 <div style="position: relative;">
                     <i class="fas fa-chalkboard-teacher"
                         style="position: absolute; left: 10px; top: 12px; color: #999;"></i>
-                    <input type="text" placeholder="Enter Staff ID" style="padding-left: 35px;" required>
+                    <input type="text" id="staffId" placeholder="Enter Staff ID" style="padding-left: 35px;" required>
                 </div>
             </div>
 
@@ -34,14 +34,16 @@
                 <label style="display: block; margin-bottom: 5px;">Password</label>
                 <div style="position: relative;">
                     <i class="fas fa-lock" style="position: absolute; left: 10px; top: 12px; color: #999;"></i>
-                    <input type="password" placeholder="Enter Password" style="padding-left: 35px;" required>
+                    <input type="password" id="staffPassword" placeholder="Enter Password" style="padding-left: 35px;" required>
                 </div>
             </div>
+
+            <div id="loginError" style="display:none; color:#ea5455; font-size:0.85rem; margin-bottom:10px; text-align:center;"></div>
 
             <button type="submit" class="btn btn-primary" style="width: 100%;">Secure Login</button>
 
             <div style="margin-top: 1rem; text-align: center; font-size: 0.9rem;">
-                <a href="#" style="color: var(--secondary-color);">Forgot Password?</a>
+                <a href="reset_password.html" style="color: var(--secondary-color);">Forgot Password?</a>
             </div>
         </form>
 
@@ -51,9 +53,78 @@
                 style="border-color: var(--primary-color); color: var(--primary-color); padding: 5px 15px; font-size: 0.8rem; margin-top: 5px;">Student
                 Login</a>
         </div>
+
+        <div style="margin-top: 1.5rem; padding: 10px; background: rgba(255,255,255,0.08); border-radius: 5px; font-size: 0.75rem; color: #aaa;">
+            <p><strong>Demo Credentials:</strong></p>
+            <p>Admin: admin / pass</p>
+            <p>Teacher: teacher / pass</p>
+        </div>
     </div>
 
+    <script>
+        // Redirect if already logged in
+        (function () {
+            var role = sessionStorage.getItem('role');
+            if (role === 'admin') window.location.href = 'dashboard_admin.html';
+            else if (role === 'teacher') window.location.href = 'dashboard_teacher.html';
+        })();
+
+        document.getElementById('adminLoginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            var id = document.getElementById('staffId').value.trim();
+            var pass = document.getElementById('staffPassword').value;
+            var errDiv = document.getElementById('loginError');
+            errDiv.style.display = 'none';
+
+            // Resolve API Endpoint dynamically with fallback to 5000
+            const API = `${window.location.protocol}//${window.location.hostname}:5000/api`;
+
+            // Try backend login first
+            try {
+                const response = await fetch(`${API}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: id, password: pass })
+                });
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    if (data.role === 'admin') {
+                        sessionStorage.setItem('role', 'admin');
+                        sessionStorage.setItem('staff_id', data.staff_id);
+                        window.location.href = 'dashboard_admin.html';
+                        return;
+                    } else if (data.role === 'teacher') {
+                        sessionStorage.setItem('role', 'teacher');
+                        sessionStorage.setItem('teacher_name', data.teacher_name);
+                        sessionStorage.setItem('staff_id', data.staff_id);
+                        window.location.href = 'dashboard_teacher.html';
+                        return;
+                    }
+                } else if (!response.ok && data.error && !data.error.includes('not found in database')) {
+                    errDiv.textContent = data.error;
+                    errDiv.style.display = 'block';
+                    return;
+                }
+            } catch (err) {
+                console.warn('Backend login unavailable, falling back to static checks:', err);
+            }
+
+            // Fallback static checks
+            if (id.toLowerCase() === 'admin' && pass === 'pass') {
+                sessionStorage.setItem('role', 'admin');
+                sessionStorage.setItem('staff_id', id);
+                window.location.href = 'dashboard_admin.html';
+            } else if (id.toLowerCase() === 'teacher' && pass === 'pass') {
+                sessionStorage.setItem('role', 'teacher');
+                sessionStorage.setItem('teacher_name', 'Teacher Name');
+                sessionStorage.setItem('staff_id', id);
+                window.location.href = 'dashboard_teacher.html';
+            } else {
+                errDiv.textContent = 'Invalid Staff ID or Password.';
+                errDiv.style.display = 'block';
+            }
+        });
+    </script>
 </body>
 
 </html>
-

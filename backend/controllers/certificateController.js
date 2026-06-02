@@ -3,7 +3,20 @@ const prisma = require('../prismaClient');
 exports.getCertificates = async (req, res) => {
     try {
         const certificates = await prisma.certificateRequest.findMany();
-        res.json(certificates);
+        
+        // Fetch all students to map medium
+        const students = await prisma.student.findMany({
+            select: { student_code: true, medium: true }
+        });
+        const studentMap = {};
+        students.forEach(s => studentMap[s.student_code] = s.medium);
+
+        const enrichedCertificates = certificates.map(c => ({
+            ...c,
+            medium: studentMap[c.student_code] || 'Unknown'
+        }));
+
+        res.json(enrichedCertificates);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch certificates' });
     }
@@ -11,10 +24,20 @@ exports.getCertificates = async (req, res) => {
 
 exports.getCertificateByStudent = async (req, res) => {
     try {
+        const student = await prisma.student.findUnique({
+            where: { student_code: req.params.code }
+        });
+
         const certificates = await prisma.certificateRequest.findMany({
             where: { student_code: req.params.code }
         });
-        res.json(certificates);
+
+        const enrichedCertificates = certificates.map(c => ({
+            ...c,
+            medium: student ? student.medium : 'Unknown'
+        }));
+
+        res.json(enrichedCertificates);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch student certificates' });
     }
