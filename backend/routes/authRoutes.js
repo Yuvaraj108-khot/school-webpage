@@ -1,6 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const nodemailer = require('nodemailer');
+let nodemailer;
+try {
+    nodemailer = require('nodemailer');
+} catch (e) {
+    console.warn("WARNING: nodemailer is not installed. Email features will run in mock mode.");
+    nodemailer = {
+        createTransport: () => ({
+            sendMail: async () => {
+                console.log("Mock email sent (nodemailer not installed)");
+                return {};
+            }
+        })
+    };
+}
 const path = require('path');
 const prisma = require('../prismaClient');
 
