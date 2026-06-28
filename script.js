@@ -1,5 +1,51 @@
 document.addEventListener('DOMContentLoaded', () => {
     // ═══════════════════════════════════════════════
+    // Render Unified Header
+    // ═══════════════════════════════════════════════
+    const headerEl = document.querySelector('.site-header');
+    if (headerEl) {
+        const path = window.location.pathname;
+        const page = path.split("/").pop().toLowerCase() || "index.html";
+        const isHome = page === 'index.html' || page === '' || page === 'index';
+        const isAbout = page === 'about.html' || page === 'about';
+        const isAcademics = page === 'academics.html' || page === 'academics';
+        const isTeachers = page === 'teachers.html' || page === 'teachers';
+        const isAdmission = page === 'admission.html' || page === 'admission';
+        const isGallery = page === 'gallery.html' || page === 'gallery';
+        const isAlumni = page === 'alumni.html' || page === 'alumni';
+        const isContact = page === 'contact.html' || page === 'contact';
+
+        headerEl.innerHTML = `
+            <div class="container header-container">
+                <div class="logo">
+                    <img src="images/logo.png" alt="SBS Logo">
+                    <div class="logo-text">
+                        <h1>SBRS KARKALA</h1>
+                        <span>Shaping Global Futures</span>
+                    </div>
+                </div>
+                <div class="menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </div>
+                <nav class="nav-menu">
+                    <a href="index.html" class="${isHome ? 'active' : ''}">Home</a>
+                    <a href="about.html" class="${isAbout ? 'active' : ''}">About</a>
+                    <a href="academics.html" class="${isAcademics ? 'active' : ''}">Academics</a>
+                    <a href="teachers.html" class="${isTeachers ? 'active' : ''}">Teachers</a>
+                    <a href="admission.html" class="${isAdmission ? 'active' : ''}">Admission</a>
+                    <a href="gallery.html" class="${isGallery ? 'active' : ''}">Gallery</a>
+                    <a href="alumni.html" class="${isAlumni ? 'active' : ''}">Alumni</a>
+                    <a href="contact.html" class="${isContact ? 'active' : ''}">Contact</a>
+                </nav>
+                <div class="nav-buttons">
+                    <a href="login.html" class="btn btn-primary">Login</a>
+                    <a href="admission.html" class="btn btn-primary">Apply</a>
+                </div>
+            </div>
+        `;
+    }
+
+    // ═══════════════════════════════════════════════
     // Premium Slide-in Sidebar Navigation Logic
     // ═══════════════════════════════════════════════
     const menuToggle = document.querySelector('.menu-toggle');
