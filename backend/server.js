@@ -32,6 +32,7 @@ const mediumRoutes = require('./routes/mediumRoutes');
 const classRoutes = require('./routes/classRoutes');
 const examRoutes = require('./routes/examRoutes');
 const subjectTeacherRoutes = require('./routes/subjectTeacherRoutes');
+const alumniTrackingRoutes = require('./routes/alumniTrackingRoutes');
 
 // Route Registrations
 app.use('/api/students', studentRoutes);
@@ -52,6 +53,7 @@ app.use('/api/mediums', mediumRoutes);
 app.use('/api/classes', classRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/subject-teachers', subjectTeacherRoutes);
+app.use('/api/alumni-tracking', alumniTrackingRoutes);
 
 // Health Check
 app.get('/api/health', (req, res) => {

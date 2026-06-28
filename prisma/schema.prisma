@@ -33,6 +33,7 @@ model Student {
   marks                 Marks[]
   attendance            Attendance[]
   certificate_requests  CertificateRequest[]
+  alumni_tracking       AlumniTracking?
 
   @@map("students")
   @@schema("public")
@@ -846,5 +847,21 @@ model Exam {
   marks         Marks[]
   
   @@map("exams")
+  @@schema("public")
+}
+
+model AlumniTracking {
+  id                   Int             @id @default(autoincrement())
+  student_id           Int             @unique
+  student_rel          Student         @relation(fields: [student_id], references: [id])
+  graduation_batch     String          // E.g., "2026"
+  higher_education     String?         // E.g., "B.Tech Computer Science"
+  employment_status    String?         // E.g., "Employed", "Student", "Unemployed"
+  current_organization String?         // E.g., "Google", "MIT"
+  email                String?
+  phone                String?
+  created_at           DateTime        @default(now()) @db.Timestamp(6)
+
+  @@map("alumni_tracking")
   @@schema("public")
 }

@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alumni Tracking Dashboard | SBS</title>
+    <link rel="icon" href="images/logo.png" type="image/png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- jsPDF for direct PDF download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #1a252f;
+            color: white;
+            padding: 2rem 0;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-menu a {
+            padding: 15px 20px;
+            color: #ccc;
+            display: block;
+            border-left: 4px solid transparent;
+            transition: 0.3s;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-left-color: #6c5ce7;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            background: #f4f7f6;
+            min-width: 0;
+        }
+
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            background: white;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-left: 4px solid #6c5ce7;
+        }
+
+        .stat-card.orange { border-left-color: #e67e22; }
+        .stat-card.green { border-left-color: #22c55e; }
+        .stat-card.blue { border-left-color: #3498db; }
+
+        .stat-info h3 {
+            font-size: 2rem;
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        .stat-info p {
+            margin: 5px 0 0;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .stat-icon {
+            font-size: 2.2rem;
+            color: #bdc3c7;
+        }
+
+        .card-box {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        .mgmt-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 1.5rem;
+        }
+
+        .mgmt-grid .full-width {
+            grid-column: span 2;
+        }
+
+        .field-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #475569;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .form-box {
+            background: #f8fafc;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 2rem;
+        }
+
+        .btn-full {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .btn-full:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2);
+        }
+
+        .enrolled-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #1e293b, #334155);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            font-size: 0.88rem;
+        }
+
+        .enrolled-header.purple {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+        }
+
+        .enrolled-count {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 3px 12px;
+            border-radius: 15px;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        .enrolled-list {
+            border: 2px solid #e2e8f0;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            max-height: 500px;
+            overflow-y: auto;
+            background: white;
+        }
+
+        .enrolled-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.2s;
+        }
+
+        .enrolled-row:hover {
+            background: #f8fafc;
+        }
+
+        .enrolled-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .enrolled-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #475569;
+            flex-shrink: 0;
+        }
+
+        .enrolled-name {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 0.95rem;
+        }
+
+        .enrolled-sub {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .btn-remove {
+            padding: 6px 14px;
+            background: transparent;
+            color: #ef4444;
+            border: 2px solid #fecaca;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-remove:hover {
+            background: #ef4444;
+            color: white;
+            border-color: #ef4444;
+        }
+
+        .btn-edit {
+            padding: 6px 14px;
+            background: transparent;
+            color: #3b82f6;
+            border: 2px solid #bfdbfe;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-edit:hover {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2.5rem;
+            color: #94a3b8;
+        }
+
+        .empty-state i {
+            font-size: 2.5rem;
+            margin-bottom: 0.8rem;
+            color: #cbd5e1;
+            display: block;
+        }
+
+        .admin-toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 14px 22px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.92rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 9999;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+
+        .admin-toast.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .admin-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 0.9rem;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #6c5ce7;
+            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15);
+        }
+
+        .export-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-export {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+        .btn-export.excel { background: #217346; }
+        .btn-export.csv { background: #1f4e78; }
+        .btn-export.pdf { background: #e74c3c; }
+
+        .btn-export:hover {
+            filter: brightness(0.9);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- ===== SIDEBAR ===== -->
+        <div class="sidebar" id="adminSidebar">
+            <div style="text-align:center; padding: 0 2rem 2rem;">
+                <img src="images/logo.png" style="width:50px; border-radius:50%;">
+                <h3 style="margin-top:10px; color:white;">Alumni Tracker</h3>
+            </div>
+            <nav class="sidebar-menu">
+                <a class="active">
+                    <i class="fas fa-graduation-cap"></i> Alumni Tracking
+                </a>
+                <a href="dashboard_admin.html">
+                    <i class="fas fa-arrow-left"></i> Core Admin Panel
+                </a>
+            </nav>
+            <div style="margin-top:auto; padding:20px;">
+                <a href="#" onclick="sessionStorage.clear(); window.location.href='index.html'; return false;" style="color:#ea5455;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header-bar">
+                <h2>Alumni Tracking Module</h2>
+                <div>
+                    <span>Super Admin</span>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3 id="statTotal">0</h3>
+                        <p>Total Tracked Alumni</p>
+                    </div>
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                </div>
+                <div class="stat-card green">
+                    <div class="stat-info">
+                        <h3 id="statYear">0</h3>
+                        <p>Graduated This Year</p>
+                    </div>
+                    <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
+                </div>
+                <div class="stat-card orange">
+                    <div class="stat-info">
+                        <h3 id="statLatest">N/A</h3>
+                        <p>Latest Batch Year</p>
+                    </div>
+                    <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+                </div>
+                <div class="stat-card blue">
+                    <div class="stat-info">
+                        <h3 id="statMonth">0</h3>
+                        <p>Archived This Month</p>
+                    </div>
+                    <div class="stat-icon"><i class="fas fa-archive"></i></div>
+                </div>
+            </div>
+
+            <!-- Graduation Workflow Panel -->
+            <div class="card-box">
+                <h3><i class="fas fa-graduation-cap" style="color:#6c5ce7;"></i> Register Student Graduation</h3>
+                <p style="color:#666; margin-bottom:1.5rem;">Mark active students from the final class as graduated and register their post-school career details atomically.</p>
+                
+                <div class="form-box">
+                    <div style="margin-bottom: 20px;">
+                        <label class="field-label">Graduation Mode</label>
+                        <div style="display: flex; gap: 20px; font-size: 0.95rem;">
+                            <label><input type="radio" name="gradMode" value="single" checked onchange="toggleGradMode()"> Graduate Selected Student</label>
+                            <label><input type="radio" name="gradMode" value="bulk" onchange="toggleGradMode()"> Graduate Entire Class</label>
+                        </div>
+                    </div>
+
+                    <div class="mgmt-grid">
+                        <div class="full-width">
+                            <label class="field-label">Graduation Batch Year *</label>
+                            <input type="number" id="gradBatchYear" placeholder="e.g., 2026">
+                        </div>
+                    </div>
+
+                    <!-- SINGLE MODE FIELDS -->
+                    <div id="modeSingleSection">
+                        <div class="mgmt-grid">
+                            <div>
+                                <label class="field-label">Select Student *</label>
+                                <select id="gradStudentSelect">
+                                    <option value="">-- Loading Eligible Students --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="field-label">Higher Education Details</label>
+                                <input type="text" id="gradHigherEd" placeholder="e.g., B.Tech in CS at MIT (Optional)">
+                            </div>
+                            <div>
+                                <label class="field-label">Employment Status</label>
+                                <select id="gradEmploymentStatus">
+                                    <option value="Student">Student</option>
+                                    <option value="Employed">Employed</option>
+                                    <option value="Self-Employed">Self-Employed</option>
+                                    <option value="Unemployed">Unemployed</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="field-label">Current Organization / Employer</label>
+                                <input type="text" id="gradOrganization" placeholder="e.g., Google or University Name (Optional)">
+                            </div>
+                            <div>
+                                <label class="field-label">New Email Address</label>
+                                <input type="email" id="gradEmail" placeholder="Copy from Student if blank">
+                            </div>
+                            <div>
+                                <label class="field-label">Contact Phone Number</label>
+                                <input type="text" id="gradPhone" placeholder="Contact number (Optional)">
+                            </div>
+                        </div>
+                        <button class="btn-full" onclick="executeGraduation()">
+                            <i class="fas fa-check-circle"></i> Graduate Student
+                        </button>
+                    </div>
+
+                    <!-- BULK MODE FIELDS -->
+                    <div id="modeBulkSection" style="display: none;">
+                        <div class="mgmt-grid">
+                            <div>
+                                <label class="field-label">Medium *</label>
+                                <select id="bulkMedium">
+                                    <option value="">-- Select Medium --</option>
+                                    <option value="Kannada">Kannada</option>
+                                    <option value="English">English</option>
+                                    <option value="CBSE">CBSE</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="field-label">Class *</label>
+                                <select id="bulkClass">
+                                    <option value="">-- Select Class --</option>
+                                    <option value="10">Class 10</option>
+                                    <option value="12">Class 12</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn-full" style="background: linear-gradient(135deg, #0984e3, #74b9ff); margin-bottom: 15px;" onclick="loadBulkEligibleStudents()">
+                            <i class="fas fa-users"></i> Load Eligible Students
+                        </button>
+
+                        <div id="bulkStudentListContainer" style="display: none; border: 1px solid #e2e8f0; border-radius: 8px; background: white; padding: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                                <strong style="color: #2c3e50;">Select Students to Graduate</strong>
+                                <div>
+                                    <button onclick="toggleAllBulkStudents(true)" style="padding: 4px 10px; border-radius: 4px; border: 1px solid #ccc; background: #f8fafc; cursor: pointer; margin-right: 5px;">Select All</button>
+                                    <button onclick="toggleAllBulkStudents(false)" style="padding: 4px 10px; border-radius: 4px; border: 1px solid #ccc; background: #f8fafc; cursor: pointer;">Deselect All</button>
+                                </div>
+                            </div>
+                            <div id="bulkStudentCheckboxes" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                                <!-- Checkboxes load here -->
+                            </div>
+                            <button class="btn-full" style="background: linear-gradient(135deg, #00b894, #55efc4); margin-top: 15px;" onclick="executeBulkGraduation()">
+                                <i class="fas fa-check-double"></i> Bulk Graduate Selected
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alumni Roster Directory -->
+            <div class="card-box">
+                <h3><i class="fas fa-list" style="color:#6c5ce7;"></i> Alumni Directory</h3>
+                
+                <div class="export-group">
+                    <button class="btn-export excel" onclick="exportData('excel')">
+                        <i class="fas fa-file-excel"></i> Export Excel
+                    </button>
+                    <button class="btn-export csv" onclick="exportData('csv')">
+                        <i class="fas fa-file-csv"></i> Export CSV
+                    </button>
+                    <button class="btn-export pdf" onclick="exportPdf()">
+                        <i class="fas fa-file-pdf"></i> Export PDF Report
+                    </button>
+                </div>
+
+                <div class="mgmt-grid" style="margin-bottom: 1.5rem;">
+                    <div>
+                        <label class="field-label">Search Directory</label>
+                        <input type="text" id="alumniSearch" placeholder="Search by name or student code..." oninput="loadAlumniList()">
+                    </div>
+                    <div>
+                        <label class="field-label">Filter by Employment Status</label>
+                        <select id="alumniFilterEmployment" onchange="loadAlumniList()">
+                            <option value="All">All Statuses</option>
+                            <option value="Student">Student</option>
+                            <option value="Employed">Employed</option>
+                            <option value="Self-Employed">Self-Employed</option>
+                            <option value="Unemployed">Unemployed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="enrolled-header purple">
+                    <span><i class="fas fa-graduation-cap"></i> Tracked Alumni Records</span>
+                    <span class="enrolled-count">Listed: <span id="totalListed">0</span></span>
+                </div>
+                <div class="enrolled-list" id="trackingList">
+                    <!-- Data will load here dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="admin-toast" id="adminToast">
+        <i class="fas fa-check-circle"></i>
+        <span id="adminToastMsg">Done!</span>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        // Load stats, dropdowns, and records on boot
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set current year as default graduation batch
+            document.getElementById('gradBatchYear').value = new Date().getFullYear();
+            
+            refreshStats();
+            loadEligibleStudents();
+            loadAlumniList();
+        });
+
+        // 1. Toast Alert Helper
+        function toast(msg, type = 'success') {
+            const t = document.getElementById('adminToast');
+            const msgEl = document.getElementById('adminToastMsg');
+            msgEl.textContent = msg;
+            
+            if (type === 'error') {
+                t.className = 'admin-toast error show';
+            } else {
+                t.className = 'admin-toast show';
+            }
+            
+            setTimeout(() => {
+                t.classList.remove('show');
+            }, 3000);
+        }
+
+        function toggleGradMode() {
+            const mode = document.querySelector('input[name="gradMode"]:checked').value;
+            if (mode === 'bulk') {
+                document.getElementById('modeSingleSection').style.display = 'none';
+                document.getElementById('modeBulkSection').style.display = 'block';
+            } else {
+                document.getElementById('modeSingleSection').style.display = 'block';
+                document.getElementById('modeBulkSection').style.display = 'none';
+            }
+        }
+
+        async function loadBulkEligibleStudents() {
+            const medium = document.getElementById('bulkMedium').value;
+            const cls = document.getElementById('bulkClass').value;
+            const container = document.getElementById('bulkStudentListContainer');
+            const list = document.getElementById('bulkStudentCheckboxes');
+
+            if (!medium || !cls) {
+                toast('Please select both Medium and Class', 'error');
+                return;
+            }
+
+            container.style.display = 'none';
+            list.innerHTML = 'Loading...';
+
+            try {
+                const res = await fetch(`${API_BASE}/alumni-tracking/eligible-bulk?medium=${medium}&class=${cls}`);
+                if (!res.ok) throw new Error('Failed to fetch');
+                const students = await res.json();
+
+                if (students.length === 0) {
+                    toast('No eligible active students found for this class', 'error');
+                    return;
+                }
+
+                list.innerHTML = '';
+                students.forEach(s => {
+                    const label = document.createElement('label');
+                    label.style.display = 'flex';
+                    label.style.alignItems = 'center';
+                    label.style.padding = '8px';
+                    label.style.background = '#f8fafc';
+                    label.style.borderRadius = '5px';
+                    label.style.border = '1px solid #e2e8f0';
+                    label.style.cursor = 'pointer';
+                    label.innerHTML = `<input type="checkbox" class="bulk-student-cb" value="${s.id}" checked style="width:18px;height:18px;margin-right:10px;"> 
+                                       <strong>${s.name}</strong> <span style="color:#64748b;margin-left:5px;">(${s.student_code})</span>`;
+                    list.appendChild(label);
+                });
+
+                container.style.display = 'block';
+            } catch (error) {
+                toast('Error loading students', 'error');
+                console.error(error);
+            }
+        }
+
+        function toggleAllBulkStudents(checked) {
+            document.querySelectorAll('.bulk-student-cb').forEach(cb => cb.checked = checked);
+        }
+
+        async function executeBulkGraduation() {
+            const batch = document.getElementById('gradBatchYear').value;
+            if (!batch) {
+                toast('Graduation Batch Year is required', 'error');
+                return;
+            }
+
+            const checkedBoxes = document.querySelectorAll('.bulk-student-cb:checked');
+            const students = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
+
+            if (students.length === 0) {
+                toast('Please select at least one student', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/alumni-tracking/bulk-graduate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ batch, students })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Bulk graduation failed');
+
+                toast(`Success! ${data.graduated_count} students graduated.`);
+                
+                document.getElementById('bulkStudentListContainer').style.display = 'none';
+                document.getElementById('bulkStudentCheckboxes').innerHTML = '';
+
+                refreshStats();
+                loadEligibleStudents();
+                loadAlumniList();
+
+            } catch (error) {
+                toast(error.message, 'error');
+                console.error(error);
+            }
+        }
+
+        // 2. Fetch Stats
+        async function refreshStats() {
+            try {
+                const res = await fetch(`${API_BASE}/alumni-tracking/stats`);
+                if (!res.ok) throw new Error();
+                const stats = await res.json();
+                
+                document.getElementById('statTotal').textContent = stats.totalAlumni;
+                document.getElementById('statYear').textContent = stats.graduatedThisYear;
+                document.getElementById('statLatest').textContent = stats.latestBatch;
+                document.getElementById('statMonth').textContent = stats.archivedThisMonth;
+            } catch (err) {
+                console.error('Failed to load stats', err);
+            }
+        }
+
+        // 3. Fetch and render eligible students in dropdown
+        async function loadEligibleStudents() {
+            const select = document.getElementById('gradStudentSelect');
+            select.innerHTML = '<option value="">-- Loading Eligible Students --</option>';
+            try {
+                const res = await fetch(`${API_BASE}/alumni-tracking/eligible`);
+                if (!res.ok) throw new Error();
+                const students = await res.json();
+                
+                if (students.length === 0) {
+                    select.innerHTML = '<option value="">No active students in final class</option>';
+                    return;
+                }
+                
+                select.innerHTML = '<option value="">-- Choose Student --</option>';
+                students.forEach(s => {
+                    select.innerHTML += `<option value="${s.id}">${s.name} (${s.student_code}) - ${s.medium} Medium</option>`;
+                });
+            } catch (err) {
+                console.error(err);
+                select.innerHTML = '<option value="">Failed to load eligible students</option>';
+            }
+        }
+
+        // 4. Load Alumni Directory list
+        let loadedAlumniData = [];
+        async function loadAlumniList() {
+            const search = document.getElementById('alumniSearch').value;
+            const filterEmp = document.getElementById('alumniFilterEmployment').value;
+            const listContainer = document.getElementById('trackingList');
+            
+            try {
+                let query = `?search=${encodeURIComponent(search)}`;
+                if (filterEmp !== 'All') {
+                    query += `&employment_status=${encodeURIComponent(filterEmp)}`;
+                }
+
+                const res = await fetch(`${API_BASE}/alumni-tracking${query}`);
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                loadedAlumniData = data;
+
+                document.getElementById('totalListed').textContent = data.length;
+
+                if (data.length === 0) {
+                    listContainer.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-user-graduate"></i>
+                            <p>No tracking records found.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                listContainer.innerHTML = '';
+                data.forEach((item, idx) => {
+                    const student = item.student_rel;
+                    const details = [
+                        item.higher_education ? `Edu: ${item.higher_education}` : '',
+                        item.current_organization ? `Org: ${item.current_organization}` : '',
+                        item.email ? `Email: ${item.email}` : '',
+                        item.phone ? `Phone: ${item.phone}` : ''
+                    ].filter(Boolean).join(' | ') || 'No details tracked';
+
+                    const row = document.createElement('div');
+                    row.className = 'enrolled-row';
+                    row.innerHTML = `
+                        <div class="enrolled-info">
+                            <div class="enrolled-num">${idx + 1}</div>
+                            <div>
+                                <div class="enrolled-name">${student.name} (${item.graduation_batch})</div>
+                                <div class="enrolled-sub">Code: ${student.student_code} | Status: <strong>${item.employment_status || 'N/A'}</strong></div>
+                                <div class="enrolled-sub" style="color:#7f8c8d; font-size:0.75rem;">${details}</div>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn-edit" onclick="editTracking(${item.id})">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="btn-remove" onclick="deleteTracking(${item.id}, '${student.name}')">
+                                <i class="fas fa-undo"></i> Restore Student
+                            </button>
+                        </div>
+                    `;
+                    listContainer.appendChild(row);
+                });
+            } catch (err) {
+                console.error(err);
+                toast('Failed to load alumni directory', 'error');
+            }
+        }
+
+        // 5. Execute Graduation (Prisma Transaction)
+        async function executeGraduation() {
+            const student_id = document.getElementById('gradStudentSelect').value;
+            const graduation_batch = document.getElementById('gradBatchYear').value;
+            const higher_education = document.getElementById('gradHigherEd').value.trim();
+            const employment_status = document.getElementById('gradEmploymentStatus').value;
+            const current_organization = document.getElementById('gradOrganization').value.trim();
+            const email = document.getElementById('gradEmail').value.trim();
+            const phone = document.getElementById('gradPhone').value.trim();
+
+            if (!student_id) {
+                toast('Please select a student for graduation', 'error');
+                return;
+            }
+            if (!graduation_batch) {
+                toast('Batch year is required', 'error');
+                return;
+            }
+
+            const payload = {
+                student_id: parseInt(student_id),
+                graduation_batch,
+                higher_education: higher_education || null,
+                employment_status,
+                current_organization: current_organization || null,
+                email: email || null,
+                phone: phone || null
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/alumni-tracking/graduate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Graduation workflow failed');
+
+                toast('Student graduated successfully!');
+                
+                // Reset form fields
+                document.getElementById('gradStudentSelect').value = '';
+                document.getElementById('gradHigherEd').value = '';
+                document.getElementById('gradOrganization').value = '';
+                document.getElementById('gradEmail').value = '';
+                document.getElementById('gradPhone').value = '';
+
+                // Reload layout
+                refreshStats();
+                loadEligibleStudents();
+                loadAlumniList();
+
+            } catch (err) {
+                console.error(err);
+                toast(err.message, 'error');
+            }
+        }
+
+        // 6. Edit Tracking
+        async function editTracking(id) {
+            const record = loadedAlumniData.find(item => item.id === id);
+            if (!record) return;
+
+            const higher_education = prompt('Update Higher Education:', record.higher_education || '') || null;
+            const employment_status = prompt('Update Employment Status (Student/Employed/Self-Employed/Unemployed):', record.employment_status || '') || null;
+            const current_organization = prompt('Update Organization:', record.current_organization || '') || null;
+            const email = prompt('Update Email:', record.email || '') || null;
+            const phone = prompt('Update Phone Number:', record.phone || '') || null;
+
+            try {
+                const res = await fetch(`${API_BASE}/alumni-tracking/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        higher_education,
+                        employment_status,
+                        current_organization,
+                        email,
+                        phone
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed to update record');
+
+                toast('Record updated!');
+                loadAlumniList();
+            } catch (err) {
+                console.error(err);
+                toast(err.message, 'error');
+            }
+        }
+
+        // 7. Delete / Rollback Tracking (restores student)
+        async function deleteTracking(id, studentName) {
+            if (!confirm(`Restore student "${studentName}" to active school enrollment? This will delete their alumni tracking record.`)) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/alumni-tracking/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed to restore student');
+
+                toast('Student restored to active status.', 'error');
+                
+                refreshStats();
+                loadEligibleStudents();
+                loadAlumniList();
+            } catch (err) {
+                console.error(err);
+                toast(err.message, 'error');
+            }
+        }
+
+        // 8. Trigger CSV / Excel Export
+        function exportData(type) {
+            window.location.href = `${API_BASE}/alumni-tracking/export/${type}`;
+        }
+
+        // 9. Generate PDF on Frontend using jsPDF (matching pattern used elsewhere)
+        function exportPdf() {
+            if (loadedAlumniData.length === 0) {
+                toast('No records to export in PDF.', 'error');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+            
+            // Set header
+            doc.setFillColor(91, 33, 182); // Theme purple
+            doc.rect(0, 0, 210, 40, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('Helvetica', 'bold');
+            doc.setFontSize(20);
+            doc.text('SBRS Alumni Tracking Report', 15, 18);
+            
+            doc.setFont('Helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(200, 200, 255);
+            doc.text(`Report Period: All Time | Generated: ${new Date().toLocaleDateString()}`, 15, 28);
+            
+            let y = 50;
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(10);
+            
+            loadedAlumniData.forEach((rec, index) => {
+                const student = rec.student_rel;
+                
+                // Page break check
+                if (y > 270) {
+                    doc.addPage();
+                    y = 20;
+                }
+                
+                doc.setFont('Helvetica', 'bold');
+                doc.text(`${index + 1}. ${student.name} (Batch: ${rec.graduation_batch})`, 15, y);
+                doc.setFont('Helvetica', 'normal');
+                y += 5;
+                
+                const edu = rec.higher_education || 'N/A';
+                const emp = rec.employment_status || 'N/A';
+                const org = rec.current_organization || 'N/A';
+                const contact = `Email: ${rec.email || 'N/A'} | Phone: ${rec.phone || 'N/A'}`;
+                
+                doc.text(`Employment: ${emp} | Organization: ${org}`, 15, y);
+                y += 5;
+                doc.text(`Higher Education: ${edu}`, 15, y);
+                y += 5;
+                doc.text(contact, 15, y);
+                y += 8; // spacing between records
+                
+                // Draw a separator line
+                doc.setDrawColor(220, 220, 220);
+                doc.line(15, y - 2, 195, y - 2);
+            });
+            
+            doc.save(`Alumni_Tracking_Roster_${new Date().toISOString().split('T')[0]}.pdf`);
+            toast('PDF downloaded!');
+        }
+    </script>
+</body>
+
+</html>
