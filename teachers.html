@@ -302,7 +302,7 @@
 
     <script src="script.js"></script>
     <script>
-        const API = "http://localhost:5000/api";
+        const API = "/api";
 
         async function loadFaculty() {
             try {
@@ -320,7 +320,7 @@
                         card.setAttribute('data-subject', (t.category || 'other').toLowerCase());
                         card.setAttribute('data-name', t.name.toLowerCase());
 
-                        const photoUrl = t.photo_url ? (t.photo_url.startsWith('http') ? t.photo_url : `http://localhost:5000${t.photo_url}`) : 'images/logo.png';
+                        const photoUrl = t.photo_url ? (t.photo_url.startsWith('http') ? t.photo_url : `${t.photo_url}`) : 'images/logo.png';
                         card.innerHTML = `
                             <div class="teacher-img-container">
                                 <img src="${photoUrl}" alt="${t.name}" class="teacher-img" onerror="this.src='images/logo.png'">

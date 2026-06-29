@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load Notices Logic (for Index Page)
     const publicNoticeList = document.getElementById('publicNoticeList');
     if (publicNoticeList) {
-        fetch('http://localhost:5000/api/notices')
+        fetch('/api/notices')
             .then(res => res.json())
             .then(notices => {
                 const today = new Date();

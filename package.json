@@ -4,10 +4,11 @@
   "description": "Local School Webpage Server",
   "scripts": {
     "start": "node backend/server.js",
-    "dev": "concurrently \"node backend/server.js\" \"http-server -a localhost -p 8000 -c-1 -o\"",
+    "dev": "concurrently \"node backend/server.js\" \"http-server -a localhost -p 8000 -c-1 -o --proxy http://localhost:5000\"",
     "seed": "node prisma/seed.js",
     "check-db": "node check-db.js",
-    "full-validation": "node full-validation.js"
+    "full-validation": "node full-validation.js",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

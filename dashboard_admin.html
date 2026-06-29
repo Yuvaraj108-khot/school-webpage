@@ -854,7 +854,7 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:5000/api';
+        const API_BASE = '/api';
 
         /* ============================================================
            SECTION NAVIGATION
@@ -939,7 +939,7 @@
                 gallery.forEach(function (item) {
                     var div = document.createElement('div');
                     div.className = 'preview-item';
-                    const fullUrl = item.image_url.startsWith('http') ? item.image_url : 'http://localhost:5000' + item.image_url;
+                    const fullUrl = item.image_url.startsWith('http') ? item.image_url : '' + item.image_url;
                     div.innerHTML = '<button class="delete-btn" onclick="deleteImage(' + item.id + ')"><i class="fas fa-times"></i></button>' +
                         '<img src="' + fullUrl + '" alt="Gallery">' +
                         '<div class="preview-desc"><strong>' + item.category + '</strong><br>' + item.description + '</div>';
@@ -1303,7 +1303,7 @@
                 teachers.forEach(function (t, i) {
                     var row = document.createElement('div');
                     row.className = 'enrolled-row';
-                    const photoHtml = t.photo_url ? `<img src="${t.photo_url.startsWith('http') ? t.photo_url : 'http://localhost:5000' + t.photo_url}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:15px;">` : `<div style="width:40px;height:40px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;margin-right:15px;"><i class="fas fa-user" style="color:#94a3b8;"></i></div>`;
+                    const photoHtml = t.photo_url ? `<img src="${t.photo_url.startsWith('http') ? t.photo_url : '' + t.photo_url}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:15px;">` : `<div style="width:40px;height:40px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;margin-right:15px;"><i class="fas fa-user" style="color:#94a3b8;"></i></div>`;
                     row.innerHTML = '<div class="enrolled-info" style="align-items:center;">' +
                         '<div class="enrolled-num">' + (i + 1) + '</div>' + photoHtml +
                         '<div><div class="enrolled-name">' + t.name + '</div>' +
