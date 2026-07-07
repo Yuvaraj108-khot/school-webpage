@@ -25,8 +25,9 @@ const verifiedResetStore = new Map();
 function createTransporter() {
     return nodemailer.createTransport({
         host: 'smtp.gmail.com',
-        port: 465,
-        secure: true,
+        port: 587,
+        secure: false, // use STARTTLS
+        requireTLS: true,
         family: 4, // Force IPv4 to prevent Render ENETUNREACH errors
         auth: {
             user: process.env.SCHOOL_EMAIL,
