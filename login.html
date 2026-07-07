@@ -47,7 +47,7 @@
 
         <div class="login-container">
             <div style="text-align: center; margin-bottom: 2rem;">
-                <img src="images/logo.png" alt="Logo" style="width: 80px; margin-bottom: 1rem;">
+                <img src="images/logo.png" alt="Logo" style="width: 80px; margin: 0 auto 1rem auto;">
                 <h2 style="color: var(--primary-color); margin-bottom: 0.5rem;">Welcome Back</h2>
                 <p style="color: #666; font-size: 0.9rem;">Sign in to access your dashboard</p>
             </div>
@@ -93,7 +93,7 @@
             const pass = document.getElementById('password').value;
 
             // Resolve API Endpoint dynamically with fallback to 5000
-            const API = `${window.location.protocol}//${window.location.hostname}:5000/api`;
+            const API = "http://localhost:5000/api";
 
             // Try backend login first
             try {

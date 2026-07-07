@@ -51,7 +51,7 @@ exports.createCertificate = async (req, res) => {
                 student_code,
                 certificate_type,
                 status: status || "Pending",
-                request_date: request_date ? new Date(request_date).toISOString() : new Date().toISOString()
+                request_date: request_date ? new Date(request_date) : new Date()
             }
         });
         res.status(201).json(certificate);

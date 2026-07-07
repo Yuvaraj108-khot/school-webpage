@@ -84,11 +84,16 @@ model Notice {
 }
 
 model Alumni {
-  id         Int     @id @default(autoincrement())
-  name       String?
-  batch_year String?
-  profession String?
-  photo_url  String?
+  id           Int       @id @default(autoincrement())
+  student_code String?
+  name         String?
+  email        String?
+  phone        String?
+  batch_year   String?
+  profession   String?
+  photo_url    String?
+  status       String?   @default("Pending") // Pending, Approved, Rejected
+  applied_at   DateTime? @default(now()) @db.Timestamp(6)
 
   @@map("alumni")
   @@schema("public")
