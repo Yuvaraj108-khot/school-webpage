@@ -144,12 +144,7 @@ exports.createStudent = async (req, res) => {
                 return res.status(400).json({ error: 'Student email already exists' });
             }
 
-            const existingTeacherEmail = await prisma.teacher.findUnique({
-                where: { email: cleanEmail }
-            });
-            if (existingTeacherEmail) {
-                return res.status(400).json({ error: 'Email is already used by a teacher' });
-            }
+
         }
 
         // Resolve relational mapping fields
@@ -190,12 +185,17 @@ exports.deleteStudent = async (req, res) => {
         });
         if (!student) return res.status(404).json({ error: 'Student not found' });
         
-        // Soft delete
-        const updated = await prisma.student.update({
-            where: { student_code: req.params.code },
-            data: { is_active: false }
+        // Hard delete: remove associated records first
+        const id = student.id;
+        await prisma.alumniTracking.deleteMany({ where: { student_id: id } });
+        await prisma.attendance.deleteMany({ where: { student_id: id } });
+        await prisma.marks.deleteMany({ where: { student_id: id } });
+        await prisma.certificateRequest.deleteMany({ where: { student_id: id } });
+        
+        const deleted = await prisma.student.delete({
+            where: { id }
         });
-        res.json({ message: 'Student soft-deleted successfully', student: updated });
+        res.json({ message: 'Student deleted successfully', student: deleted });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete student' });
     }
@@ -220,12 +220,7 @@ exports.updateStudent = async (req, res) => {
                 return res.status(400).json({ error: 'Student email already exists' });
             }
 
-            const existingTeacherEmail = await prisma.teacher.findUnique({
-                where: { email: cleanEmail }
-            });
-            if (existingTeacherEmail) {
-                return res.status(400).json({ error: 'Email is already used by a teacher' });
-            }
+
         }
 
         // Resolve new class/medium relation IDs if updated

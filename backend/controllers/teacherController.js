@@ -40,12 +40,7 @@ exports.createTeacher = async (req, res) => {
             return res.status(400).json({ error: 'Teacher email already exists' });
         }
 
-        const existingStudentEmail = await prisma.student.findUnique({
-            where: { email: cleanEmail }
-        });
-        if (existingStudentEmail) {
-            return res.status(400).json({ error: 'Email is already used by a student' });
-        }
+
 
         let photo_url = null;
         if (req.file) {
@@ -115,12 +110,15 @@ exports.deleteTeacher = async (req, res) => {
         const teacher = await prisma.teacher.findUnique({ where: { id } });
         if (!teacher) return res.status(404).json({ error: 'Teacher not found' });
         
-        // Soft delete
-        const updated = await prisma.teacher.update({
-            where: { id },
-            data: { is_active: false }
+        // Hard delete: remove associated records first to avoid foreign key constraints
+        await prisma.subjectTeacher.deleteMany({
+            where: { teacher_id: id }
         });
-        res.json({ message: 'Teacher deleted successfully', teacher: updated });
+        
+        const deleted = await prisma.teacher.delete({
+            where: { id }
+        });
+        res.json({ message: 'Teacher deleted successfully', teacher: deleted });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete teacher' });
     }
@@ -150,10 +148,7 @@ exports.updateTeacher = async (req, res) => {
                 return res.status(400).json({ error: 'Teacher email already exists' });
             }
 
-            const existingStudentEmail = await prisma.student.findUnique({ where: { email: cleanEmail } });
-            if (existingStudentEmail) {
-                return res.status(400).json({ error: 'Email is already used by a student' });
-            }
+
         }
 
         let photo_url = teacher.photo_url;

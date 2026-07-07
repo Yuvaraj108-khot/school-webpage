@@ -395,9 +395,18 @@
         <div class="main-content">
             <!-- Header -->
             <div class="header-bar">
-                <h2>Alumni Tracking Module</h2>
-                <div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <button class="admin-menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('active')">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2>Alumni Tracking Module</h2>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
                     <span>Super Admin</span>
+                    <a href="index.html" class="btn btn-outline"
+                        style="border:1px solid #6c5ce7; color:#6c5ce7; padding:5px 15px; font-size:0.8rem; border-radius:6px; text-decoration:none;">
+                        Back to Home
+                    </a>
                 </div>
             </div>
 

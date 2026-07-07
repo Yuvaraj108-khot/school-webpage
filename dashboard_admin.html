@@ -475,6 +475,17 @@
             border-color: #e67e22;
             box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.15);
         }
+
+        @media (max-width: 768px) {
+            .enrolled-row {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 15px !important;
+            }
+            .enrolled-row > div:last-child {
+                align-self: flex-end;
+            }
+        }
     </style>
 </head>
 
@@ -658,10 +669,10 @@
                                 style="width:80px;height:80px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
                                 <i class="fas fa-user" style="font-size:2rem;color:#94a3b8;"></i>
                             </div>
-                            <div style="flex:1;">
+                            <div style="flex:1; min-width: 0;">
                                 <label class="field-label">Teacher Photo</label>
                                 <input type="file" id="teacherPhoto" accept="image/*"
-                                    onchange="previewTeacherPhoto(this)" style="margin-bottom:0;">
+                                    onchange="previewTeacherPhoto(this)" style="margin-bottom:0; max-width: 100%; box-sizing: border-box; overflow: hidden;">
                                 <p style="font-size:0.75rem;color:#94a3b8;margin-top:4px;">JPG/PNG recommended. Max
                                     500KB.</p>
                             </div>
@@ -671,6 +682,10 @@
                             <div>
                                 <label class="field-label">Full Name *</label>
                                 <input type="text" id="teacherName" placeholder="e.g., Dr. Ramesh Kumar">
+                            </div>
+                            <div>
+                                <label class="field-label">Staff ID *</label>
+                                <input type="text" id="teacherStaffId" placeholder="e.g., TCH-001">
                             </div>
                             <div>
                                 <label class="field-label">Designation / Qualifications *</label>
@@ -703,7 +718,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="field-label">Email Address (Optional)</label>
+                                <label class="field-label">Email Address *</label>
                                 <input type="email" id="teacherEmail" placeholder="e.g., teacher@school.com">
                             </div>
                             <div>
@@ -1321,6 +1336,7 @@
 
         async function addTeacher() {
             var name = document.getElementById('teacherName').value.trim();
+            var staffId = document.getElementById('teacherStaffId').value.trim();
             var designation = document.getElementById('teacherDesignation').value.trim();
             var experience = document.getElementById('teacherExperience').value.trim();
             var category = document.getElementById('teacherCategory').value;
@@ -1330,13 +1346,14 @@
             var password = document.getElementById('teacherPassword').value;
             var photoInput = document.getElementById('teacherPhoto');
 
-            if (!name || !designation || !experience) {
-                toast('Please fill Name, Designation, and Experience.', 'error');
+            if (!name || !staffId || !email || !designation || !experience) {
+                toast('Please fill Name, Staff ID, Email, Designation, and Experience.', 'error');
                 return;
             }
 
             const formData = new FormData();
             formData.append('name', name);
+            formData.append('staff_id', staffId);
             formData.append('designation', designation);
             formData.append('experience', experience);
             formData.append('category', category);
@@ -1350,10 +1367,17 @@
 
             try {
                 const res = await fetch(API_BASE + '/teachers', { method: 'POST', body: formData });
-                if (!res.ok) throw new Error('Failed to add teacher');
+                if (!res.ok) {
+                    let errData;
+                    try {
+                        errData = await res.json();
+                    } catch(e) {}
+                    throw new Error((errData && errData.error) || 'Failed to add teacher');
+                }
                 loadTeachers();
 
                 document.getElementById('teacherName').value = '';
+                document.getElementById('teacherStaffId').value = '';
                 document.getElementById('teacherDesignation').value = '';
                 document.getElementById('teacherExperience').value = '';
                 document.getElementById('teacherSubject').value = '';

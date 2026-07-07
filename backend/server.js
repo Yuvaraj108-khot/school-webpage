@@ -61,6 +61,10 @@ app.get('/api/health', (req, res) => {
 });
 
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+    // Initialize Cron Jobs
+    const { scheduleRollover } = require('./utils/rollover');
+    scheduleRollover();
+
     app.listen(PORT, () => {
         console.log(`Server is running at http://localhost:${PORT}`);
     });

@@ -70,7 +70,7 @@
         </section>
 
         <!-- Vision & Mission -->
-        <section style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-bottom: 4rem;">
+        <section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 3rem; margin-bottom: 4rem;">
             <div style="background: var(--light-bg); padding: 2rem; border-radius: 10px;">
                 <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Vision of Founder</h3>
                 <p>Divinity of the saint and sublimity of nature have rendered the campus a balanced blending of an
@@ -118,14 +118,14 @@
                 <span>Holistic Growth</span>
                 <h2>Beyond Academics</h2>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem;">
                 <div
                     style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05);">
                     <h3 style="color: var(--primary-color); margin-bottom: 1.5rem;"><i class="fas fa-skating"
                             style="margin-right: 10px;"></i>Co-curricular Activities</h3>
                     <p style="margin-bottom: 1rem;">We believe in the all-round development of our pupils. The following
                         classes are conducted for all interested students in the campus:</p>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
                         <span class="badge"
                             style="background: #eef2ff; color: #4338ca; padding: 8px 12px; border-radius: 20px; font-size: 0.85rem;"><i
                                 class="fas fa-trophy"></i> Sports & Games</span>
@@ -184,8 +184,8 @@
                 <span>Success Stories</span>
                 <h2>SSLC Academic Rank Holders</h2>
             </div>
-            <div
-                style="overflow-x: auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.05);">
+            <div class="table-responsive"
+                style="background: white; padding: 1rem; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.05);">
                 <table style="width: 100%; border-collapse: collapse;">
                     <thead style="border-bottom: 2px solid var(--primary-color);">
                         <tr>
@@ -269,7 +269,7 @@
             </div>
             <div
                 style="background: white; padding: 2.5rem; border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.05);">
-                <ul style="list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <ul style="list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
                     <li style="display: flex; gap: 15px; align-items: flex-start;">
                         <i class="fas fa-medal"
                             style="color: var(--secondary-color); font-size: 1.2rem; margin-top: 4px;"></i>
@@ -379,12 +379,12 @@
                 <h2>Head Master</h2>
             </div>
             <div
-                style="background: white; padding: 3rem; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 3rem; max-width: 900px; margin: 0 auto;">
-                <div style="flex-shrink: 0;">
+                style="background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 2rem; max-width: 900px; margin: 0 auto;">
+                <div style="flex-shrink: 0; text-align: center;">
                     <img src="images/principle.jpeg" alt="Mr. R. Narayana Shenoy"
                         style="width: 180px; height: 180px; border-radius: 50%; object-fit: cover; border: 4px solid var(--secondary-color); box-shadow: 0 8px 25px rgba(0,0,0,0.1);">
                 </div>
-                <div>
+                <div style="flex: 1; min-width: 250px;">
                     <h3 style="color: var(--primary-color); font-size: 1.8rem; margin-bottom: 0.5rem;">Mr. R. Narayana
                         Shenoy</h3>
                     <p style="color: var(--accent-color); font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem;">

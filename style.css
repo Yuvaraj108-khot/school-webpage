@@ -682,3 +682,69 @@ footer {
     -webkit-overflow-scrolling: touch;
     margin-bottom: 1rem;
 }
+/* Dashboard Global Mobile Fixes */
+.admin-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: #1a252f;
+    font-size: 1.4rem;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+    .dashboard-container .sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: -280px !important;
+        width: 260px !important;
+        height: 100vh !important;
+        z-index: 1050 !important;
+        transition: left 0.4s !important;
+        overflow-y: auto !important;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.5) !important;
+    }
+    .dashboard-container .sidebar.active {
+        left: 0 !important;
+    }
+    .admin-menu-toggle {
+        display: block !important;
+    }
+    .dashboard-container .main-content {
+        padding: 1rem !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+    }
+    .dashboard-container .header-bar {
+        flex-wrap: wrap !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
+        padding: 1rem !important;
+    }
+    .dashboard-container .mgmt-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .dashboard-container .mgmt-grid .full-width {
+        grid-column: span 1 !important;
+    }
+    .dashboard-container .stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .card-box {
+        padding: 1.5rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+    /* Toolbar inside card-box */
+    .card-box .toolbar, .table-responsive .toolbar {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+    .toolbar button, .toolbar select {
+        width: 100% !important;
+        margin-bottom: 5px !important;
+    }
+}

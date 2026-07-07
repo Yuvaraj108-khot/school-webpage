@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Create overlay backdrop
         const overlay = document.createElement('div');
         overlay.className = 'nav-overlay';
-        document.body.appendChild(overlay);
+        navMenu.parentNode.appendChild(overlay);
 
         // Create close button inside sidebar
         const closeBtn = document.createElement('button');

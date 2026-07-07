@@ -870,3 +870,17 @@ model AlumniTracking {
   @@map("alumni_tracking")
   @@schema("public")
 }
+
+model GraduatedStudent {
+  id              Int      @id @default(autoincrement())
+  student_code    String?
+  name            String
+  graduation_year String
+  medium          String
+  email           String?
+  phone           String?
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+
+  @@map("graduated_students")
+  @@schema("public")
+}

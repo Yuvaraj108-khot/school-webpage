@@ -1,0 +1,1 @@
+const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient(); async function main() { await prisma.subjectTeacher.deleteMany({}); await prisma.teacher.deleteMany({}); console.log('All teachers and subject_teachers deleted'); } main().catch(e => { console.error(e); process.exit(1); }).finally(async () => { await prisma.$disconnect(); });
