@@ -24,7 +24,10 @@ const verifiedResetStore = new Map();
 // ── Create reusable transporter using school Gmail ─────────────────────────
 function createTransporter() {
     return nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        family: 4, // Force IPv4 to prevent Render ENETUNREACH errors
         auth: {
             user: process.env.SCHOOL_EMAIL,
             pass: process.env.SCHOOL_EMAIL_PASSWORD,

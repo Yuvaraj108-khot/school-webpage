@@ -1,0 +1,1 @@
+require('dotenv').config(); const nodemailer = require('nodemailer'); const t = nodemailer.createTransport({ service: 'gmail', auth: { user: process.env.SCHOOL_EMAIL, pass: process.env.SCHOOL_EMAIL_PASSWORD }}); t.sendMail({ from: process.env.SCHOOL_EMAIL, to: 'yuvarajkhot2005@gmail.com', subject: 'Test OTP', text: '123456' }).then(console.log).catch(console.error);
