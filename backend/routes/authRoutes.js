@@ -22,21 +22,31 @@ const otpStore = new Map();
 const verifiedResetStore = new Map();
 
 // ── Create reusable transporter using school Gmail ─────────────────────────
-function createTransporter() {
-    return nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false, // use STARTTLS
-        requireTLS: true,
-        family: 4, // Force IPv4 to prevent Render ENETUNREACH errors
-        auth: {
-            user: process.env.SCHOOL_EMAIL,
-            pass: process.env.SCHOOL_EMAIL_PASSWORD,
+// ── Brevo REST API Helper ─────────────────────────
+async function sendBrevoEmail(toEmail, toName, subject, htmlContent) {
+    const senderEmail = process.env.SCHOOL_EMAIL || 'srimadbhuvanendraeducationalin@gmail.com';
+    const senderName = 'Srimad Bhuvanendra High School';
+    
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+            'accept': 'application/json',
+            'api-key': process.env.BREVO_API_KEY,
+            'content-type': 'application/json'
         },
-        connectionTimeout: 5000,
-        socketTimeout: 5000,
-        greetingTimeout: 5000
+        body: JSON.stringify({
+            sender: { name: senderName, email: senderEmail },
+            to: [{ email: toEmail, name: toName }],
+            subject: subject,
+            htmlContent: htmlContent
+        })
     });
+    
+    if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Brevo API Error: ${response.status} ${errText}`);
+    }
+    return response.json();
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -72,12 +82,7 @@ router.post('/send-otp', async (req, res) => {
         return res.status(404).json({ error: 'This email is not registered in the database.' });
     }
 
-    const isConfigured = process.env.SCHOOL_EMAIL && 
-                         process.env.SCHOOL_EMAIL.trim() !== '' &&
-                         process.env.SCHOOL_EMAIL !== 'schoolemail@gmail.com' && 
-                         process.env.SCHOOL_EMAIL_PASSWORD && 
-                         process.env.SCHOOL_EMAIL_PASSWORD.trim() !== '' &&
-                         process.env.SCHOOL_EMAIL_PASSWORD !== 'xxxx xxxx xxxx xxxx';
+    const isConfigured = process.env.BREVO_API_KEY && process.env.BREVO_API_KEY.trim() !== '';
 
     // Generate 6-digit OTP
     const otp = String(Math.floor(100000 + Math.random() * 900000));
@@ -165,9 +170,8 @@ router.post('/send-otp', async (req, res) => {
     };
 
     try {
-        const transporter = createTransporter();
-        // Fire and forget email sending to avoid blocking the UI due to Gmail SMTP latency
-        transporter.sendMail(mailOptions).catch(err => {
+        // Fire and forget email sending to avoid blocking the UI due to network latency
+        sendBrevoEmail(email, name, mailOptions.subject, mailOptions.html).catch(err => {
             console.error('Background Email send error:', err.message);
         });
         
