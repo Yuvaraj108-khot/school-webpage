@@ -1,6 +1,6 @@
 const http = require('http');
 
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = 'https://school-webpage-1uky.onrender.com/api';
 
 async function post(path, data) {
     return new Promise((resolve, reject) => {

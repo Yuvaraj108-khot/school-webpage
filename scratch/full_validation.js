@@ -27,7 +27,7 @@ async function runAudit() {
     }
   }
 
-  const BASE = 'http://localhost:5000/api';
+  const BASE = 'https://school-webpage-1uky.onrender.com/api';
 
   // --- Student Management Test ---
   console.log('\n--- STUDENT MANAGEMENT ---');

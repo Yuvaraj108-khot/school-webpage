@@ -25,7 +25,7 @@ async function phase7Testing() {
     }
   }
 
-  const BASE = 'http://localhost:5000/api';
+  const BASE = 'https://school-webpage-1uky.onrender.com/api';
 
   // 1. Student Marks View
   await test('Student marks view', `${BASE}/marks?limit=10`);

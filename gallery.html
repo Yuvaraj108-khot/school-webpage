@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -233,7 +233,7 @@
                         div.style.padding = '0';
                         div.style.overflow = 'hidden';
 
-                        const fullImageUrl = item.image_url.startsWith('http') ? item.image_url : `${API.replace('/api', '')}${item.image_url}`;
+                        const fullImageUrl = item.image_url.startsWith('http') ? item.image_url : `${API.replace('https://school-webpage-1uky.onrender.com/api', '')}${item.image_url}`;
                         div.innerHTML = `
                             <img src="${fullImageUrl}" alt="${item.category}" style="width: 100%; height: 200px; object-fit: cover;">
                             <div style="padding: 1rem;">
