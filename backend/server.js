@@ -60,7 +60,7 @@ app.get('/api/health', (req, res) => {
     res.json({ status: "ok" });
 });
 
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+if (!process.env.VERCEL) {
     // Initialize Cron Jobs
     const { scheduleRollover } = require('./utils/rollover');
     scheduleRollover();
