@@ -241,9 +241,9 @@
             </div>
             <div class="filter-chips">
                 <button class="filter-chip active" data-filter="all">All Staff</button>
-                <button class="filter-chip" data-filter="higher-primary">Higher Primary</button>
-                <button class="filter-chip" data-filter="kannada-medium">Kannada Medium (Aided)</button>
-                <button class="filter-chip" data-filter="english-medium">English Medium</button>
+                <button class="filter-chip" data-filter="primary">Primary / Kindergarten</button>
+                <button class="filter-chip" data-filter="kannada">Kannada Medium (Aided)</button>
+                <button class="filter-chip" data-filter="english">English Medium</button>
             </div>
             <div class="results-count" id="resultsCount">Showing all faculty members</div>
         </div>
@@ -327,9 +327,9 @@
                             </div>
                             <div class="teacher-info">
                                 <h3>${t.name}</h3>
-                                <span class="designation">${t.designation}</span>
+                                <span class="designation">${t.designation || t.subject || ''}</span>
                                 <div class="teacher-details">
-                                    <p><i class="fas fa-briefcase"></i> ${t.experience} Years Experience</p>
+                                    <p><i class="fas fa-briefcase"></i> ${t.experience ? (t.experience.toString().toLowerCase().includes('year') ? t.experience : t.experience + ' Years Experience') : 'N/A'}</p>
                                 </div>
                             </div>
                         `;
@@ -360,7 +360,12 @@
                     const designation = (card.querySelector('.designation')?.textContent || '').toLowerCase();
                     const allText = name + ' ' + subject + ' ' + designation;
 
-                    const matchesFilter = activeFilter === 'all' || subject === activeFilter;
+                    let matchesFilter = activeFilter === 'all';
+                    if (!matchesFilter) {
+                        if (activeFilter === 'primary' && (subject.includes('primary') || subject.includes('lkg') || subject.includes('ukg'))) matchesFilter = true;
+                        else if (activeFilter === 'kannada' && subject.includes('kannada')) matchesFilter = true;
+                        else if (activeFilter === 'english' && subject.includes('english')) matchesFilter = true;
+                    }
                     const matchesSearch = !query || allText.includes(query);
 
                     if (matchesFilter && matchesSearch) {
