@@ -1758,6 +1758,7 @@
                 <div><label class="field-label">Phone Number</label><input type="text" id="editTeacherPhone"></div>
                 <div><label class="field-label">Email Address *</label><input type="email" id="editTeacherEmail"></div>
                 <div><label class="field-label">Password (Optional)</label><input type="text" id="editTeacherPassword" placeholder="Leave blank to keep same"></div>
+                <div><label class="field-label">Photo (Optional)</label><input type="file" id="editTeacherPhoto" accept="image/*"></div>
             </div>
             <button class="btn-full" style="margin-top:20px;" onclick="submitEditTeacher()">Save Changes</button>
         </div>
@@ -1777,6 +1778,7 @@
             document.getElementById('editTeacherPhone').value = t.phone || '';
             document.getElementById('editTeacherEmail').value = t.email || '';
             document.getElementById('editTeacherPassword').value = '';
+            document.getElementById('editTeacherPhoto').value = '';
             document.getElementById('editTeacherModal').style.display = 'flex';
         }
         function closeEditTeacherModal() {
@@ -1784,23 +1786,28 @@
         }
         async function submitEditTeacher() {
             const id = document.getElementById('editTeacherId').value;
-            const data = {
-                name: document.getElementById('editTeacherName').value,
-                staff_id: document.getElementById('editTeacherStaffId').value,
-                designation: document.getElementById('editTeacherDesignation').value,
-                experience: document.getElementById('editTeacherExperience').value,
-                category: document.getElementById('editTeacherCategory').value,
-                subject: document.getElementById('editTeacherSubject').value,
-                medium: document.getElementById('editTeacherMedium').value,
-                phone: document.getElementById('editTeacherPhone').value,
-                email: document.getElementById('editTeacherEmail').value,
-                password: document.getElementById('editTeacherPassword').value
-            };
+            const formData = new FormData();
+            
+            formData.append('name', document.getElementById('editTeacherName').value);
+            formData.append('staff_id', document.getElementById('editTeacherStaffId').value);
+            formData.append('designation', document.getElementById('editTeacherDesignation').value);
+            formData.append('experience', document.getElementById('editTeacherExperience').value);
+            formData.append('category', document.getElementById('editTeacherCategory').value);
+            formData.append('subject', document.getElementById('editTeacherSubject').value);
+            formData.append('medium', document.getElementById('editTeacherMedium').value);
+            formData.append('phone', document.getElementById('editTeacherPhone').value);
+            formData.append('email', document.getElementById('editTeacherEmail').value);
+            
+            const password = document.getElementById('editTeacherPassword').value;
+            if (password) formData.append('password', password);
+            
+            const photoFile = document.getElementById('editTeacherPhoto').files[0];
+            if (photoFile) formData.append('photo', photoFile);
+
             try {
                 const res = await fetch(API_BASE + '/teachers/' + id, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                    body: formData
                 });
                 if (!res.ok) {
                     let errData;
