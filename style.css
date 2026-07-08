@@ -715,7 +715,10 @@ footer {
         border: none;
         border-bottom: 1px solid #eee;
         position: relative;
-        padding-left: 45% !important;
+        padding-top: 35px !important;
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+        padding-bottom: 15px !important;
         text-align: left !important;
         white-space: normal;
         min-height: 40px;
@@ -727,13 +730,15 @@ footer {
     
     .table-responsive td::before {
         position: absolute;
-        top: 15px;
+        top: 10px;
         left: 15px;
-        width: 35%;
-        padding-right: 10px;
+        width: calc(100% - 30px);
+        padding-right: 0;
         white-space: nowrap;
         font-weight: 700;
-        color: var(--primary-color);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        color: #7f8c8d; /* Muted color for the label */
         content: attr(data-label);
         overflow: hidden;
         text-overflow: ellipsis;
