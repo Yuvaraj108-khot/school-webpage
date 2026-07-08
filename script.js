@@ -178,11 +178,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem;">This website was proudly built by a team of 5 brilliant students as a school project, under the mentorship of Mr. SRIKANTH BHAT K.</p>
                 <ul style="list-style: none; padding: 0; margin: 0; text-align: left; background: #f8fafc; padding: 1rem; border-radius: 10px; border: 1px solid #e2e8f0;">
                     <li style="padding: 8px 0; border-bottom: 2px solid #cbd5e1; font-weight: 700; color: var(--primary-color); margin-bottom: 5px;"><i class="fas fa-chalkboard-teacher" style="color: var(--secondary-color); margin-right: 10px;"></i> Mentor: Mr. Srikanth Bhat K</li>
-                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;">Yuvaraj Khot</li>
-                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;">Shrivathsa Bhat M</li>
-                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;">Vikyath</li>
-                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;">Vinethraj.R.Naik</li>
-                    <li style="padding: 8px 0; font-weight: 600;">Vineeth Bhatta</li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;"><a href="https://www.linkedin.com/in/yuvaraj-khot-b827b7369/" target="_blank" style="color: inherit; text-decoration: none; display: flex; justify-content: space-between; align-items: center;">Yuvaraj Khot <i class="fab fa-linkedin" style="color: #0a66c2;"></i></a></li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;"><a href="https://www.linkedin.com/in/shrivathsa-bhat-m/" target="_blank" style="color: inherit; text-decoration: none; display: flex; justify-content: space-between; align-items: center;">Shrivathsa Bhat M <i class="fab fa-linkedin" style="color: #0a66c2;"></i></a></li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;"><a href="https://www.linkedin.com/in/vikyath-t-kotian-335931361?utm_source=share_via&utm_content=profile&utm_medium=member_android" target="_blank" style="color: inherit; text-decoration: none; display: flex; justify-content: space-between; align-items: center;">Vikyath-t-kotian <i class="fab fa-linkedin" style="color: #0a66c2;"></i></a></li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;"><a href="https://www.linkedin.com/in/vinethraj-r-naik-762910339/" target="_blank" style="color: inherit; text-decoration: none; display: flex; justify-content: space-between; align-items: center;">Vinethraj.R.Naik <i class="fab fa-linkedin" style="color: #0a66c2;"></i></a></li>
+                    <li style="padding: 8px 0; font-weight: 600;"><a href="https://www.linkedin.com/in/vineeth-bhatta-65b3723a2/" target="_blank" style="color: inherit; text-decoration: none; display: flex; justify-content: space-between; align-items: center;">Vineeth Bhatta <i class="fab fa-linkedin" style="color: #0a66c2;"></i></a></li>
                 </ul>
             </div>
         `;
