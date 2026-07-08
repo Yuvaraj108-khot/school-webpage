@@ -152,4 +152,63 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(err => console.error(err));
     }
+
+    // ═══════════════════════════════════════════════
+    // Easter Egg: Developed by Students Modal
+    // ═══════════════════════════════════════════════
+    const footerBottom = document.querySelector('.footer-bottom p');
+    if (footerBottom) {
+        // Append the Easter egg link to the footer text
+        const devLink = document.createElement('a');
+        devLink.href = 'javascript:void(0)';
+        devLink.style.color = 'var(--secondary-color)';
+        devLink.style.marginLeft = '10px';
+        devLink.style.textDecoration = 'none';
+        devLink.innerHTML = '&lt; / &gt; Developed by Students';
+        footerBottom.appendChild(devLink);
+
+        // Create the Modal
+        const devModal = document.createElement('div');
+        devModal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; justify-content:center; align-items:center; backdrop-filter: blur(5px);';
+        devModal.innerHTML = `
+            <div style="background: white; padding: 2.5rem; border-radius: 15px; max-width: 400px; width: 90%; text-align: center; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: popIn 0.3s ease-out;">
+                <span class="close-dev" style="position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #666;">&times;</span>
+                <i class="fas fa-code" style="font-size: 3rem; color: var(--secondary-color); margin-bottom: 1rem;"></i>
+                <h2 style="color: var(--primary-color); margin-bottom: 0.5rem; font-family: var(--font-heading);">The Dev Team</h2>
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem;">This website was proudly built by a team of 5 brilliant students as a school project.</p>
+                <ul style="list-style: none; padding: 0; margin: 0; text-align: left; background: #f8fafc; padding: 1rem; border-radius: 10px; border: 1px solid #e2e8f0;">
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;"><i class="fas fa-user-astronaut" style="color: var(--accent-color); margin-right: 10px;"></i> Yuvaraj Khot</li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;"><i class="fas fa-user-ninja" style="color: var(--accent-color); margin-right: 10px;"></i> Shrivathsa Bhat M</li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;"><i class="fas fa-user-secret" style="color: var(--accent-color); margin-right: 10px;"></i> Vikyath</li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;"><i class="fas fa-user-tie" style="color: var(--accent-color); margin-right: 10px;"></i> Vinethraj.R.Naik</li>
+                    <li style="padding: 8px 0; font-weight: 600;"><i class="fas fa-user-graduate" style="color: var(--accent-color); margin-right: 10px;"></i> Vineeth Bhatta</li>
+                </ul>
+            </div>
+        `;
+        document.body.appendChild(devModal);
+
+        // Add popIn animation style if not exists
+        if (!document.getElementById('devModalStyles')) {
+            const style = document.createElement('style');
+            style.id = 'devModalStyles';
+            style.innerHTML = '@keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }';
+            document.head.appendChild(style);
+        }
+
+        // Toggle logic
+        devLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            devModal.style.display = 'flex';
+        });
+
+        devModal.querySelector('.close-dev').addEventListener('click', () => {
+            devModal.style.display = 'none';
+        });
+
+        devModal.addEventListener('click', (e) => {
+            if (e.target === devModal) {
+                devModal.style.display = 'none';
+            }
+        });
+    }
 });
