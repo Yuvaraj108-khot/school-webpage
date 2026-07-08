@@ -175,9 +175,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="close-dev" style="position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #666;">&times;</span>
                 <i class="fas fa-code" style="font-size: 3rem; color: var(--secondary-color); margin-bottom: 1rem;"></i>
                 <h2 style="color: var(--primary-color); margin-bottom: 0.5rem; font-family: var(--font-heading);">The Dev Team</h2>
-                <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem;">This website was proudly built by a team of 5 brilliant students as a school project, under the mentorship of SRIKANTH BHAT K sir.</p>
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem;">This website was proudly built by a team of 5 brilliant students as a school project, under the mentorship of Mr. SRIKANTH BHAT K.</p>
                 <ul style="list-style: none; padding: 0; margin: 0; text-align: left; background: #f8fafc; padding: 1rem; border-radius: 10px; border: 1px solid #e2e8f0;">
-                    <li style="padding: 8px 0; border-bottom: 2px solid #cbd5e1; font-weight: 700; color: var(--primary-color); margin-bottom: 5px;"><i class="fas fa-chalkboard-teacher" style="color: var(--secondary-color); margin-right: 10px;"></i> Mentor: Srikanth Bhat K Sir</li>
+                    <li style="padding: 8px 0; border-bottom: 2px solid #cbd5e1; font-weight: 700; color: var(--primary-color); margin-bottom: 5px;"><i class="fas fa-chalkboard-teacher" style="color: var(--secondary-color); margin-right: 10px;"></i> Mentor: Mr. Srikanth Bhat K</li>
                     <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;">Yuvaraj Khot</li>
                     <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;">Shrivathsa Bhat M</li>
                     <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;">Vikyath</li>
