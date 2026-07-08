@@ -80,14 +80,14 @@ async function runAcademicRollover() {
   }
 }
 
-// Schedule to run on June 1st at midnight
+// Schedule to run on May 1st at midnight
 function scheduleRollover() {
-  // '0 0 1 6 *' = At 00:00 on day-of-month 1 in June.
-  cron.schedule('0 0 1 6 *', () => {
+  // '0 0 1 5 *' = At 00:00 on day-of-month 1 in May.
+  cron.schedule('0 0 1 5 *', () => {
     console.log('Triggering scheduled Academic Year Rollover...');
     runAcademicRollover();
   });
-  console.log('Academic Year Rollover cron job scheduled for June 1st.');
+  console.log('Academic Year Rollover cron job scheduled for May 1st.');
 }
 
 module.exports = { scheduleRollover, runAcademicRollover };
