@@ -121,6 +121,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ═══════════════════════════════════════════════
+    // Responsive Tables - Auto data-label
+    // ═══════════════════════════════════════════════
+    const tables = document.querySelectorAll('.table-responsive table');
+    tables.forEach(table => {
+        const headers = Array.from(table.querySelectorAll('th')).map(th => th.innerText.trim());
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            cells.forEach((cell, index) => {
+                if (headers[index]) {
+                    cell.setAttribute('data-label', headers[index]);
+                }
+            });
+        });
+    });
+
     // Load Notices Logic (for Index Page)
     const publicNoticeList = document.getElementById('publicNoticeList');
     if (publicNoticeList) {
