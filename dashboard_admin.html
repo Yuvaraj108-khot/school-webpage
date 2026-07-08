@@ -869,7 +869,7 @@
     </div>
 
     <script>
-        const API_BASE = 'https://school-webpage-1uky.onrender.com/api';
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? `http://${window.location.hostname}:5000/api` : 'https://school-webpage-1uky.onrender.com/api';
 
         /* ============================================================
            SECTION NAVIGATION
@@ -954,7 +954,7 @@
                 gallery.forEach(function (item) {
                     var div = document.createElement('div');
                     div.className = 'preview-item';
-                    const fullUrl = item.image_url.startsWith('http') ? item.image_url : '' + item.image_url;
+                    const fullUrl = item.image_url.startsWith('http') ? item.image_url : API_BASE.replace('/api', '') + item.image_url;
                     div.innerHTML = '<button class="delete-btn" onclick="deleteImage(' + item.id + ')"><i class="fas fa-times"></i></button>' +
                         '<img src="' + fullUrl + '" alt="Gallery">' +
                         '<div class="preview-desc"><strong>' + item.category + '</strong><br>' + item.description + '</div>';
@@ -1201,7 +1201,15 @@
                     body: JSON.stringify(payload)
                 });
 
-                const result = await response.json();
+                let result;
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    result = await response.json();
+                } else {
+                    const errText = await response.text();
+                    throw new Error(`Server returned unexpected format (Status: ${response.status}). The service might be down.`);
+                }
+
                 console.log('[DEBUG] Add Student server response:', result);
 
                 if (!response.ok) {

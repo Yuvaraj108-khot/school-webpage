@@ -215,7 +215,9 @@
 
     <script src="script.js"></script>
     <script>
-        const API = `${window.location.protocol}//${window.location.hostname}:5000/api`;
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+        const API = isLocal ? 'http://localhost:5000/api' : 'https://school-webpage-1uky.onrender.com/api';
+        const BACKEND_URL = isLocal ? 'http://localhost:5000' : 'https://school-webpage-1uky.onrender.com';
 
         async function loadGallery() {
             try {
@@ -233,7 +235,7 @@
                         div.style.padding = '0';
                         div.style.overflow = 'hidden';
 
-                        const fullImageUrl = item.image_url.startsWith('http') ? item.image_url : `${API.replace('https://school-webpage-1uky.onrender.com/api', '')}${item.image_url}`;
+                        const fullImageUrl = item.image_url.startsWith('http') ? item.image_url : `${BACKEND_URL}${item.image_url}`;
                         div.innerHTML = `
                             <img src="${fullImageUrl}" alt="${item.category}" style="width: 100%; height: 200px; object-fit: cover;">
                             <div style="padding: 1rem;">
@@ -246,10 +248,11 @@
                     });
                 }
 
-                // Refresh filter logic
-                setupFilters();
             } catch (error) {
                 console.error(error);
+            } finally {
+                // Always setup filters even if fetch fails so buttons remain interactive
+                setupFilters();
             }
         }
 
