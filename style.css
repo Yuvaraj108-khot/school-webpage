@@ -682,6 +682,11 @@ footer {
     -webkit-overflow-scrolling: touch;
     margin-bottom: 1rem;
 }
+
+.table-responsive table {
+    width: 100%;
+    min-width: 600px;
+}
 /* Dashboard Global Mobile Fixes */
 .admin-menu-toggle {
     display: none;
