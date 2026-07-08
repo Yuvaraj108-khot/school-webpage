@@ -4,7 +4,8 @@ const supabase = require('../supabaseClient');
 exports.getTeachers = async (req, res) => {
     try {
         const teachers = await prisma.teacher.findMany({
-            where: { is_active: true }
+            where: { is_active: true },
+            orderBy: { name: 'asc' }
         });
         res.json(teachers);
     } catch (error) {

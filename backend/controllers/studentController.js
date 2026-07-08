@@ -73,7 +73,7 @@ exports.getStudents = async (req, res) => {
         where,
         skip,
         take: parseInt(limit),
-        orderBy: { roll_no: 'asc' },
+        orderBy: { name: 'asc' },
         include: {
             class_rel: true,
             medium_rel: true
