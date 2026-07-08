@@ -14,7 +14,7 @@ exports.getTeachers = async (req, res) => {
 
 exports.createTeacher = async (req, res) => {
     try {
-        const { name, subject, medium, designation, experience, category, staff_id, email, password } = req.body;
+        const { name, subject, medium, designation, experience, category, staff_id, email, password, phone } = req.body;
         const cleanName = typeof name === 'string' ? name.trim() : '';
         const cleanSubject = typeof subject === 'string' && subject.trim() ? subject.trim() : 'General';
         const cleanMedium = typeof medium === 'string' && medium.trim() ? medium.trim() : 'Both';
@@ -94,7 +94,8 @@ exports.createTeacher = async (req, res) => {
                 photo_url,
                 staff_id: cleanStaffId,
                 email: cleanEmail,
-                password: cleanPassword
+                password: cleanPassword,
+                phone: phone || null
             }
         });
         res.status(201).json(teacher);
@@ -127,7 +128,7 @@ exports.deleteTeacher = async (req, res) => {
 exports.updateTeacher = async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        const { name, subject, medium, designation, experience, category, staff_id, email, password } = req.body;
+        const { name, subject, medium, designation, experience, category, staff_id, email, password, phone } = req.body;
         
         const teacher = await prisma.teacher.findUnique({ where: { id } });
         if (!teacher) return res.status(404).json({ error: 'Teacher not found' });
@@ -182,7 +183,8 @@ exports.updateTeacher = async (req, res) => {
                 photo_url: photo_url,
                 staff_id: staff_id !== undefined ? cleanStaffId : teacher.staff_id,
                 email: email !== undefined ? cleanEmail : teacher.email,
-                password: password !== undefined && password.trim() ? password.trim() : teacher.password
+                password: password !== undefined && password.trim() ? password.trim() : teacher.password,
+                phone: phone !== undefined ? phone : teacher.phone
             }
         });
         res.json(updated);

@@ -5,7 +5,7 @@ files.forEach(file => {
     
     // Fix missing logo text
     if(content.includes('<div class="logo">') && !content.includes('<div class="logo-text">')) {
-        content = content.replace(/(<img src="images\/logo\.png"[^>]*>)/i, '$1\n                <div class="logo-text">\n                    <h1>SBRS KARKALA</h1>\n                    <span>Shaping Global Futures</span>\n                </div>');
+        content = content.replace(/(<img src="images\/logo\.png"[^>]*>)/i, '$1\n                <div class="logo-text">\n                    <h1>SBS KARKALA</h1>\n                    <span>Shaping Global Futures</span>\n                </div>');
     }
     
     // Center logo images in login and dashboard areas

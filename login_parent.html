@@ -35,9 +35,9 @@
 
     <div class="login-box">
         <div style="text-align: center; margin-bottom: 2rem;">
-            <img src="images/logo.png" alt="SBRS Logo" style="width: 80px; margin: 0 auto 1rem auto;">
+            <img src="images/logo.png" alt="SBS Logo" style="width: 80px; margin: 0 auto 1rem auto;">
             <a href="index.html"
-                style="font-family: var(--font-heading); font-size: 1.5rem; color: var(--primary-color);">SBRS
+                style="font-family: var(--font-heading); font-size: 1.5rem; color: var(--primary-color);">SBS
                 Karkala</a>
             <p>Student / Parent Portal</p>
         </div>
@@ -128,7 +128,7 @@
             var found = false;
             for (var i = 0; i < localStorage.length; i++) {
                 var key = localStorage.key(i);
-                if (!key || !key.startsWith('sbrs_students_')) continue;
+                if (!key || !key.startsWith('SBS_students_')) continue;
                 try {
                     var students = JSON.parse(localStorage.getItem(key) || '[]');
                     var idLower = id.toLowerCase();

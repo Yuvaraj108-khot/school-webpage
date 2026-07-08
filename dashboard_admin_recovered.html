@@ -880,7 +880,7 @@
         }
 
         function loadGallery() {
-            var gallery = JSON.parse(localStorage.getItem('sbrs_gallery') || '[]');
+            var gallery = JSON.parse(localStorage.getItem('SBS_gallery') || '[]');
             var grid = document.getElementById('previewGrid');
             if (!grid) return;
             if (gallery.length === 0) {
@@ -907,10 +907,10 @@
 
             var reader = new FileReader();
             reader.onload = function (e) {
-                var gallery = JSON.parse(localStorage.getItem('sbrs_gallery') || '[]');
+                var gallery = JSON.parse(localStorage.getItem('SBS_gallery') || '[]');
                 gallery.unshift({ url: e.target.result, category: category, description: desc, upload_date: new Date().toLocaleDateString() });
                 try {
-                    localStorage.setItem('sbrs_gallery', JSON.stringify(gallery));
+                    localStorage.setItem('SBS_gallery', JSON.stringify(gallery));
                     loadGallery();
                     document.getElementById('imgDesc').value = '';
                     document.getElementById('dropZoneText').textContent = 'Drag & Drop images here or click to browse';
@@ -924,9 +924,9 @@
 
         function deleteImage(idx) {
             if (!confirm('Remove this image?')) return;
-            var gallery = JSON.parse(localStorage.getItem('sbrs_gallery') || '[]');
+            var gallery = JSON.parse(localStorage.getItem('SBS_gallery') || '[]');
             gallery.splice(idx, 1);
-            localStorage.setItem('sbrs_gallery', JSON.stringify(gallery));
+            localStorage.setItem('SBS_gallery', JSON.stringify(gallery));
             loadGallery();
         }
 
@@ -934,7 +934,7 @@
            NOTICES / EVENTS
         ============================================================ */
         function loadNotices() {
-            var notices = JSON.parse(localStorage.getItem('sbrs_notices') || '[]');
+            var notices = JSON.parse(localStorage.getItem('SBS_notices') || '[]');
             var list = document.getElementById('noticeList');
             if (!list) return;
             if (notices.length === 0) {
@@ -955,14 +955,14 @@
         function publishNotice() {
             var title = document.getElementById('eventTitle').value.trim();
             if (!title) { toast('Title is required!', 'error'); return; }
-            var notices = JSON.parse(localStorage.getItem('sbrs_notices') || '[]');
+            var notices = JSON.parse(localStorage.getItem('SBS_notices') || '[]');
             notices.unshift({
                 title: title,
                 date: document.getElementById('eventDate').value || new Date().toLocaleDateString(),
                 expiryDate: document.getElementById('eventExpiryDate').value || null,
                 description: document.getElementById('eventDetails').value
             });
-            localStorage.setItem('sbrs_notices', JSON.stringify(notices));
+            localStorage.setItem('SBS_notices', JSON.stringify(notices));
             loadNotices();
             document.getElementById('eventTitle').value = '';
             document.getElementById('eventDate').value = '';
@@ -972,9 +972,9 @@
         }
 
         function deleteNotice(idx) {
-            var notices = JSON.parse(localStorage.getItem('sbrs_notices') || '[]');
+            var notices = JSON.parse(localStorage.getItem('SBS_notices') || '[]');
             notices.splice(idx, 1);
-            localStorage.setItem('sbrs_notices', JSON.stringify(notices));
+            localStorage.setItem('SBS_notices', JSON.stringify(notices));
             loadNotices();
             toast('Notice removed.', 'error');
         }
@@ -1011,7 +1011,7 @@
             var c = document.getElementById('adminClass').value;
             if (!m || !c) return;
 
-            var key = 'sbrs_students_' + m + '_' + c;
+            var key = 'SBS_students_' + m + '_' + c;
             var students = JSON.parse(localStorage.getItem(key) || '[]');
             var query = document.getElementById('studentSearch').value.toLowerCase();
             var list = document.getElementById('enrolledStudentsList');
@@ -1046,7 +1046,7 @@
             var parent = document.getElementById('newStudentParent').value.trim();
             if (!name) { toast('Enter student name.', 'error'); return; }
             if (!m || !c) { toast('Select medium and class.', 'error'); return; }
-            var key = 'sbrs_students_' + m + '_' + c;
+            var key = 'SBS_students_' + m + '_' + c;
             var students = JSON.parse(localStorage.getItem(key) || '[]');
             
             // Get highest existing ID number to avoid collisions after deletions
@@ -1076,7 +1076,7 @@
         function removeStudent(idx) {
             var m = document.getElementById('adminMedium').value;
             var c = document.getElementById('adminClass').value;
-            var key = 'sbrs_students_' + m + '_' + c;
+            var key = 'SBS_students_' + m + '_' + c;
             var students = JSON.parse(localStorage.getItem(key) || '[]');
             if (!confirm('Remove "' + students[idx].name + '"?')) return;
             students.splice(idx, 1);
@@ -1088,7 +1088,7 @@
         function editStudent(idx) {
             var m = document.getElementById('adminMedium').value;
             var c = document.getElementById('adminClass').value;
-            var key = 'sbrs_students_' + m + '_' + c;
+            var key = 'SBS_students_' + m + '_' + c;
             var students = JSON.parse(localStorage.getItem(key) || '[]');
             var s = students[idx];
 
@@ -1123,7 +1123,7 @@
         }
 
         function loadTeachers() {
-            var teachers = JSON.parse(localStorage.getItem('sbrs_teachers') || '[]');
+            var teachers = JSON.parse(localStorage.getItem('SBS_teachers') || '[]');
             var list = document.getElementById('teachersList');
             document.getElementById('totalTeachers').textContent = teachers.length;
             if (teachers.length === 0) {
@@ -1158,9 +1158,9 @@
                 return;
             }
 
-            var teachers = JSON.parse(localStorage.getItem('sbrs_teachers') || '[]');
+            var teachers = JSON.parse(localStorage.getItem('SBS_teachers') || '[]');
             teachers.push({ name: name, designation: designation, experience: experience, category: category, subject: subject, medium: medium, photo: teacherPhotoBase64, id: Date.now() });
-            localStorage.setItem('sbrs_teachers', JSON.stringify(teachers));
+            localStorage.setItem('SBS_teachers', JSON.stringify(teachers));
             loadTeachers();
 
             document.getElementById('teacherName').value = '';
@@ -1174,16 +1174,16 @@
         }
 
         function removeTeacher(idx) {
-            var teachers = JSON.parse(localStorage.getItem('sbrs_teachers') || '[]');
+            var teachers = JSON.parse(localStorage.getItem('SBS_teachers') || '[]');
             if (!confirm('Remove "' + teachers[idx].name + '" from faculty?')) return;
             teachers.splice(idx, 1);
-            localStorage.setItem('sbrs_teachers', JSON.stringify(teachers));
+            localStorage.setItem('SBS_teachers', JSON.stringify(teachers));
             loadTeachers();
             toast('Teacher removed.', 'error');
         }
 
         function editTeacher(idx) {
-            var teachers = JSON.parse(localStorage.getItem('sbrs_teachers') || '[]');
+            var teachers = JSON.parse(localStorage.getItem('SBS_teachers') || '[]');
             var t = teachers[idx];
 
             var newName = prompt('Update Name:', t.name);
@@ -1194,7 +1194,7 @@
             t.experience = prompt('Update Experience (Years):', t.experience) || t.experience;
             t.subject = prompt('Update Subject:', t.subject) || t.subject;
 
-            localStorage.setItem('sbrs_teachers', JSON.stringify(teachers));
+            localStorage.setItem('SBS_teachers', JSON.stringify(teachers));
             loadTeachers();
             toast('Teacher updated!');
         }
@@ -1203,7 +1203,7 @@
            ALUMNI
         ============================================================ */
         function loadAlumni() {
-            var alumni = JSON.parse(localStorage.getItem('sbrs_alumni') || '[]');
+            var alumni = JSON.parse(localStorage.getItem('SBS_alumni') || '[]');
             var list = document.getElementById('alumniList');
             document.getElementById('totalAlumni').textContent = alumni.length;
             if (alumni.length === 0) {
@@ -1230,9 +1230,9 @@
             var batch = document.getElementById('alumniBatch').value.trim();
             var profession = document.getElementById('alumniProfession').value.trim();
             if (!name || !batch) { toast('Name and Batch year are required.', 'error'); return; }
-            var alumni = JSON.parse(localStorage.getItem('sbrs_alumni') || '[]');
+            var alumni = JSON.parse(localStorage.getItem('SBS_alumni') || '[]');
             alumni.push({ name: name, batch_year: batch, profession: profession || 'N/A' });
-            localStorage.setItem('sbrs_alumni', JSON.stringify(alumni));
+            localStorage.setItem('SBS_alumni', JSON.stringify(alumni));
             loadAlumni();
             document.getElementById('alumniName').value = '';
             document.getElementById('alumniBatch').value = '';
@@ -1241,16 +1241,16 @@
         }
 
         function removeAlumni(idx) {
-            var alumni = JSON.parse(localStorage.getItem('sbrs_alumni') || '[]');
+            var alumni = JSON.parse(localStorage.getItem('SBS_alumni') || '[]');
             if (!confirm('Remove "' + alumni[idx].name + '"?')) return;
             alumni.splice(idx, 1);
-            localStorage.setItem('sbrs_alumni', JSON.stringify(alumni));
+            localStorage.setItem('SBS_alumni', JSON.stringify(alumni));
             loadAlumni();
             toast('Removed.', 'error');
         }
 
         function editAlumni(idx) {
-            var alumni = JSON.parse(localStorage.getItem('sbrs_alumni') || '[]');
+            var alumni = JSON.parse(localStorage.getItem('SBS_alumni') || '[]');
             var a = alumni[idx];
 
             var newName = prompt('Update Name:', a.name);
@@ -1260,7 +1260,7 @@
             a.batch_year = prompt('Update Batch Year:', a.batch_year) || a.batch_year;
             a.profession = prompt('Update Profession:', a.profession) || a.profession;
 
-            localStorage.setItem('sbrs_alumni', JSON.stringify(alumni));
+            localStorage.setItem('SBS_alumni', JSON.stringify(alumni));
             loadAlumni();
             toast('Alumni updated!');
         }
@@ -1298,7 +1298,7 @@
             }
 
             display.textContent = med + ' - Class ' + cls;
-            var subjects = JSON.parse(localStorage.getItem('sbrs_subjects_' + med + '_' + cls) || '[]');
+            var subjects = JSON.parse(localStorage.getItem('SBS_subjects_' + med + '_' + cls) || '[]');
             
             if (subjects.length === 0) {
                 list.innerHTML = '<div class="empty-state"><i class="fas fa-tasks"></i><p>No subjects added for Class ' + cls + ' yet.</p></div>';
@@ -1338,11 +1338,11 @@
             var sub = (sel === 'Other') ? custom : sel;
             if (!sub) { toast('Please select or type a subject name.', 'error'); return; }
 
-            var subjects = JSON.parse(localStorage.getItem('sbrs_subjects_' + med + '_' + cls) || '[]');
+            var subjects = JSON.parse(localStorage.getItem('SBS_subjects_' + med + '_' + cls) || '[]');
             if (subjects.indexOf(sub) !== -1) { toast('Subject already exists.', 'error'); return; }
             
             subjects.push(sub);
-            localStorage.setItem('sbrs_subjects_' + med + '_' + cls, JSON.stringify(subjects));
+            localStorage.setItem('SBS_subjects_' + med + '_' + cls, JSON.stringify(subjects));
             
             // Reset
             document.getElementById('subjectSelectMain').value = '';
@@ -1356,10 +1356,10 @@
         function removeSubjectFromClass(idx) {
             var med = document.getElementById('subjectMgmtMedium').value;
             var cls = document.getElementById('subjectMgmtClass').value;
-            var subjects = JSON.parse(localStorage.getItem('sbrs_subjects_' + med + '_' + cls) || '[]');
+            var subjects = JSON.parse(localStorage.getItem('SBS_subjects_' + med + '_' + cls) || '[]');
             if (!confirm('Remove "' + subjects[idx] + '"?')) return;
             subjects.splice(idx, 1);
-            localStorage.setItem('sbrs_subjects_' + med + '_' + cls, JSON.stringify(subjects));
+            localStorage.setItem('SBS_subjects_' + med + '_' + cls, JSON.stringify(subjects));
             loadClassSubjects();
             toast('Subject removed.', 'error');
         }

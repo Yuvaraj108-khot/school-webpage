@@ -98,7 +98,7 @@ exports.exportAttendance = async (req, res) => {
         // Title Block
         sheet.mergeCells('A1:F1');
         const titleCell = sheet.getCell('A1');
-        titleCell.value = `SBRS Attendance Register – Class ${cls} (${medium} Medium)`;
+        titleCell.value = `SBS Attendance Register – Class ${cls} (${medium} Medium)`;
         titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
         titleCell.fill = primaryFill;
         titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -270,7 +270,7 @@ exports.exportMarks = async (req, res) => {
         // Title Block
         sheet.mergeCells('A1:E1');
         const titleCell = sheet.getCell('A1');
-        titleCell.value = `SBRS Marks Register – Class ${cls} (${medium} Medium)`;
+        titleCell.value = `SBS Marks Register – Class ${cls} (${medium} Medium)`;
         titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
         titleCell.fill = primaryFill;
         titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -401,7 +401,7 @@ exports.exportStudentReportCard = async (req, res) => {
         // Title Row
         sheet.mergeCells('A1:E1');
         const title = sheet.getCell('A1');
-        title.value = "SBRS ACADEMIC REPORT CARD";
+        title.value = "SBS ACADEMIC REPORT CARD";
         title.font = { name: 'Arial', size: 18, bold: true, color: { argb: 'FFFFFFFF' } };
         title.fill = primaryFill;
         title.alignment = { horizontal: 'center', vertical: 'middle' };

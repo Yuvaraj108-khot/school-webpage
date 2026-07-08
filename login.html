@@ -146,7 +146,7 @@
                 const userLower = user.toLowerCase();
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
-                    if (!key || !key.startsWith('sbrs_students_')) continue;
+                    if (!key || !key.startsWith('SBS_students_')) continue;
                     try {
                         const students = JSON.parse(localStorage.getItem(key) || '[]');
                         const student = students.find(s =>

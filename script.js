@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="logo">
                     <img src="images/logo.png" alt="SBS Logo">
                     <div class="logo-text">
-                        <h1>SBRS KARKALA</h1>
+                        <h1>SBS KARKALA</h1>
                         <span>Shaping Global Futures</span>
                     </div>
                 </div>

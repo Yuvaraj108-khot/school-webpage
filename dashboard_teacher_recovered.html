@@ -946,7 +946,7 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-logo">
-                <img src="images/logo.png" alt="SBRS Logo">
+                <img src="images/logo.png" alt="SBS Logo">
                 <h3>Teacher Panel</h3>
             </div>
             <nav class="sidebar-menu">
@@ -1384,7 +1384,7 @@
                 const subjectSelect = document.getElementById('selectSubject');
                 subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
                 
-                var subjects = JSON.parse(localStorage.getItem('sbrs_subjects_' + medium + '_' + cls) || '[]');
+                var subjects = JSON.parse(localStorage.getItem('SBS_subjects_' + medium + '_' + cls) || '[]');
                 if (subjects.length === 0) {
                     // Fallback to defaults if none defined
                     subjects = medium === 'CBSE' ? subjectsCBSE : subjectsKannada;
@@ -1413,7 +1413,7 @@
             subSel.innerHTML = '<option value="">-- Select Subject --</option>';
 
             if (cls) {
-                var subjects = JSON.parse(localStorage.getItem('sbrs_subjects_' + medium + '_' + cls) || '[]');
+                var subjects = JSON.parse(localStorage.getItem('SBS_subjects_' + medium + '_' + cls) || '[]');
                 if (subjects.length === 0) {
                     subjects = medium === 'CBSE' ? subjectsCBSE : subjectsKannada;
                 }
@@ -1491,7 +1491,7 @@
 
         // ===================== STUDENT LIST LOADING =====================
         function getStudentsForClass(medium, classNum) {
-            const key = `sbrs_students_${medium}_${classNum}`;
+            const key = `SBS_students_${medium}_${classNum}`;
             const stored = localStorage.getItem(key);
             if (stored) return JSON.parse(stored);
 
@@ -1623,7 +1623,7 @@
             });
 
             // Validate: Check if attendance for this session already exists
-            const history = JSON.parse(localStorage.getItem('sbrs_attendance_history') || '[]');
+            const history = JSON.parse(localStorage.getItem('SBS_attendance_history') || '[]');
             const dateStr = today.toLocaleDateString('en-IN');
             const duplicate = history.find(rec => 
                 rec.date === dateStr && 
@@ -1653,7 +1653,7 @@
 
             // Save to localStorage
             history.unshift(record);
-            localStorage.setItem('sbrs_attendance_history', JSON.stringify(history));
+            localStorage.setItem('SBS_attendance_history', JSON.stringify(history));
 
             showToast(`Attendance saved! Present: ${presentList.length}, Absent: ${absentList.length}`, 'success');
 
@@ -1666,7 +1666,7 @@
 
         // ===================== HISTORY =====================
         function loadHistory() {
-            const history = JSON.parse(localStorage.getItem('sbrs_attendance_history') || '[]');
+            const history = JSON.parse(localStorage.getItem('SBS_attendance_history') || '[]');
             const list = document.getElementById('historyList');
 
             if (history.length === 0) {
@@ -1717,7 +1717,7 @@
                 marksData.push({ ...student, marks: isNaN(val) ? '' : val });
             });
 
-            const key = `sbrs_marks_${medium}_${cls}_${exam}_${subject}`;
+            const key = `SBS_marks_${medium}_${cls}_${exam}_${subject}`;
             localStorage.setItem(key, JSON.stringify(marksData));
             showToast(`Marks saved for Class ${cls} ΓÇô ${exam} (${subject})!`, 'success');
         }
@@ -1751,7 +1751,7 @@
             }
 
             const students = getStudentsForClass(medium, cls);
-            const key = `sbrs_marks_${medium}_${cls}_${exam}_${subject}`;
+            const key = `SBS_marks_${medium}_${cls}_${exam}_${subject}`;
             const saved = JSON.parse(localStorage.getItem(key) || '[]');
 
             // Determine max marks based on exam
@@ -1773,7 +1773,7 @@
 
             // Build rows
             const wsData = [
-                [`SBRS ΓÇô ${medium} Medium ΓÇô Class ${cls}`],
+                [`SBS ΓÇô ${medium} Medium ΓÇô Class ${cls}`],
                 [`Exam: ${exam}   |   Subject: ${subject}   |   Max Marks: ${maxMarks}`],
                 [],
                 ['Sl.No', 'Student Name', 'Roll Number', `Marks (Out of ${maxMarks})`, 'Grade', 'Remarks']
@@ -1832,7 +1832,7 @@
             const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June',
                 'July', 'August', 'September', 'October', 'November', 'December'];
 
-            const history = JSON.parse(localStorage.getItem('sbrs_attendance_history') || '[]');
+            const history = JSON.parse(localStorage.getItem('SBS_attendance_history') || '[]');
             const students = getStudentsForClass(medium, cls);
 
             // 1. Filter and sort records chronologically
@@ -1858,7 +1858,7 @@
             }
 
             // 2. Build the Excel Data (Vertical Layout: One row per student per session)
-            const header1 = [`SBRS ΓÇô ${medium} Medium ΓÇô Class ${cls} ΓÇô Attendance Register`];
+            const header1 = [`SBS ΓÇô ${medium} Medium ΓÇô Class ${cls} ΓÇô Attendance Register`];
             const header2 = [`Month: ${monthNames[month]} ${year}`];
             const colHeader = ['Date', 'Period', 'Subject', 'Roll Number', 'Student Name', 'Status'];
 

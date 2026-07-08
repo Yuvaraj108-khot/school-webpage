@@ -498,7 +498,7 @@
         <div class="sidebar" id="adminSidebar">
             <div style="text-align:center; padding: 0 2rem 2rem;">
                 <img src="images/logo.png" style="width:60px; margin: 0 auto; border-radius:50%;">
-                <h3 style="margin-top:10px; color:white; font-size: 1.1rem; line-height: 1.3;">SBRS KARKALA<br><span style="font-size:0.85rem; font-weight:400; opacity: 0.8;">Admin Panel</span></h3>
+                <h3 style="margin-top:10px; color:white; font-size: 1.1rem; line-height: 1.3;">SBS KARKALA<br><span style="font-size:0.85rem; font-weight:400; opacity: 0.8;">Admin Panel</span></h3>
             </div>
             <nav class="sidebar-menu">
                 <a href="#" onclick="showSection('gallery'); return false;" id="link-gallery" class="active">
@@ -720,6 +720,10 @@
                             <div>
                                 <label class="field-label">Email Address *</label>
                                 <input type="email" id="teacherEmail" placeholder="e.g., teacher@school.com">
+                            </div>
+                            <div>
+                                <label class="field-label">Phone Number</label>
+                                <input type="text" id="teacherPhone" placeholder="e.g., 9876543210">
                             </div>
                             <div>
                                 <label class="field-label">Password (Optional)</label>
@@ -1325,6 +1329,7 @@
             try {
                 const res = await fetch(API_BASE + '/teachers');
                 const teachers = await res.json();
+                window.loadedTeachersList = teachers;
                 document.getElementById('totalTeachers').textContent = teachers.length;
                 if (teachers.length === 0) {
                     list.innerHTML = '<div class="empty-state"><i class="fas fa-user-tie"></i><p>No teachers added yet.</p></div>';
@@ -1340,6 +1345,7 @@
                         '<div><div class="enrolled-name">' + t.name + '</div>' +
                         '<div class="enrolled-sub">' + (t.designation || 'N/A') + ' | ' + (t.category || 'N/A') + ' | ' + (t.experience || '0') + ' yrs</div></div></div>' +
                         '<div style="display:flex; gap:10px;">' +
+                        '<button class="btn-full" style="padding: 5px 10px; width: auto; margin: 0; background: #6c5ce7;" onclick="openEditTeacherModal(' + t.id + ')"><i class="fas fa-edit"></i> Edit</button>' +
                         '<button class="btn-remove" onclick="removeTeacher(' + t.id + ', \'' + t.name + '\')"><i class="fas fa-trash-alt"></i> Remove</button>' +
                         '</div>';
                     list.appendChild(row);
@@ -1359,6 +1365,7 @@
             var subject = document.getElementById('teacherSubject').value.trim();
             var medium = document.getElementById('teacherMedium').value;
             var email = document.getElementById('teacherEmail').value.trim();
+            var phone = document.getElementById('teacherPhone') ? document.getElementById('teacherPhone').value.trim() : '';
             var password = document.getElementById('teacherPassword').value;
             var photoInput = document.getElementById('teacherPhoto');
 
@@ -1376,6 +1383,7 @@
             formData.append('subject', subject);
             formData.append('medium', medium);
             if (email) formData.append('email', email);
+            if (phone) formData.append('phone', phone);
             if (password) formData.append('password', password);
             if (photoInput.files[0]) {
                 formData.append('photo', photoInput.files[0]);
@@ -1398,6 +1406,7 @@
                 document.getElementById('teacherExperience').value = '';
                 document.getElementById('teacherSubject').value = '';
                 document.getElementById('teacherEmail').value = '';
+                if (document.getElementById('teacherPhone')) document.getElementById('teacherPhone').value = '';
                 document.getElementById('teacherPassword').value = '';
                 document.getElementById('teacherPhoto').value = '';
                 teacherPhotoBase64 = null;
@@ -1714,6 +1723,98 @@
             }
         }
 
+    </script>
+
+    <!-- Edit Teacher Modal -->
+    <div id="editTeacherModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+        <div class="modal-content" style="background:#fff; padding:20px; border-radius:8px; max-width:500px; width:90%; max-height:90vh; overflow-y:auto; position:relative;">
+            <span class="close-modal" onclick="closeEditTeacherModal()" style="position:absolute; top:15px; right:20px; font-size:24px; cursor:pointer;">&times;</span>
+            <h3 style="margin-bottom:15px; color:#333;">Edit Teacher</h3>
+            <input type="hidden" id="editTeacherId">
+            <div class="mgmt-grid">
+                <div><label class="field-label">Full Name *</label><input type="text" id="editTeacherName"></div>
+                <div><label class="field-label">Staff ID *</label><input type="text" id="editTeacherStaffId"></div>
+                <div><label class="field-label">Designation *</label><input type="text" id="editTeacherDesignation"></div>
+                <div><label class="field-label">Experience *</label><input type="text" id="editTeacherExperience"></div>
+                <div>
+                    <label class="field-label">Category</label>
+                    <select id="editTeacherCategory">
+                        <option value="LKG">LKG</option>
+                        <option value="UKG">UKG</option>
+                        <option value="Primary Section">Primary Section</option>
+                        <option value="Aided Kannada Medium">Aided Kannada Medium</option>
+                        <option value="English Medium">English Medium</option>
+                    </select>
+                </div>
+                <div><label class="field-label">Subject</label><input type="text" id="editTeacherSubject"></div>
+                <div>
+                    <label class="field-label">Teaching Medium</label>
+                    <select id="editTeacherMedium">
+                        <option value="Both">Both</option>
+                        <option value="English">English</option>
+                        <option value="Kannada">Kannada</option>
+                    </select>
+                </div>
+                <div><label class="field-label">Phone Number</label><input type="text" id="editTeacherPhone"></div>
+                <div><label class="field-label">Email Address *</label><input type="email" id="editTeacherEmail"></div>
+                <div><label class="field-label">Password (Optional)</label><input type="text" id="editTeacherPassword" placeholder="Leave blank to keep same"></div>
+            </div>
+            <button class="btn-full" style="margin-top:20px;" onclick="submitEditTeacher()">Save Changes</button>
+        </div>
+    </div>
+    <script>
+        function openEditTeacherModal(id) {
+            const t = window.loadedTeachersList.find(x => x.id === id);
+            if (!t) return;
+            document.getElementById('editTeacherId').value = t.id;
+            document.getElementById('editTeacherName').value = t.name || '';
+            document.getElementById('editTeacherStaffId').value = t.staff_id || '';
+            document.getElementById('editTeacherDesignation').value = t.designation || '';
+            document.getElementById('editTeacherExperience').value = t.experience || '';
+            document.getElementById('editTeacherCategory').value = t.category || 'LKG';
+            document.getElementById('editTeacherSubject').value = t.subject || '';
+            document.getElementById('editTeacherMedium').value = t.medium || 'Both';
+            document.getElementById('editTeacherPhone').value = t.phone || '';
+            document.getElementById('editTeacherEmail').value = t.email || '';
+            document.getElementById('editTeacherPassword').value = '';
+            document.getElementById('editTeacherModal').style.display = 'flex';
+        }
+        function closeEditTeacherModal() {
+            document.getElementById('editTeacherModal').style.display = 'none';
+        }
+        async function submitEditTeacher() {
+            const id = document.getElementById('editTeacherId').value;
+            const data = {
+                name: document.getElementById('editTeacherName').value,
+                staff_id: document.getElementById('editTeacherStaffId').value,
+                designation: document.getElementById('editTeacherDesignation').value,
+                experience: document.getElementById('editTeacherExperience').value,
+                category: document.getElementById('editTeacherCategory').value,
+                subject: document.getElementById('editTeacherSubject').value,
+                medium: document.getElementById('editTeacherMedium').value,
+                phone: document.getElementById('editTeacherPhone').value,
+                email: document.getElementById('editTeacherEmail').value,
+                password: document.getElementById('editTeacherPassword').value
+            };
+            try {
+                const res = await fetch(API_BASE + '/teachers/' + id, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (!res.ok) {
+                    let errData;
+                    try { errData = await res.json(); } catch(e){}
+                    throw new Error(errData?.error || 'Failed to update teacher');
+                }
+                closeEditTeacherModal();
+                loadTeachers();
+                toast('Teacher updated successfully');
+            } catch (err) {
+                console.error(err);
+                toast(err.message || 'Failed to update teacher', 'error');
+            }
+        }
     </script>
 </body>
 

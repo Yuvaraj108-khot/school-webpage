@@ -280,7 +280,7 @@ exports.exportExcel = async (req, res) => {
         // Title Block
         sheet.mergeCells('A1:G1');
         const titleCell = sheet.getCell('A1');
-        titleCell.value = 'SBRS Alumni Tracking Database';
+        titleCell.value = 'SBS Alumni Tracking Database';
         titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
         titleCell.fill = primaryFill;
         titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
