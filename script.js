@@ -178,11 +178,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem;">This website was proudly built by a team of 5 brilliant students as a school project, under the mentorship of SRIKANTH BHAT K sir.</p>
                 <ul style="list-style: none; padding: 0; margin: 0; text-align: left; background: #f8fafc; padding: 1rem; border-radius: 10px; border: 1px solid #e2e8f0;">
                     <li style="padding: 8px 0; border-bottom: 2px solid #cbd5e1; font-weight: 700; color: var(--primary-color); margin-bottom: 5px;"><i class="fas fa-chalkboard-teacher" style="color: var(--secondary-color); margin-right: 10px;"></i> Mentor: Srikanth Bhat K Sir</li>
-                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;"><i class="fas fa-user-astronaut" style="color: var(--accent-color); margin-right: 10px;"></i> Yuvaraj Khot</li>
-                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;"><i class="fas fa-user-ninja" style="color: var(--accent-color); margin-right: 10px;"></i> Shrivathsa Bhat M</li>
-                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;"><i class="fas fa-user-secret" style="color: var(--accent-color); margin-right: 10px;"></i> Vikyath</li>
-                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;"><i class="fas fa-user-tie" style="color: var(--accent-color); margin-right: 10px;"></i> Vinethraj.R.Naik</li>
-                    <li style="padding: 8px 0; font-weight: 600;"><i class="fas fa-user-graduate" style="color: var(--accent-color); margin-right: 10px;"></i> Vineeth Bhatta</li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;">Yuvaraj Khot</li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;">Shrivathsa Bhat M</li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;">Vikyath</li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;">Vinethraj.R.Naik</li>
+                    <li style="padding: 8px 0; font-weight: 600;">Vineeth Bhatta</li>
                 </ul>
             </div>
         `;
