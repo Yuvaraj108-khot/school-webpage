@@ -776,9 +776,16 @@
                         </button>
                     </div>
 
-                    <div class="enrolled-header purple">
-                        <span><i class="fas fa-users"></i> Registered Alumni</span>
-                        <span class="enrolled-count">Total: <span id="totalAlumni">0</span></span>
+                    <div class="enrolled-header purple" style="flex-wrap: wrap; gap: 10px;">
+                        <span><i class="fas fa-users"></i> Alumni Database &nbsp;&nbsp;<span style="font-size:0.8rem; background:rgba(255,255,255,0.2); padding: 2px 8px; border-radius:10px;" id="totalAlumni">0</span></span>
+                        <div style="display:flex; gap:10px; flex: 1; justify-content:flex-end;">
+                            <input type="number" id="alumniBatchFilter" placeholder="Filter by Batch" style="padding:5px; border-radius:5px; border:none; width: 150px; outline:none; font-family:inherit;">
+                            <select id="alumniStatusFilter" style="padding:5px; border-radius:5px; border:none; outline:none; font-family:inherit;" onchange="loadAlumni()">
+                                <option value="Pending">Pending Approvals</option>
+                                <option value="Approved">Approved Alumni</option>
+                            </select>
+                            <button onclick="loadAlumni()" style="padding:5px 10px; border-radius:5px; border:none; background:rgba(255,255,255,0.3); color:white; cursor:pointer; font-family:inherit;"><i class="fas fa-search"></i></button>
+                        </div>
                     </div>
                     <div class="enrolled-list" id="alumniList"></div>
                 </div>
@@ -1445,12 +1452,19 @@
         ============================================================ */
         async function loadAlumni() {
             var list = document.getElementById('alumniList');
+            var status = document.getElementById('alumniStatusFilter') ? document.getElementById('alumniStatusFilter').value : 'Pending';
+            var batch = document.getElementById('alumniBatchFilter') ? document.getElementById('alumniBatchFilter').value : '';
             try {
-                const res = await fetch(API_BASE + '/alumni');
-                const alumni = await res.json();
+                const res = await fetch(API_BASE + '/alumni?status=' + status);
+                let alumni = await res.json();
+                
+                if (batch) {
+                    alumni = alumni.filter(a => a.batch_year == batch);
+                }
+                
                 document.getElementById('totalAlumni').textContent = alumni.length;
                 if (alumni.length === 0) {
-                    list.innerHTML = '<div class="empty-state"><i class="fas fa-graduation-cap"></i><p>No alumni registered yet.</p></div>';
+                    list.innerHTML = '<div class="empty-state"><i class="fas fa-graduation-cap"></i><p>No alumni found.</p></div>';
                     return;
                 }
                 list.innerHTML = '';
@@ -1458,12 +1472,17 @@
                     var row = document.createElement('div');
                     row.className = 'enrolled-row';
                     const photoHtml = a.photo_url ? `<img src="${a.photo_url.startsWith('http') ? a.photo_url : API_BASE.replace('/api', '') + a.photo_url}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:15px;">` : `<div style="width:40px;height:40px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;margin-right:15px;"><i class="fas fa-user-graduate" style="color:#94a3b8;"></i></div>`;
+                    
+                    let buttons = '';
+                    if (status === 'Pending') {
+                        buttons += `<button class="btn-add" style="padding: 5px 12px; font-size:0.8rem; margin-right:5px; min-width:auto;" onclick="approveAlumni(${a.id})"><i class="fas fa-check"></i> Approve</button>`;
+                    }
+                    buttons += `<button class="btn-remove" onclick="removeAlumni(${a.id}, '${a.name}')"><i class="fas fa-trash-alt"></i> Remove</button>`;
+
                     row.innerHTML = '<div class="enrolled-info" style="align-items:center;"><div class="enrolled-num">' + (i + 1) + '</div>' + photoHtml +
                         '<div><div class="enrolled-name">' + a.name + ' (' + a.batch_year + ')</div>' +
-                        '<div class="enrolled-sub">' + a.profession + '</div></div></div>' +
-                        '<div style="display:flex; gap:10px;">' +
-                        '<button class="btn-remove" onclick="removeAlumni(' + a.id + ', \'' + a.name + '\')"><i class="fas fa-trash-alt"></i> Remove</button>' +
-                        '</div>';
+                        '<div class="enrolled-sub">' + a.profession + '<br><small>Email: ' + (a.email || 'N/A') + '</small></div></div></div>' +
+                        '<div style="display:flex; gap:10px; align-items:center;">' + buttons + '</div>';
                     list.appendChild(row);
                 });
             } catch (err) {
@@ -1483,6 +1502,7 @@
             formData.append('name', name);
             formData.append('batch_year', batch);
             formData.append('profession', profession);
+            formData.append('status', 'Approved'); // Admin additions are auto-approved
             if (photoInput.files[0]) {
                 formData.append('photo', photoInput.files[0]);
             }
@@ -1500,6 +1520,23 @@
                 document.getElementById('alumniProfession').value = '';
                 document.getElementById('alumniPhoto').value = '';
                 toast('"' + name + '" added!');
+            } catch (err) {
+                console.error(err);
+                toast(err.message, 'error');
+            }
+        }
+
+        async function approveAlumni(id) {
+            if (!confirm('Approve this alumni registration?')) return;
+            try {
+                const res = await fetch(API_BASE + '/alumni/' + id + '/status', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'Approved' })
+                });
+                if (!res.ok) throw new Error('Failed to approve');
+                toast('Alumni approved successfully!');
+                loadAlumni();
             } catch (err) {
                 console.error(err);
                 toast(err.message, 'error');

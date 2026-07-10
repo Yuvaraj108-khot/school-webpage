@@ -3,7 +3,12 @@ const supabase = require('../supabaseClient');
 
 exports.getAlumni = async (req, res) => {
     try {
-        const alumni = await prisma.alumni.findMany();
+        const { status } = req.query;
+        let whereClause = {};
+        if (status) {
+            whereClause.status = status;
+        }
+        const alumni = await prisma.alumni.findMany({ where: whereClause, orderBy: { applied_at: 'desc' } });
         res.json(alumni);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch alumni' });
@@ -12,7 +17,8 @@ exports.getAlumni = async (req, res) => {
 
 exports.createAlumni = async (req, res) => {
     try {
-        const { name, batch_year, profession } = req.body;
+        const { name, batch_year, profession, email } = req.body;
+        const status = req.body.status || 'Pending';
         
         let photo_url = null;
         if (req.file) {
@@ -56,7 +62,7 @@ exports.createAlumni = async (req, res) => {
         }
 
         const alumni = await prisma.alumni.create({
-            data: { name, batch_year, profession, photo_url }
+            data: { name, email, batch_year, profession, photo_url, status }
         });
         res.status(201).json(alumni);
     } catch (error) {
@@ -75,5 +81,25 @@ exports.deleteAlumni = async (req, res) => {
         res.json({ message: 'Alumni deleted successfully' });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete alumni' });
+    }
+};
+
+exports.updateAlumniStatus = async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const { status } = req.body;
+        
+        if (!['Pending', 'Approved', 'Rejected'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid status' });
+        }
+        
+        const alumni = await prisma.alumni.update({
+            where: { id },
+            data: { status }
+        });
+        res.json(alumni);
+    } catch (error) {
+        console.error("Update Alumni Status Error:", error);
+        res.status(500).json({ error: 'Failed to update alumni status' });
     }
 };

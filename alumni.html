@@ -34,9 +34,12 @@
                     <p style="font-size: 0.9rem; margin-bottom: 1rem;">Join our global network of successful
                         professionals.</p>
                     <form class="contact-form" id="alumniRegisterForm">
-                        <input type="text" placeholder="Full Name" required>
-                        <input type="email" placeholder="Email Address" required>
-                        <input type="text" placeholder="Batch / Year of Passing" required>
+                        <input type="text" id="regName" placeholder="Full Name" required>
+                        <input type="email" id="regEmail" placeholder="Email Address" required>
+                        <input type="number" id="regBatch" placeholder="Batch / Year of Passing" required>
+                        <input type="text" id="regProfession" placeholder="Current Profession / Achievement">
+                        <label style="font-size: 0.85rem; color: #475569; display: block; margin-top: 10px; margin-bottom: 5px;">Profile Photo (Optional)</label>
+                        <input type="file" id="regPhoto" accept="image/*" style="margin-bottom: 1rem;">
                         <button type="submit" class="btn btn-primary" style="width: auto;">Register</button>
                     </form>
                 </div>
@@ -106,7 +109,7 @@
 
         async function loadAlumni() {
             try {
-                const res = await fetch(`${API}/alumni`);
+                const res = await fetch(`${API}/alumni?status=Approved`);
                 if (!res.ok) throw new Error("Failed to fetch alumni");
                 const members = await res.json();
                 
@@ -140,13 +143,43 @@
 
             const form = document.getElementById('alumniRegisterForm');
             if (form) {
-                form.addEventListener('submit', function(e) {
+                form.addEventListener('submit', async function(e) {
                     e.preventDefault();
-                    const name = this.querySelector('input[type="text"]').value;
-                    const email = this.querySelector('input[type="email"]').value;
-                    if (name && email) {
-                        alert('Thank you, ' + name + '! Your alumni registration has been submitted successfully. We will contact you at ' + email + '.');
+                    
+                    const btn = this.querySelector('button[type="submit"]');
+                    btn.disabled = true;
+                    btn.textContent = "Registering...";
+                    
+                    const formData = new FormData();
+                    formData.append('name', document.getElementById('regName').value);
+                    formData.append('email', document.getElementById('regEmail').value);
+                    formData.append('batch_year', document.getElementById('regBatch').value);
+                    formData.append('profession', document.getElementById('regProfession').value);
+                    
+                    const photoInput = document.getElementById('regPhoto');
+                    if (photoInput.files[0]) {
+                        formData.append('photo', photoInput.files[0]);
+                    }
+
+                    try {
+                        const res = await fetch(`${API}/alumni`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        if (!res.ok) {
+                            const data = await res.json();
+                            throw new Error(data.error || 'Failed to register');
+                        }
+                        
+                        alert('Thank you! Your alumni registration has been submitted and is pending admin approval.');
                         this.reset();
+                    } catch (err) {
+                        console.error(err);
+                        alert(err.message);
+                    } finally {
+                        btn.disabled = false;
+                        btn.textContent = "Register";
                     }
                 });
             }

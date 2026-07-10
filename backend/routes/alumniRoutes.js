@@ -9,5 +9,6 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get('/', alumniController.getAlumni);
 router.post('/', upload.single('photo'), alumniController.createAlumni);
 router.delete('/:id', alumniController.deleteAlumni);
+router.put('/:id/status', alumniController.updateAlumniStatus);
 
 module.exports = router;
