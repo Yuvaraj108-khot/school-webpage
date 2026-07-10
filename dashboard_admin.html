@@ -516,9 +516,7 @@
                 <a href="#" onclick="showSection('alumni'); return false;" id="link-alumni">
                     <i class="fas fa-user-graduate"></i> Alumni
                 </a>
-                <a href="dashboard_alumni_tracking.html" id="link-alumni-tracking">
-                    <i class="fas fa-graduation-cap"></i> Alumni Tracking
-                </a>
+
                 <a href="#" onclick="showSection('subject-mgmt'); return false;" id="link-subject-mgmt">
                     <i class="fas fa-book"></i> Subject Management
                 </a>
@@ -779,7 +777,7 @@
                     <div class="enrolled-header purple" style="flex-wrap: wrap; gap: 10px;">
                         <span><i class="fas fa-users"></i> Alumni Database &nbsp;&nbsp;<span style="font-size:0.8rem; background:rgba(255,255,255,0.2); padding: 2px 8px; border-radius:10px;" id="totalAlumni">0</span></span>
                         <div style="display:flex; gap:10px; flex: 1; justify-content:flex-end;">
-                            <input type="number" id="alumniBatchFilter" placeholder="Filter by Batch" style="padding:5px; border-radius:5px; border:none; width: 150px; outline:none; font-family:inherit;">
+                            <input type="text" id="alumniBatchFilter" placeholder="Filter by Batch Year" style="padding:5px; border-radius:5px; border:none; width: 160px; outline:none; font-family:inherit;">
                             <select id="alumniStatusFilter" style="padding:5px; border-radius:5px; border:none; outline:none; font-family:inherit;" onchange="loadAlumni()">
                                 <option value="Pending">Pending Approvals</option>
                                 <option value="Approved">Approved Alumni</option>
