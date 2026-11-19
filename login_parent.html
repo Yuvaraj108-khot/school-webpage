@@ -95,8 +95,10 @@
             var errDiv = document.getElementById('loginError');
             errDiv.style.display = 'none';
 
-            // Resolve API Endpoint dynamically with fallback to 5000
-            const API = "https://school-webpage-1uky.onrender.com/api";
+            // Resolve API Endpoint dynamically
+            const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+                ? 'http://localhost:5000/api'
+                : 'https://school-webpage-1uky.onrender.com/api';
 
             // Try backend login first
             try {

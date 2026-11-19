@@ -53,9 +53,26 @@ app.use('/api/classes', classRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/subject-teachers', subjectTeacherRoutes);
 
-// Health Check
-app.get('/api/health', (req, res) => {
-    res.json({ status: "ok" });
+const prisma = require('./prismaClient');
+
+// Health Check & Neon Status
+app.get('/api/health', async (req, res) => {
+    try {
+        const studentCount = await prisma.student.count();
+        res.json({
+            status: "ok",
+            database: "Neon PostgreSQL",
+            branch: process.env.NEON_BRANCH || "production",
+            studentCount,
+            services: {
+                postgres: "connected",
+                auth: process.env.NEON_AUTH_BASE_URL ? "configured" : "none",
+                realtime: process.env.NEON_REALTIME_URL ? "configured" : "none"
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ status: "error", error: error.message });
+    }
 });
 
 if (!process.env.VERCEL) {

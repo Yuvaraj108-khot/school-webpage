@@ -192,7 +192,9 @@
 
     <script src="script.js"></script>
     <script>
-        const API = "https://school-webpage-1uky.onrender.com/api";
+        const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? `http://${window.location.hostname}:5000/api`
+            : "https://school-webpage-1uky.onrender.com/api";
 
         async function loadPublicNotices() {
             try {

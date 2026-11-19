@@ -556,9 +556,12 @@
                     <h3><i class="fas fa-camera" style="color:#e67e22;"></i> Update Gallery</h3>
                     <p style="color:#666; margin-bottom:2rem;">Upload new photos to the school gallery.</p>
                     <div class="drag-drop-zone" onclick="document.getElementById('fileInput').click()">
-                        <i class="fas fa-cloud-upload-alt" style="font-size:3rem; color:#ccc; margin-bottom:1rem;"></i>
+                        <div id="galleryPreviewContainer" style="display:none; margin-bottom: 12px;">
+                            <img id="galleryPreviewImg" src="" style="max-height: 180px; max-width: 100%; border-radius: 8px; object-fit: contain; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+                        </div>
+                        <i id="galleryCloudIcon" class="fas fa-cloud-upload-alt" style="font-size:3rem; color:#ccc; margin-bottom:1rem;"></i>
                         <p><strong id="dropZoneText">Drag &amp; Drop images here or click to browse</strong></p>
-                        <p style="font-size:0.8rem; margin-top:10px;">Supports JPG, PNG (Max 500KB)</p>
+                        <p id="dropZoneSubText" style="font-size:0.8rem; margin-top:10px;">Supports JPG, PNG (Max 500KB)</p>
                         <input type="file" id="fileInput" accept="image/*" onchange="handleFiles(this.files)">
                     </div>
                     <div style="margin-top:2rem;">
@@ -621,6 +624,9 @@
                                 <option value="">-- Select Class --</option>
                             </select>
                         </div>
+                    </div>
+                    <div id="selectPrompt" style="padding: 15px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; text-align: center; color: #64748b; margin-top: 1rem;">
+                        <i class="fas fa-hand-point-up" style="margin-right: 6px; color: #e67e22;"></i> Please select both a <strong>Medium</strong> and a <strong>Class</strong> above to add and manage students.
                     </div>
                     <div id="addStudentArea" style="display:none;">
                         <div class="add-row">
@@ -763,9 +769,18 @@
                                 <input type="text" id="alumniProfession"
                                     placeholder="e.g., Senior Software Engineer at Google">
                             </div>
-                            <div>
+                        </div>
+                        <div
+                            style="display:flex; align-items:center; gap:20px; margin-bottom:1.5rem; padding:1rem; background:#f8fafc; border-radius:10px; border:1px dashed #cbd5e1;">
+                            <div id="alumniPhotoPreview"
+                                style="width:80px;height:80px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+                                <i class="fas fa-user-graduate" style="font-size:2rem;color:#94a3b8;"></i>
+                            </div>
+                            <div style="flex:1; min-width: 0;">
                                 <label class="field-label">Alumnus Photo (Optional)</label>
-                                <input type="file" id="alumniPhoto" accept="image/*">
+                                <input type="file" id="alumniPhoto" accept="image/*"
+                                    onchange="previewAlumniPhoto(this)" style="margin-bottom:0; max-width: 100%; box-sizing: border-box; overflow: hidden;">
+                                <p style="font-size:0.75rem;color:#94a3b8;margin-top:4px;">JPG/PNG recommended. Max 500KB.</p>
                             </div>
                         </div>
                         <button class="btn-full" onclick="addAlumni()"
@@ -950,6 +965,20 @@
             if (files.length > 0) {
                 selectedFile = files[0];
                 document.getElementById('dropZoneText').textContent = 'Selected: ' + selectedFile.name;
+                if (selectedFile.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = document.getElementById('galleryPreviewImg');
+                        const container = document.getElementById('galleryPreviewContainer');
+                        const icon = document.getElementById('galleryCloudIcon');
+                        if (img && container) {
+                            img.src = e.target.result;
+                            container.style.display = 'block';
+                            if (icon) icon.style.display = 'none';
+                        }
+                    };
+                    reader.readAsDataURL(selectedFile);
+                }
             }
         }
 
@@ -1002,6 +1031,10 @@
                 document.getElementById('imgDesc').value = '';
                 document.getElementById('dropZoneText').textContent = 'Drag & Drop images here or click to browse';
                 document.getElementById('fileInput').value = '';
+                const gPrev = document.getElementById('galleryPreviewContainer');
+                const gIcon = document.getElementById('galleryCloudIcon');
+                if (gPrev) gPrev.style.display = 'none';
+                if (gIcon) gIcon.style.display = 'block';
                 selectedFile = null;
             } catch (err) {
                 console.error(err);
@@ -1111,6 +1144,7 @@
                 cls.disabled = true;
             }
             document.getElementById('addStudentArea').style.display = 'none';
+            if (document.getElementById('selectPrompt')) document.getElementById('selectPrompt').style.display = 'block';
         }
 
         var loadedStudentsList = [];
@@ -1118,8 +1152,13 @@
         async function loadStudents() {
             var m = document.getElementById('adminMedium').value;
             var c = document.getElementById('adminClass').value;
-            if (!m || !c) { document.getElementById('addStudentArea').style.display = 'none'; return; }
+            if (!m || !c) {
+                document.getElementById('addStudentArea').style.display = 'none';
+                if (document.getElementById('selectPrompt')) document.getElementById('selectPrompt').style.display = 'block';
+                return;
+            }
             document.getElementById('addStudentArea').style.display = 'block';
+            if (document.getElementById('selectPrompt')) document.getElementById('selectPrompt').style.display = 'none';
             
             try {
                 console.log(`[DEBUG] Fetching students from DB: medium=${m}, class=${c}`);
@@ -1517,6 +1556,9 @@
                 document.getElementById('alumniBatch').value = '';
                 document.getElementById('alumniProfession').value = '';
                 document.getElementById('alumniPhoto').value = '';
+                if (document.getElementById('alumniPhotoPreview')) {
+                    document.getElementById('alumniPhotoPreview').innerHTML = '<i class="fas fa-user-graduate" style="font-size:2rem;color:#94a3b8;"></i>';
+                }
                 toast('"' + name + '" added!');
             } catch (err) {
                 console.error(err);
@@ -1807,7 +1849,16 @@
                 <div><label class="field-label">Phone Number</label><input type="text" id="editTeacherPhone"></div>
                 <div><label class="field-label">Email Address *</label><input type="email" id="editTeacherEmail"></div>
                 <div><label class="field-label">Password (Optional)</label><input type="text" id="editTeacherPassword" placeholder="Leave blank to keep same"></div>
-                <div><label class="field-label">Photo (Optional)</label><input type="file" id="editTeacherPhoto" accept="image/*"></div>
+                <div style="grid-column: 1 / -1; display:flex; align-items:center; gap:15px; padding:10px; background:#f8fafc; border-radius:8px; border:1px dashed #cbd5e1;">
+                    <div id="editTeacherPhotoPreview" style="width:65px;height:65px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+                        <i class="fas fa-user" style="font-size:1.8rem;color:#94a3b8;"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <label class="field-label" style="margin-bottom:3px;">Teacher Photo (Optional)</label>
+                        <input type="file" id="editTeacherPhoto" accept="image/*" onchange="previewEditTeacherPhoto(this)" style="margin-bottom:0;">
+                        <p style="font-size:0.75rem;color:#94a3b8;margin-top:2px;">Select a new photo to update.</p>
+                    </div>
+                </div>
             </div>
             <button class="btn-full" style="margin-top:20px;" onclick="submitEditTeacher()">Save Changes</button>
         </div>
@@ -1828,10 +1879,43 @@
             document.getElementById('editTeacherEmail').value = t.email || '';
             document.getElementById('editTeacherPassword').value = '';
             document.getElementById('editTeacherPhoto').value = '';
+            var editPreview = document.getElementById('editTeacherPhotoPreview');
+            if (editPreview) {
+                if (t.photo_url) {
+                    var photoSrc = t.photo_url.startsWith('http') ? t.photo_url : API_BASE.replace('/api', '') + t.photo_url;
+                    editPreview.innerHTML = '<img src="' + photoSrc + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.src=\'images/logo.png\'">';
+                } else {
+                    editPreview.innerHTML = '<i class="fas fa-user" style="font-size:1.8rem;color:#94a3b8;"></i>';
+                }
+            }
             document.getElementById('editTeacherModal').style.display = 'flex';
         }
         function closeEditTeacherModal() {
             document.getElementById('editTeacherModal').style.display = 'none';
+        }
+
+        function previewAlumniPhoto(input) {
+            if (!input.files || !input.files[0]) return;
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                var preview = document.getElementById('alumniPhotoPreview');
+                if (preview) {
+                    preview.innerHTML = '<img src="' + e.target.result + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+                }
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        function previewEditTeacherPhoto(input) {
+            if (!input.files || !input.files[0]) return;
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                var preview = document.getElementById('editTeacherPhotoPreview');
+                if (preview) {
+                    preview.innerHTML = '<img src="' + e.target.result + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+                }
+            };
+            reader.readAsDataURL(input.files[0]);
         }
         async function submitEditTeacher() {
             const id = document.getElementById('editTeacherId').value;

@@ -5,6 +5,7 @@
   "scripts": {
     "start": "node backend/server.js",
     "dev": "concurrently \"node backend/server.js\" \"http-server -a localhost -p 8000 -c-1 -o --proxy http://localhost:5000\"",
+    "build": "prisma generate",
     "seed": "node prisma/seed.js",
     "check-db": "node check-db.js",
     "full-validation": "node full-validation.js",
@@ -23,6 +24,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@neon/config": "^1.14.4",
+    "@neon/env": "^2.1.7",
     "@prisma/client": "5.22.0",
     "@supabase/supabase-js": "^2.105.1",
     "cors": "^2.8.6",
