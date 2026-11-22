@@ -18,9 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
         headerEl.innerHTML = `
             <div class="container header-container">
                 <div class="logo">
-                    <img src="images/logo.png" alt="SBS Logo">
+                    <img src="images/logo.png" alt="SBEI Logo">
                     <div class="logo-text">
-                        <h1>SBS KARKALA</h1>
+                        <h1>SBEI KARKALA</h1>
                         <span>Shaping Global Futures</span>
                     </div>
                 </div>

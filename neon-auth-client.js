@@ -8,7 +8,7 @@ let inMemoryCookieJwt = null;
  */
 export function getApiBase() {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return `http://${window.location.hostname}:5000/api`;
+        return `http://${window.location.hostname}:5001/api`;
     }
     return '/api';
 }
@@ -344,7 +344,7 @@ export async function downloadAuthenticatedFile(urlOrPath, fallbackFilename = 'd
         try {
             const errJson = await resp.json();
             if (errJson && errJson.error) errMessage = errJson.error;
-        } catch (_) {}
+        } catch (_) { }
         throw new Error(errMessage);
     }
 

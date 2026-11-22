@@ -1,4 +1,4 @@
-# SBS School Database Documentation
+# SBEI School Database Documentation
 
 ## Database Name: `sbs_school`
 
