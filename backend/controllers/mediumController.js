@@ -7,7 +7,10 @@ exports.getAllMediums = async (req, res) => {
         if (is_active !== undefined) {
             where.is_active = is_active === 'true';
         }
-        const mediums = await prisma.medium.findMany({ where });
+        const mediums = await prisma.medium.findMany({
+            where,
+            orderBy: { id: 'asc' }
+        });
         res.json(mediums);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch mediums' });

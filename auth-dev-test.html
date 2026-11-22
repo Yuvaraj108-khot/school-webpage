@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Auth Dev Test (auth-dev) | SBS Karkala</title>
+    <link rel="icon" href="images/logo.png" type="image/png">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #10253b 0%, #1d3c5c 100%);
+            color: #1f2937;
+            padding: 24px 16px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .banner {
+            background: #fff;
+            border-radius: 14px;
+            padding: 20px 24px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.22);
+            margin-bottom: 18px;
+        }
+        .banner-top {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        .badge {
+            display: inline-block;
+            background: #e0f2fe;
+            color: #0369a1;
+            font-weight: 700;
+            font-size: 0.78rem;
+            padding: 4px 10px;
+            border-radius: 999px;
+        }
+        h1 {
+            margin: 0 0 4px;
+            font-size: 1.35rem;
+            color: #10253b;
+        }
+        .subtitle {
+            margin: 0;
+            font-size: 0.88rem;
+            color: #6b7280;
+        }
+        .config-line {
+            margin-top: 12px;
+            padding: 10px 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            word-break: break-all;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 18px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 20px 22px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.18);
+        }
+        .card h2 {
+            margin: 0 0 6px;
+            font-size: 1.05rem;
+            color: #10253b;
+        }
+        .card p.hint {
+            margin: 0 0 14px;
+            font-size: 0.82rem;
+            color: #6b7280;
+        }
+        label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.92rem;
+            margin-bottom: 12px;
+            outline: none;
+        }
+        input:focus { border-color: #1d3c5c; }
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        button {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: #1d3c5c;
+            color: #fff;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button.secondary { background: #475569; }
+        button.success-btn { background: #15803d; }
+        button.danger { background: #b91c1c; }
+        .status {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            display: none;
+            white-space: pre-wrap;
+        }
+        .status.ok { display: block; background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .status.err { display: block; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .status.info { display: block; background: #e0f2fe; color: #075985; border: 1px solid #7dd3fc; }
+        pre {
+            margin: 10px 0 0;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            overflow-x: auto;
+            max-height: 280px;
+        }
+        .full-width { margin-top: 18px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="banner">
+            <div class="banner-top">
+                <div>
+                    <h1>Phase 1: Isolated Neon Managed Auth Test</h1>
+                    <p class="subtitle">Vanilla JS + <code>@neon/auth</code> (<code>BetterAuthVanillaAdapter</code>) — No changes to production users or existing pages</p>
+                </div>
+                <span class="badge">Branch: auth-dev</span>
+            </div>
+            <div class="config-line" id="configBox">Loading <code>NEON_AUTH_DEV_BASE_URL</code> from <code>/api/dev/neon-auth-config</code>...</div>
+        </div>
+
+        <div class="grid">
+            <!-- Card 1: Account Sign Up / Sign In / Session / Sign Out -->
+            <div class="card">
+                <h2>1. Account, Sign In &amp; Session</h2>
+                <p class="hint">Create a test user in <code>auth-dev</code>, sign in, inspect session/JWT, or sign out.</p>
+
+                <label for="testName">Display Name (for Sign Up)</label>
+                <input id="testName" type="text" placeholder="Test User" value="Dev Test User">
+
+                <label for="testEmail">Your Test Email Address</label>
+                <input id="testEmail" type="email" placeholder="you@example.com" autocomplete="email">
+
+                <label for="testPassword">Password (min 8 chars)</label>
+                <input id="testPassword" type="password" placeholder="StrongPass123!">
+
+                <div class="btn-row">
+                    <button id="btnSignUp" type="button">Create Test Account</button>
+                    <button id="btnSignIn" type="button" class="success-btn">Sign In</button>
+                    <button id="btnGetSession" type="button" class="secondary">Get Session</button>
+                    <button id="btnSignOut" type="button" class="danger">Sign Out</button>
+                </div>
+
+                <div id="authStatus" class="status"></div>
+            </div>
+
+            <!-- Card 2: Email OTP Password Reset -->
+            <div class="card">
+                <h2>2. Email OTP Password Reset</h2>
+                <p class="hint">Uses <code>forgetPassword.emailOtp()</code>, <code>emailOtp.checkVerificationOtp()</code>, and <code>emailOtp.resetPassword()</code>.</p>
+
+                <label for="otpEmail">Test Account Email (synced from left or enter here)</label>
+                <input id="otpEmail" type="email" placeholder="you@example.com">
+
+                <div class="btn-row" style="margin-bottom: 12px;">
+                    <button id="btnSendOtp" type="button">Send Password-Reset OTP</button>
+                </div>
+
+                <label for="otpCode">6-Digit OTP from Email</label>
+                <input id="otpCode" type="text" inputmode="numeric" maxlength="6" placeholder="123456">
+
+                <div class="btn-row" style="margin-bottom: 12px;">
+                    <button id="btnVerifyOtp" type="button" class="secondary">Verify Reset OTP</button>
+                </div>
+
+                <label for="newPassword">New Password (min 8 chars)</label>
+                <input id="newPassword" type="password" placeholder="NewStrongPass123!">
+
+                <div class="btn-row">
+                    <button id="btnResetPassword" type="button" class="success-btn">Set New Password with OTP</button>
+                </div>
+
+                <div id="otpStatus" class="status"></div>
+            </div>
+
+            <!-- Card 3: Express Backend JWT Verification (Phase 3 Audit) -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>3. Express Backend JWT Verification (Phase 3 Audit)</h2>
+                <p class="hint">Verifies EdDSA signatures via <code>jose</code> against the <code>auth-dev</code> remote JWKS in log-only mode. Tests valid in-memory session token, missing token, invalid token, and expired token without blocking existing requests.</p>
+
+                <div class="btn-row">
+                    <button id="btnTestExpressJwt" type="button" class="success-btn">Test Express JWT</button>
+                    <button id="btnTestMissingJwt" type="button" class="secondary">Test Missing JWT</button>
+                    <button id="btnTestInvalidJwt" type="button" class="secondary">Test Invalid JWT</button>
+                    <button id="btnTestExpiredJwt" type="button" class="secondary">Test Expired JWT</button>
+                </div>
+
+                <div id="jwtAuditStatus" class="status"></div>
+            </div>
+        </div>
+
+        <div class="card full-width">
+            <h2>Live SDK Output / Session Payload</h2>
+            <p class="hint">Shows raw responses from Neon Auth (<code>@neon/auth</code> v0.8.2).</p>
+            <pre id="outputLog">Initializing...</pre>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createAuthClient, BetterAuthVanillaAdapter } from './auth-dev-sdk.js';
+
+        const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? `http://${window.location.hostname}:5000/api`
+            : '/api';
+
+        const configBox = document.getElementById('configBox');
+        const outputLog = document.getElementById('outputLog');
+        const authStatus = document.getElementById('authStatus');
+        const otpStatus = document.getElementById('otpStatus');
+        const jwtAuditStatus = document.getElementById('jwtAuditStatus');
+        let cachedAuthBaseUrl = '';
+
+        const testNameEl = document.getElementById('testName');
+        const testEmailEl = document.getElementById('testEmail');
+        const testPasswordEl = document.getElementById('testPassword');
+        const otpEmailEl = document.getElementById('otpEmail');
+        const otpCodeEl = document.getElementById('otpCode');
+        const newPasswordEl = document.getElementById('newPassword');
+
+        // Keep email fields synchronized for convenience
+        testEmailEl.addEventListener('input', () => {
+            otpEmailEl.value = testEmailEl.value;
+        });
+
+        let authClient = null;
+
+        function setStatus(el, msg, kind = 'info') {
+            el.textContent = msg;
+            el.className = `status ${kind}`;
+        }
+
+        function logResult(action, payload) {
+            outputLog.textContent = `[${new Date().toLocaleTimeString()}] ${action}\n` +
+                JSON.stringify(payload, null, 2);
+        }
+
+        function formatError(err) {
+            if (!err) return 'Unknown error';
+            if (typeof err === 'string') return err;
+            return err.message || err.code || JSON.stringify(err);
+        }
+
+        function setButtonsEnabled(enabled) {
+            document.querySelectorAll('button').forEach((b) => {
+                b.disabled = !enabled;
+            });
+        }
+
+        async function runAction(btn, statusEl, label, fn) {
+            if (!authClient) {
+                setStatus(statusEl, 'Neon Auth client is not initialized yet. Check NEON_AUTH_DEV_BASE_URL in .env.', 'err');
+                return;
+            }
+            const original = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Working...';
+            try {
+                const res = await fn();
+                logResult(label, res);
+                if (res && res.error) {
+                    setStatus(statusEl, `${label} failed: ${formatError(res.error)}`, 'err');
+                }
+                return res;
+            } catch (err) {
+                logResult(label + ' (EXCEPTION)', { message: err?.message || String(err), code: err?.code });
+                setStatus(statusEl, `${label} error: ${formatError(err)}`, 'err');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = original;
+            }
+        }
+
+        // Initialize Neon Auth client using ONLY NEON_AUTH_DEV_BASE_URL from backend config endpoint
+        setButtonsEnabled(false);
+        try {
+            const cfgResp = await fetch(`${API_BASE}/dev/neon-auth-config`);
+            const cfg = await cfgResp.json();
+
+            if (!cfgResp.ok || !cfg.authBaseUrl) {
+                configBox.innerHTML = `<strong style="color:#b91c1c;">Not Ready:</strong> ${cfg.error || 'Missing auth-dev Auth URL'}`;
+                setStatus(authStatus, cfg.error || 'Missing NEON_AUTH_DEV_BASE_URL.', 'err');
+                logResult('Config Error', cfg);
+            } else {
+                cachedAuthBaseUrl = cfg.authBaseUrl;
+                authClient = createAuthClient(cfg.authBaseUrl, {
+                    adapter: BetterAuthVanillaAdapter({
+                        fetchOptions: { credentials: 'include' }
+                    })
+                });
+                configBox.innerHTML = `<strong>Connected to branch <code>${cfg.branch}</code>:</strong> <code>${cfg.authBaseUrl}</code>`;
+                setButtonsEnabled(true);
+                logResult('SDK Initialized', { branch: cfg.branch, authBaseUrl: cfg.authBaseUrl });
+            }
+        } catch (err) {
+            configBox.innerHTML = `<strong style="color:#b91c1c;">Backend unreachable:</strong> Start <code>npm run dev</code> and refresh.`;
+            logResult('Init Error', { message: err?.message || String(err) });
+        }
+
+        // 1. Create Test Account
+        document.getElementById('btnSignUp').addEventListener('click', async (e) => {
+            const name = testNameEl.value.trim() || 'Dev Test User';
+            const email = testEmailEl.value.trim();
+            const password = testPasswordEl.value;
+            if (!email || !password) {
+                setStatus(authStatus, 'Enter an email and password (min 8 chars) to create a test account.', 'err');
+                return;
+            }
+            const res = await runAction(e.currentTarget, authStatus, 'signUp.email', () =>
+                authClient.signUp.email({ name, email, password })
+            );
+            if (res && !res.error) {
+                setStatus(authStatus, `Account created for ${res.data?.user?.email || email}.`, 'ok');
+            }
+        });
+
+        // 2. Sign In
+        document.getElementById('btnSignIn').addEventListener('click', async (e) => {
+            const email = testEmailEl.value.trim();
+            const password = testPasswordEl.value;
+            if (!email || !password) {
+                setStatus(authStatus, 'Enter email and password to sign in.', 'err');
+                return;
+            }
+            const res = await runAction(e.currentTarget, authStatus, 'signIn.email', () =>
+                authClient.signIn.email({ email, password })
+            );
+            if (res && !res.error) {
+                setStatus(authStatus, `Signed in as ${res.data?.user?.email || email}.`, 'ok');
+            }
+        });
+
+        // 3. Get Current Session
+        document.getElementById('btnGetSession').addEventListener('click', async (e) => {
+            const res = await runAction(e.currentTarget, authStatus, 'getSession', () =>
+                authClient.getSession()
+            );
+            if (res && !res.error) {
+                if (res.data?.session && res.data?.user) {
+                    setStatus(authStatus, `Active session for ${res.data.user.email} (user ID: ${res.data.user.id}).`, 'ok');
+                } else {
+                    setStatus(authStatus, 'No active session (signed out or session cookie blocked).', 'info');
+                }
+            }
+        });
+
+        // 4. Sign Out
+        document.getElementById('btnSignOut').addEventListener('click', async (e) => {
+            const res = await runAction(e.currentTarget, authStatus, 'signOut', () =>
+                authClient.signOut()
+            );
+            if (res && !res.error) {
+                setStatus(authStatus, 'Signed out.', 'ok');
+            }
+        });
+
+        // 5. Send Password-Reset OTP
+        document.getElementById('btnSendOtp').addEventListener('click', async (e) => {
+            const email = otpEmailEl.value.trim() || testEmailEl.value.trim();
+            if (!email) {
+                setStatus(otpStatus, 'Enter your test email address first.', 'err');
+                return;
+            }
+            otpEmailEl.value = email;
+            const res = await runAction(e.currentTarget, otpStatus, 'forgetPassword.emailOtp', () =>
+                authClient.forgetPassword.emailOtp({ email })
+            );
+            if (res && !res.error) {
+                setStatus(otpStatus, `Password-reset OTP requested for ${email}. Check your inbox (and spam folder). Note: Neon returns success even if the email is not registered yet.`, 'ok');
+            }
+        });
+
+        // 6. Verify Password-Reset OTP
+        document.getElementById('btnVerifyOtp').addEventListener('click', async (e) => {
+            const email = otpEmailEl.value.trim() || testEmailEl.value.trim();
+            const otp = otpCodeEl.value.trim();
+            if (!email || !otp) {
+                setStatus(otpStatus, 'Enter both email and the 6-digit OTP code.', 'err');
+                return;
+            }
+            const res = await runAction(e.currentTarget, otpStatus, 'emailOtp.checkVerificationOtp', () =>
+                authClient.emailOtp.checkVerificationOtp({
+                    email,
+                    otp,
+                    type: 'forget-password'
+                })
+            );
+            if (res && !res.error) {
+                setStatus(otpStatus, res.data?.success ? 'OTP is valid! Now enter your new password below.' : 'OTP verification returned false.', res.data?.success ? 'ok' : 'err');
+            }
+        });
+
+        // 7. Set New Password with OTP
+        document.getElementById('btnResetPassword').addEventListener('click', async (e) => {
+            const email = otpEmailEl.value.trim() || testEmailEl.value.trim();
+            const otp = otpCodeEl.value.trim();
+            const password = newPasswordEl.value;
+            if (!email || !otp || !password) {
+                setStatus(otpStatus, 'Enter email, OTP code, and new password (min 8 chars).', 'err');
+                return;
+            }
+            const res = await runAction(e.currentTarget, otpStatus, 'emailOtp.resetPassword', () =>
+                authClient.emailOtp.resetPassword({
+                    email,
+                    otp,
+                    password
+                })
+            );
+            if (res && !res.error) {
+                setStatus(otpStatus, 'Password updated via Neon Email OTP! Try signing in on the left with your new password.', 'ok');
+            }
+        });
+
+        // ============================================================
+        // Phase 3: Express Backend JWT Verification (Log-Only Audit)
+        // ============================================================
+
+        // Helper: Retrieve active token strictly in memory (NEVER in localStorage/sessionStorage)
+        async function getInMemoryJwtToken() {
+            // 1. Call authClient.getSession() as required
+            const sessionRes = await authClient.getSession();
+            let token = sessionRes?.data?.session?.token;
+
+            // 2. If token is an opaque session ID (not a 3-part compact JWT), fetch the EdDSA JWT from /token
+            if (!token || !token.includes('.')) {
+                try {
+                    const tokenRes = await authClient.token();
+                    if (tokenRes?.data?.token) {
+                        token = tokenRes.data.token;
+                    }
+                } catch (e) {
+                    if (cachedAuthBaseUrl) {
+                        const r = await fetch(`${cachedAuthBaseUrl}/token`, { credentials: 'include' });
+                        if (r.ok) {
+                            const j = await r.json();
+                            if (j?.token) token = j.token;
+                        }
+                    }
+                }
+            }
+            return token;
+        }
+
+        // 8. Test Express JWT (Active Session)
+        document.getElementById('btnTestExpressJwt').addEventListener('click', async (e) => {
+            const res = await runAction(e.currentTarget, jwtAuditStatus, 'Test Express JWT', async () => {
+                const token = await getInMemoryJwtToken();
+                if (!token) {
+                    throw new Error('No active session token found. Please sign in or create a test account first.');
+                }
+
+                const resp = await fetch(`${API_BASE}/dev/auth-audit`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const auditData = await resp.json();
+
+                // Mask token: Never display complete JWT in UI
+                const masked = token.length > 20
+                    ? `${token.slice(0, 10)}...[MASKED ${token.length} chars]...${token.slice(-6)}`
+                    : '[MASKED]';
+
+                return {
+                    httpStatus: resp.status,
+                    expressAuditResponse: auditData,
+                    tokenDetails: {
+                        retrievedInMemoryOnly: true,
+                        tokenType: token.includes('.') ? 'EdDSA JWT' : 'Session Token',
+                        tokenLength: token.length,
+                        maskedToken: masked
+                    }
+                };
+            });
+
+            if (res && !res.error && res.expressAuditResponse) {
+                const r = res.expressAuditResponse;
+                if (r.verified) {
+                    setStatus(jwtAuditStatus, `✔ Express verified Neon Auth JWT successfully!\n• User ID: ${r.userId}\n• Email: ${r.email || '(unlinked test user)'}\n• Status: ${r.status}\n• Mode: ${r.auditMode}`, 'ok');
+                } else {
+                    setStatus(jwtAuditStatus, `Verification returned false: ${r.reason || r.status}`, 'err');
+                }
+            }
+        });
+
+        // 9. Test Missing JWT
+        document.getElementById('btnTestMissingJwt').addEventListener('click', async (e) => {
+            const res = await runAction(e.currentTarget, jwtAuditStatus, 'Test Missing JWT', async () => {
+                const resp = await fetch(`${API_BASE}/dev/auth-audit`);
+                const auditData = await resp.json();
+                return { httpStatus: resp.status, expressAuditResponse: auditData };
+            });
+            if (res && res.expressAuditResponse) {
+                const r = res.expressAuditResponse;
+                setStatus(jwtAuditStatus, `Missing Token Audit Result:\n• Status: ${r.status} (${r.reason})\n• Verified: ${r.verified}\n• Mode: ${r.auditMode}`, 'info');
+            }
+        });
+
+        // 10. Test Invalid JWT
+        document.getElementById('btnTestInvalidJwt').addEventListener('click', async (e) => {
+            const res = await runAction(e.currentTarget, jwtAuditStatus, 'Test Invalid JWT', async () => {
+                const resp = await fetch(`${API_BASE}/dev/auth-audit`, {
+                    headers: {
+                        'Authorization': 'Bearer eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJpbnZhbGlkX3VzZXIifQ.fakeSignatureValue'
+                    }
+                });
+                const auditData = await resp.json();
+                return { httpStatus: resp.status, expressAuditResponse: auditData };
+            });
+            if (res && res.expressAuditResponse) {
+                const r = res.expressAuditResponse;
+                setStatus(jwtAuditStatus, `Invalid Token Audit Result:\n• Status: ${r.status} (${r.reason})\n• Verified: ${r.verified} (safe non-blocking)`, 'info');
+            }
+        });
+
+        // 11. Test Expired JWT
+        document.getElementById('btnTestExpiredJwt').addEventListener('click', async (e) => {
+            const res = await runAction(e.currentTarget, jwtAuditStatus, 'Test Expired JWT', async () => {
+                const fakeHeader = btoa(JSON.stringify({ alg: "EdDSA", kid: "expired-test" })).replace(/=/g, '');
+                const fakePayload = btoa(JSON.stringify({
+                    sub: "test-expired-user",
+                    exp: Math.floor(Date.now() / 1000) - 3600
+                })).replace(/=/g, '');
+                const expiredJwt = `${fakeHeader}.${fakePayload}.fakeSignature`;
+
+                const resp = await fetch(`${API_BASE}/dev/auth-audit`, {
+                    headers: {
+                        'Authorization': `Bearer ${expiredJwt}`
+                    }
+                });
+                const auditData = await resp.json();
+                return { httpStatus: resp.status, expressAuditResponse: auditData };
+            });
+            if (res && res.expressAuditResponse) {
+                const r = res.expressAuditResponse;
+                setStatus(jwtAuditStatus, `Expired Token Audit Result:\n• Status: ${r.status} (${r.reason})\n• Verified: ${r.verified} (safe non-blocking)`, 'info');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -8,125 +8,335 @@
     <link rel="icon" href="images/logo.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .portal-tabs {
+            display: flex;
+            gap: 8px;
+            background: #f1f5f9;
+            padding: 5px;
+            border-radius: 10px;
+            margin-bottom: 1.25rem;
+        }
+
+        .portal-tab {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: #475569;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 9px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .portal-tab.active {
+            background: #ffffff;
+            color: var(--primary-color);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .portal-panel {
+            display: none;
+        }
+
+        .portal-panel.active {
+            display: block;
+        }
+
+        .auth-badge-note {
+            font-size: 0.76rem;
+            color: #64748b;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-top: 12px;
+            text-align: center;
+        }
+    </style>
 </head>
 
 <body class="login-page" style="background-color: #2c3e50;">
 
     <div class="login-box">
-        <div style="text-align: center; margin-bottom: 2rem;">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
             <img src="images/logo.png" alt="SBS Logo" style="width: 80px; margin: 0 auto 1rem auto;">
             <div>
                 <a href="index.html"
                     style="font-family: var(--font-heading); font-size: 1.5rem; color: var(--primary-color);">SBS
                     Karkala</a>
             </div>
-            <p style="color: var(--accent-color); font-weight: bold; margin-top: 0.5rem;">Teacher / Admin Portal</p>
+            <p style="color: var(--accent-color); font-weight: bold; margin-top: 0.5rem;">Admin / Teacher Portal</p>
         </div>
 
-        <form class="contact-form" id="adminLoginForm">
+        <div class="portal-tabs" role="tablist">
+            <button type="button" class="portal-tab active" id="tabAdmin" data-portal="admin">
+                <i class="fas fa-user-shield"></i> Administrator
+            </button>
+            <button type="button" class="portal-tab" id="tabTeacher" data-portal="teacher">
+                <i class="fas fa-chalkboard-teacher"></i> Teacher (Staff ID)
+            </button>
+        </div>
+
+        <div id="loginInfo" style="display:none; color:#075985; background:#e0f2fe; border:1px solid #bae6fd; padding:8px 10px; border-radius:6px; font-size:0.83rem; margin-bottom:12px; text-align:center;"></div>
+        <div id="loginError" style="display:none; color:#991b1b; background:#fee2e2; border:1px solid #fecaca; padding:8px 10px; border-radius:6px; font-size:0.83rem; margin-bottom:12px; text-align:center;"></div>
+
+        <!-- Admin Neon Auth Login Form -->
+        <form class="contact-form portal-panel active" id="adminNeonLoginForm">
             <div style="margin-bottom: 1rem; text-align: left;">
-                <label style="display: block; margin-bottom: 5px;">Staff ID</label>
+                <label style="display: block; margin-bottom: 5px;" for="adminEmail">Administrator Email</label>
+                <div style="position: relative;">
+                    <i class="fas fa-envelope"
+                        style="position: absolute; left: 10px; top: 12px; color: #999;"></i>
+                    <input type="email" id="adminEmail" placeholder="Enter Administrator Email" autocomplete="email" style="padding-left: 35px;" required>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1rem; text-align: left;">
+                <label style="display: block; margin-bottom: 5px;" for="adminPassword">Password</label>
+                <div style="position: relative;">
+                    <i class="fas fa-lock" style="position: absolute; left: 10px; top: 12px; color: #999;"></i>
+                    <input type="password" id="adminPassword" placeholder="Enter Password" autocomplete="current-password" style="padding-left: 35px;" required>
+                </div>
+            </div>
+
+            <button type="submit" id="btnAdminLogin" class="btn btn-primary" style="width: 100%;">Secure Admin Login</button>
+
+            <div class="auth-badge-note">
+                <i class="fas fa-shield-alt" style="color: #0369a1;"></i> Protected by Neon Managed Auth (<code>auth-dev</code>)
+            </div>
+        </form>
+
+        <!-- Teacher Staff ID Login Form (preserved for Phase 4A) -->
+        <form class="contact-form portal-panel" id="teacherLoginForm">
+            <div style="margin-bottom: 1rem; text-align: left;">
+                <label style="display: block; margin-bottom: 5px;" for="staffId">Staff ID</label>
                 <div style="position: relative;">
                     <i class="fas fa-chalkboard-teacher"
                         style="position: absolute; left: 10px; top: 12px; color: #999;"></i>
-                    <input type="text" id="staffId" placeholder="Enter Staff ID" style="padding-left: 35px;" required>
+                    <input type="text" id="staffId" placeholder="Enter Staff ID" autocomplete="username" style="padding-left: 35px;" required>
                 </div>
             </div>
 
             <div style="margin-bottom: 1rem; text-align: left;">
-                <label style="display: block; margin-bottom: 5px;">Password</label>
+                <label style="display: block; margin-bottom: 5px;" for="staffPassword">Password</label>
                 <div style="position: relative;">
                     <i class="fas fa-lock" style="position: absolute; left: 10px; top: 12px; color: #999;"></i>
-                    <input type="password" id="staffPassword" placeholder="Enter Password" style="padding-left: 35px;" required>
+                    <input type="password" id="staffPassword" placeholder="Enter Password" autocomplete="current-password" style="padding-left: 35px;" required>
                 </div>
             </div>
 
-            <div id="loginError" style="display:none; color:#ea5455; font-size:0.85rem; margin-bottom:10px; text-align:center;"></div>
-
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Secure Login</button>
+            <button type="submit" id="btnTeacherLogin" class="btn btn-primary" style="width: 100%;">Teacher Login</button>
 
             <div style="margin-top: 1rem; text-align: center; font-size: 0.9rem;">
                 <a href="reset_password.html" style="color: var(--secondary-color);">Forgot Password?</a>
             </div>
         </form>
 
-        <div style="margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1rem;">
+        <div style="margin-top: 1.75rem; border-top: 1px solid #eee; padding-top: 1rem;">
             <p style="font-size: 0.8rem;">Are you a student?</p>
             <a href="login_parent.html" class="btn btn-outline"
                 style="border-color: var(--primary-color); color: var(--primary-color); padding: 5px 15px; font-size: 0.8rem; margin-top: 5px;">Student
                 Login</a>
         </div>
-
-        <div style="margin-top: 1.5rem; padding: 10px; background: rgba(255,255,255,0.08); border-radius: 5px; font-size: 0.75rem; color: #aaa;">
-            <p><strong>Demo Credentials:</strong></p>
-            <p>Admin: admin / pass</p>
-            <p>Teacher: teacher / pass</p>
-        </div>
     </div>
 
-    <script>
-        // Redirect if already logged in
-        (function () {
-            var role = sessionStorage.getItem('role');
-            if (role === 'admin') window.location.href = 'dashboard_admin.html';
-            else if (role === 'teacher') window.location.href = 'dashboard_teacher.html';
-        })();
+    <script type="module">
+        import { initNeonAuth, getInMemoryToken, fetchAuthMe, verifyAdminSession, verifyCookieBackedSession, getApiBase } from './neon-auth-client.js';
 
-        document.getElementById('adminLoginForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
-            var id = document.getElementById('staffId').value.trim();
-            var pass = document.getElementById('staffPassword').value;
-            var errDiv = document.getElementById('loginError');
+        const errDiv = document.getElementById('loginError');
+        const infoDiv = document.getElementById('loginInfo');
+        const tabAdmin = document.getElementById('tabAdmin');
+        const tabTeacher = document.getElementById('tabTeacher');
+        const adminForm = document.getElementById('adminNeonLoginForm');
+        const teacherForm = document.getElementById('teacherLoginForm');
+
+        function clearMessages() {
             errDiv.style.display = 'none';
+            errDiv.textContent = '';
+            infoDiv.style.display = 'none';
+            infoDiv.textContent = '';
+        }
 
-            // Resolve API Endpoint dynamically
-            const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-                ? 'http://localhost:5000/api'
-                : 'https://school-webpage-1uky.onrender.com/api';
+        function showError(msg) {
+            errDiv.textContent = msg;
+            errDiv.style.display = 'block';
+        }
 
-            // Try backend login first
-            try {
-                const response = await fetch(`${API}/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: id, password: pass })
-                });
-                const data = await response.json();
-                if (response.ok && data.success) {
-                    if (data.role === 'admin') {
-                        sessionStorage.setItem('role', 'admin');
-                        sessionStorage.setItem('staff_id', data.staff_id);
-                        window.location.href = 'dashboard_admin.html';
-                        return;
-                    } else if (data.role === 'teacher') {
-                        sessionStorage.setItem('role', 'teacher');
-                        sessionStorage.setItem('teacher_name', data.teacher_name);
-                        sessionStorage.setItem('staff_id', data.staff_id);
-                        window.location.href = 'dashboard_teacher.html';
-                        return;
-                    }
-                } else if (!response.ok && data.error && !data.error.includes('not found in database')) {
-                    errDiv.textContent = data.error;
-                    errDiv.style.display = 'block';
-                    return;
-                }
-            } catch (err) {
-                console.warn('Backend login unavailable, falling back to static checks:', err);
+        function showInfo(msg) {
+            infoDiv.textContent = msg;
+            infoDiv.style.display = 'block';
+        }
+
+        function switchPortal(portal) {
+            clearMessages();
+            const isAdmin = portal === 'admin';
+            tabAdmin.classList.toggle('active', isAdmin);
+            tabTeacher.classList.toggle('active', !isAdmin);
+            adminForm.classList.toggle('active', isAdmin);
+            teacherForm.classList.toggle('active', !isAdmin);
+        }
+
+        tabAdmin.addEventListener('click', () => switchPortal('admin'));
+        tabTeacher.addEventListener('click', () => switchPortal('teacher'));
+
+        // On load: handle redirect notices and check existing valid session
+        (async function checkExistingSession() {
+            const params = new URLSearchParams(window.location.search);
+            const reason = params.get('reason');
+            if (reason === 'auth_required') {
+                sessionStorage.removeItem('role');
+                sessionStorage.removeItem('admin_name');
+                sessionStorage.removeItem('staff_id');
+                sessionStorage.removeItem('teacher_name');
+                showInfo('Please sign in with your Neon Auth administrator account.');
+                return;
+            }
+            if (reason === 'teacher_only') {
+                switchPortal('teacher');
+                sessionStorage.clear();
+                showInfo('Please sign in with your Staff ID to open the Teacher Dashboard.');
+                return;
             }
 
-            // Fallback static checks
-            if (id.toLowerCase() === 'admin' && pass === 'pass') {
-                sessionStorage.setItem('role', 'admin');
-                sessionStorage.setItem('staff_id', id);
+            const check = await verifyAdminSession();
+            if (check.isAdmin) {
                 window.location.href = 'dashboard_admin.html';
-            } else if (id.toLowerCase() === 'teacher' && pass === 'pass') {
-                sessionStorage.setItem('role', 'teacher');
-                sessionStorage.setItem('teacher_name', 'Teacher Name');
-                sessionStorage.setItem('staff_id', id);
+                return;
+            }
+
+            const teacherCheck = await verifyCookieBackedSession({ expectedRole: 'teacher' });
+            if (teacherCheck.authorized) {
                 window.location.href = 'dashboard_teacher.html';
-            } else {
-                errDiv.textContent = 'Invalid Staff ID or Password.';
-                errDiv.style.display = 'block';
+                return;
+            }
+
+            // Clear stale role markers if no valid Neon session exists
+            sessionStorage.removeItem('role');
+            sessionStorage.removeItem('admin_name');
+            sessionStorage.removeItem('staff_id');
+            sessionStorage.removeItem('teacher_name');
+        })();
+
+        // Administrator Login via Neon Managed Auth (Email + Password)
+        adminForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            clearMessages();
+
+            const email = document.getElementById('adminEmail').value.trim();
+            const password = document.getElementById('adminPassword').value;
+            const btn = document.getElementById('btnAdminLogin');
+
+            if (!email || !password) {
+                showError('Please enter your administrator email and password.');
+                return;
+            }
+
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Signing in...';
+
+            try {
+                const { authClient, authBaseUrl } = await initNeonAuth();
+                const signInRes = await authClient.signIn.email({ email, password });
+
+                if (signInRes && signInRes.error) {
+                    showError(signInRes.error.message || 'Invalid administrator email or password.');
+                    return;
+                }
+
+                // Retrieve EdDSA JWT strictly in memory
+                const token = await getInMemoryToken(authClient, authBaseUrl);
+                if (!token) {
+                    showError('Authentication succeeded, but access token could not be retrieved.');
+                    return;
+                }
+
+                // Confirm server-resolved role === 'admin' via GET /api/auth/me
+                const me = await fetchAuthMe(token);
+                if (!me.ok || !me.data || !me.data.authenticated) {
+                    if (me.status !== 503) {
+                        await authClient.signOut().catch(() => {});
+                    }
+                    showError((me.data && me.data.error) || 'Failed to verify administrator session with backend.');
+                    return;
+                }
+
+                if (me.data.role !== 'admin') {
+                    await authClient.signOut().catch(() => {});
+                    sessionStorage.removeItem('role');
+                    sessionStorage.removeItem('admin_name');
+                    sessionStorage.removeItem('staff_id');
+                    showError('Access denied: Administrator privileges are required to open the Admin Dashboard.');
+                    return;
+                }
+
+                // Store only safe UI metadata (never JWTs or passwords)
+                sessionStorage.setItem('role', 'admin');
+                sessionStorage.setItem('admin_name', (me.data.profile && me.data.profile.name) || 'Administrator');
+                window.location.href = 'dashboard_admin.html';
+            } catch (err) {
+                showError((err && err.message) || 'Administrator login failed.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        });
+
+        // Teacher Login via Staff ID (Phase 4A: preserved legacy backend lookup; never enters dashboard_admin)
+        teacherForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            clearMessages();
+
+            const id = document.getElementById('staffId').value.trim();
+            const pass = document.getElementById('staffPassword').value;
+            const btn = document.getElementById('btnTeacherLogin');
+
+            if (!id || !pass) {
+                showError('Please enter your Staff ID and Password.');
+                return;
+            }
+
+            if (id.toLowerCase() === 'admin') {
+                switchPortal('admin');
+                showError('Hardcoded admin login is disabled. Sign in with your Neon Auth administrator email.');
+                return;
+            }
+
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Signing in...';
+
+            try {
+                const response = await fetch(`${getApiBase()}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ username: id, password: pass })
+                });
+                const data = await response.json().catch(() => ({}));
+
+                if (response.ok && data.success && data.role === 'teacher') {
+                    if (data.authProvider === 'legacy') {
+                        sessionStorage.clear();
+                        showError('Legacy dummy teacher accounts without Neon Managed Auth cannot open the protected dashboard. Sign in with a Neon-linked Staff ID (e.g. T-TEST-001).');
+                        return;
+                    }
+                    sessionStorage.setItem('role', 'teacher');
+                    sessionStorage.setItem('teacher_name', data.teacher_name);
+                    sessionStorage.setItem('staff_id', data.staff_id);
+                    window.location.href = 'dashboard_teacher.html';
+                    return;
+                }
+
+                showError(data.error || 'Invalid Staff ID or Password.');
+            } catch (err) {
+                showError('Unable to reach authentication server. Please verify the backend is running.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
             }
         });
     </script>

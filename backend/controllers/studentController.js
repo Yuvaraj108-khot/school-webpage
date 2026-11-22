@@ -1,4 +1,12 @@
 const prisma = require('../prismaClient');
+const {
+    omitPassword,
+    normalizeEmail,
+    validateAccessibleEmail,
+    checkEmailAvailable,
+    verifyNeonAuthUserForLink,
+    generateNextStudentCode
+} = require('../utils/accountProvisioning');
 
 // Helper to resolve class_id and medium_id from names
 async function resolveStudentClassAndMedium(className, mediumName) {
@@ -34,70 +42,71 @@ async function resolveStudentClassAndMedium(className, mediumName) {
 }
 
 exports.getStudents = async (req, res) => {
-  try {
-    const { class: cls, medium, page = 1, limit = 50, include_inactive = 'false' } = req.query;
-    
-    const andConditions = [];
-    
-    if (cls) {
-        const numericCls = cls.replace(/\D/g, '');
-        andConditions.push({
-            OR: [
-                { class: { equals: cls, mode: 'insensitive' } },
-                { class: { equals: numericCls, mode: 'insensitive' } },
-                { class: { equals: `Class ${numericCls}`, mode: 'insensitive' } }
-            ]
-        });
-    }
-    
-    if (medium) {
-        const normalized = (medium === 'CBSE' ? 'English' : medium);
-        andConditions.push({
-            OR: [
-                { medium: { equals: medium, mode: 'insensitive' } },
-                { medium: { equals: normalized, mode: 'insensitive' } }
-            ]
-        });
-    }
-    
-    if (include_inactive !== 'true') {
-        andConditions.push({ is_active: true });
-    }
+    try {
+        const { class: cls, medium, page = 1, limit = 50, include_inactive = 'false' } = req.query;
 
-    const where = andConditions.length > 0 ? { AND: andConditions } : {};
+        const andConditions = [];
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    const totalItems = await prisma.student.count({ where });
-
-    const students = await prisma.student.findMany({ 
-        where,
-        skip,
-        take: parseInt(limit),
-        orderBy: { name: 'asc' },
-        include: {
-            class_rel: true,
-            medium_rel: true
+        if (cls) {
+            const numericCls = cls.replace(/\D/g, '');
+            andConditions.push({
+                OR: [
+                    { class: { equals: cls, mode: 'insensitive' } },
+                    { class: { equals: numericCls, mode: 'insensitive' } },
+                    { class: { equals: `Class ${numericCls}`, mode: 'insensitive' } }
+                ]
+            });
         }
-    });
 
-    res.json({
-        data: students,
-        pagination: {
-            totalItems,
-            currentPage: parseInt(page),
-            totalPages: Math.ceil(totalItems / parseInt(limit)),
-            limit: parseInt(limit)
+        if (medium) {
+            const normalized = (medium === 'CBSE' ? 'English' : medium);
+            andConditions.push({
+                OR: [
+                    { medium: { equals: medium, mode: 'insensitive' } },
+                    { medium: { equals: normalized, mode: 'insensitive' } }
+                ]
+            });
         }
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+
+        if (include_inactive !== 'true') {
+            andConditions.push({ is_active: true });
+        }
+
+        const where = andConditions.length > 0 ? { AND: andConditions } : {};
+
+        const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+        const totalItems = await prisma.student.count({ where });
+
+        const students = await prisma.student.findMany({
+            where,
+            skip,
+            take: parseInt(limit, 10),
+            orderBy: { name: 'asc' },
+            include: {
+                class_rel: true,
+                medium_rel: true
+            }
+        });
+
+        res.json({
+            data: students.map(omitPassword),
+            pagination: {
+                totalItems,
+                currentPage: parseInt(page, 10),
+                totalPages: Math.ceil(totalItems / parseInt(limit, 10)),
+                limit: parseInt(limit, 10)
+            }
+        });
+    } catch (error) {
+        console.error('Get Students Error:', error.message);
+        res.status(500).json({ error: 'Failed to fetch students' });
+    }
 };
 
 exports.getStudentByCode = async (req, res) => {
     try {
         const student = await prisma.student.findFirst({
-            where: { 
+            where: {
                 student_code: req.params.code,
                 is_active: true
             },
@@ -107,60 +116,122 @@ exports.getStudentByCode = async (req, res) => {
             }
         });
         if (!student) return res.status(404).json({ error: 'Student not found or inactive' });
-        res.json(student);
+        res.json(omitPassword(student));
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch student' });
     }
 };
 
-exports.createStudent = async (req, res) => {
+/**
+ * Pre-flight validation endpoint called by the Admin Dashboard BEFORE creating
+ * a Neon Auth user. Ensures name/class/medium/email, student_code, and cross-table
+ * email uniqueness are clean so no orphaned Neon Auth account is created.
+ */
+exports.validateStudentCreation = async (req, res) => {
     try {
-        const { student_code, name, class: className, medium, parent_name, roll_no, photo_url, email, password } = req.body;
-        const cleanStudentCode = typeof student_code === 'string' ? student_code.trim() : '';
+        const { student_code, name, class: className, medium, email } = req.body;
         const cleanName = typeof name === 'string' ? name.trim() : '';
         const cleanClass = typeof className === 'string' ? className.trim() : '';
         const cleanMedium = typeof medium === 'string' ? medium.trim() : '';
-        const cleanEmail = typeof email === 'string' && email.trim() ? email.trim().toLowerCase() : null;
-        const cleanPassword = typeof password === 'string' && password.trim() ? password.trim() : cleanStudentCode;
 
-        if (!cleanStudentCode || !cleanName || !cleanClass || !cleanMedium) {
-            return res.status(400).json({ error: 'Student code, name, class, and medium are required' });
+        if (!cleanName || !cleanClass || !cleanMedium) {
+            return res.status(400).json({ error: 'Student name, class, and medium are required.' });
         }
 
-        // Check if student code already exists
-        const existing = await prisma.student.findUnique({
-            where: { student_code: cleanStudentCode }
-        });
-
-        if (existing) {
-            return res.status(400).json({ error: 'Student Code already exists' });
+        const emailCheck = validateAccessibleEmail(email);
+        if (!emailCheck.valid) {
+            return res.status(400).json({ error: emailCheck.error });
         }
 
-        if (cleanEmail) {
-            const existingEmail = await prisma.student.findUnique({
-                where: { email: cleanEmail }
+        let cleanStudentCode = typeof student_code === 'string' ? student_code.trim() : '';
+        if (cleanStudentCode) {
+            const existingCode = await prisma.student.findFirst({
+                where: { student_code: { equals: cleanStudentCode, mode: 'insensitive' } },
+                select: { id: true }
             });
-            if (existingEmail) {
-                return res.status(400).json({ error: 'Student email already exists' });
+            if (existingCode) {
+                return res.status(400).json({ error: 'Student Code already exists.' });
             }
+        } else {
+            cleanStudentCode = await generateNextStudentCode(cleanClass, cleanMedium);
+        }
 
+        const avail = await checkEmailAvailable(emailCheck.email, { includeNeonAuth: true });
+        if (!avail.available) {
+            return res.status(409).json({ error: avail.error });
+        }
 
+        return res.json({
+            valid: true,
+            student_code: cleanStudentCode,
+            email: emailCheck.email
+        });
+    } catch (error) {
+        console.error('Validate Student Error:', error.message);
+        return res.status(500).json({ error: 'Failed to validate student registration details.' });
+    }
+};
+
+exports.createStudent = async (req, res) => {
+    try {
+        const { student_code, name, class: className, medium, parent_name, roll_no, photo_url, email, auth_user_id } = req.body;
+        const cleanName = typeof name === 'string' ? name.trim() : '';
+        const cleanClass = typeof className === 'string' ? className.trim() : '';
+        const cleanMedium = typeof medium === 'string' ? medium.trim() : '';
+
+        if (!cleanName || !cleanClass || !cleanMedium) {
+            return res.status(400).json({ error: 'Student name, class, and medium are required.' });
+        }
+
+        const emailCheck = validateAccessibleEmail(email);
+        if (!emailCheck.valid) {
+            return res.status(400).json({ error: emailCheck.error });
+        }
+
+        if (!auth_user_id) {
+            return res.status(400).json({ error: 'Neon Auth auth_user_id is required to create a student account.' });
+        }
+
+        let cleanStudentCode = typeof student_code === 'string' ? student_code.trim() : '';
+        if (cleanStudentCode) {
+            const existing = await prisma.student.findFirst({
+                where: { student_code: { equals: cleanStudentCode, mode: 'insensitive' } },
+                select: { id: true }
+            });
+            if (existing) {
+                return res.status(400).json({ error: 'Student Code already exists.' });
+            }
+        } else {
+            cleanStudentCode = await generateNextStudentCode(cleanClass, cleanMedium);
+        }
+
+        // Verify email uniqueness across students and teachers
+        const avail = await checkEmailAvailable(emailCheck.email, { includeNeonAuth: false });
+        if (!avail.available) {
+            return res.status(409).json({ error: avail.error });
+        }
+
+        // Verify referenced Neon Auth account exists, is unbanned, non-admin, email matches, and unlinked
+        const linkCheck = await verifyNeonAuthUserForLink(auth_user_id, emailCheck.email);
+        if (!linkCheck.ok) {
+            return res.status(linkCheck.status).json({ error: linkCheck.error });
         }
 
         // Resolve relational mapping fields
         const rel = await resolveStudentClassAndMedium(cleanClass, cleanMedium);
 
         const student = await prisma.student.create({
-            data: { 
+            data: {
                 student_code: cleanStudentCode,
                 name: cleanName,
                 class: cleanClass,
                 medium: cleanMedium,
-                parent_name: parent_name || null,
+                parent_name: typeof parent_name === 'string' && parent_name.trim() ? parent_name.trim() : null,
                 roll_no: roll_no || null,
                 photo_url: photo_url || null,
-                email: cleanEmail,
-                password: cleanPassword,
+                email: emailCheck.email,
+                password: null,
+                auth_user_id: linkCheck.authUserId,
                 class_id: rel.class_id,
                 medium_id: rel.medium_id,
                 is_active: true,
@@ -171,9 +242,9 @@ exports.createStudent = async (req, res) => {
                 medium_rel: true
             }
         });
-        res.status(201).json(student);
+        res.status(201).json(omitPassword(student));
     } catch (error) {
-        console.error('Create Student Error:', error);
+        console.error('Create Student Error:', error.message);
         res.status(500).json({ error: 'Failed to create student' });
     }
 };
@@ -184,18 +255,18 @@ exports.deleteStudent = async (req, res) => {
             where: { student_code: req.params.code }
         });
         if (!student) return res.status(404).json({ error: 'Student not found' });
-        
+
         // Hard delete: remove associated records first
         const id = student.id;
         await prisma.alumniTracking.deleteMany({ where: { student_id: id } });
         await prisma.attendance.deleteMany({ where: { student_id: id } });
         await prisma.marks.deleteMany({ where: { student_id: id } });
         await prisma.certificateRequest.deleteMany({ where: { student_id: id } });
-        
+
         const deleted = await prisma.student.delete({
             where: { id }
         });
-        res.json({ message: 'Student deleted successfully', student: deleted });
+        res.json({ message: 'Student deleted successfully', student: omitPassword(deleted) });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete student' });
     }
@@ -211,22 +282,37 @@ exports.updateStudent = async (req, res) => {
         });
         if (!existing) return res.status(404).json({ error: 'Student not found' });
 
-        const cleanEmail = typeof email === 'string' && email.trim() ? email.trim().toLowerCase() : null;
-        if (cleanEmail && cleanEmail !== existing.email) {
-            const existingEmail = await prisma.student.findUnique({
-                where: { email: cleanEmail }
-            });
-            if (existingEmail) {
-                return res.status(400).json({ error: 'Student email already exists' });
+        const existingEmail = normalizeEmail(existing.email);
+        const cleanEmail = normalizeEmail(email);
+
+        if (existing.auth_user_id) {
+            if (email !== undefined && (!cleanEmail || cleanEmail !== existingEmail)) {
+                return res.status(400).json({
+                    error: 'Cannot change the registered email of a Neon Auth-linked student account directly. Changing a registered email requires an authenticated email-update process synced with Neon Auth.'
+                });
             }
-
-
+        } else if (email !== undefined && cleanEmail && cleanEmail !== existingEmail) {
+            const avail = await checkEmailAvailable(cleanEmail, {
+                excludeStudentId: existing.id,
+                includeNeonAuth: false
+            });
+            if (!avail.available) {
+                return res.status(409).json({ error: avail.error });
+            }
         }
 
         // Resolve new class/medium relation IDs if updated
         const targetClass = className !== undefined ? className : existing.class;
         const targetMedium = medium !== undefined ? medium : existing.medium;
         const rel = await resolveStudentClassAndMedium(targetClass, targetMedium);
+
+        // Prevent overwriting passwords for Neon-linked accounts
+        const nextPassword = existing.auth_user_id
+            ? null
+            : (typeof password === 'string' && password.trim() ? password.trim() : existing.password);
+        const nextEmail = existing.auth_user_id
+            ? existing.email
+            : (email !== undefined ? cleanEmail : existing.email);
 
         const updated = await prisma.student.update({
             where: { student_code: code },
@@ -235,12 +321,12 @@ exports.updateStudent = async (req, res) => {
                 name: name !== undefined ? name.trim() : existing.name,
                 class: className !== undefined ? className : existing.class,
                 medium: medium !== undefined ? medium : existing.medium,
-                parent_name: parent_name !== undefined ? parent_name.trim() || null : existing.parent_name,
+                parent_name: parent_name !== undefined ? (typeof parent_name === 'string' ? parent_name.trim() || null : null) : existing.parent_name,
                 roll_no: roll_no !== undefined ? roll_no : existing.roll_no,
                 photo_url: photo_url !== undefined ? photo_url : existing.photo_url,
                 is_active: is_active !== undefined ? is_active : existing.is_active,
-                email: email !== undefined ? cleanEmail : existing.email,
-                password: password !== undefined && password.trim() ? password.trim() : existing.password,
+                email: nextEmail,
+                password: nextPassword,
                 class_id: rel.class_id,
                 medium_id: rel.medium_id
             },
@@ -249,9 +335,9 @@ exports.updateStudent = async (req, res) => {
                 medium_rel: true
             }
         });
-        res.json(updated);
+        res.json(omitPassword(updated));
     } catch (error) {
-        console.error("Update Student Error:", error);
+        console.error('Update Student Error:', error.message);
         res.status(500).json({ error: 'Failed to update student' });
     }
 };

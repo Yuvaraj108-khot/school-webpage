@@ -1,14 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
-const path = require('path');
 const teacherController = require('../controllers/teacherController');
+const { requireAuth, requireRole } = require('../middleware/authorize');
+const { createImageUploadMiddleware } = require('../utils/imageUpload');
 
-const upload = multer({ storage: multer.memoryStorage() });
+const uploadPhoto = createImageUploadMiddleware('photo');
 
 router.get('/', teacherController.getTeachers);
-router.post('/', upload.single('photo'), teacherController.createTeacher);
-router.delete('/:id', teacherController.deleteTeacher);
-router.put('/:id', upload.single('photo'), teacherController.updateTeacher);
+router.post('/validate', requireAuth, requireRole('admin'), teacherController.validateTeacherCreation);
+router.post('/', requireAuth, requireRole('admin'), uploadPhoto, teacherController.createTeacher);
+router.delete('/:id', requireAuth, requireRole('admin'), teacherController.deleteTeacher);
+router.put('/:id', requireAuth, requireRole('admin'), uploadPhoto, teacherController.updateTeacher);
 
 module.exports = router;

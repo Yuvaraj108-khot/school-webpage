@@ -4,8 +4,9 @@
   "description": "Local School Webpage Server",
   "scripts": {
     "start": "node backend/server.js",
-    "dev": "concurrently \"node backend/server.js\" \"http-server -a localhost -p 8000 -c-1 -o --proxy http://localhost:5000\"",
+    "dev": "concurrently \"node backend/server.js\" \"node backend/frontendServer.js\"",
     "build": "prisma generate",
+    "build:auth-dev-sdk": "esbuild auth-dev-sdk.src.js --bundle --format=esm --platform=browser --outfile=auth-dev-sdk.js",
     "seed": "node prisma/seed.js",
     "check-db": "node check-db.js",
     "full-validation": "node full-validation.js",
@@ -17,6 +18,7 @@
   "devDependencies": {
     "@types/node": "^25.3.5",
     "concurrently": "^9.2.1",
+    "esbuild": "^0.28.2",
     "http-server": "^14.1.1",
     "prisma": "5.22.0"
   },
@@ -24,6 +26,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@neon/auth": "^0.8.2",
     "@neon/config": "^1.14.4",
     "@neon/env": "^2.1.7",
     "@prisma/client": "5.22.0",
@@ -32,6 +35,8 @@
     "dotenv": "^17.3.1",
     "exceljs": "^4.4.0",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.5",
+    "jose": "^6.2.18",
     "multer": "^1.4.5-lts.1",
     "node-cron": "^4.6.0",
     "nodemailer": "^8.0.10",

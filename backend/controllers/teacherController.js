@@ -1,98 +1,174 @@
+const path = require('path');
 const prisma = require('../prismaClient');
-const supabase = require('../supabaseClient');
+const requireNeonAdmin = require('../middleware/requireNeonAdmin');
+const { validateAndSaveImageBuffer } = require('../utils/imageUpload');
+const {
+    SAFE_TEACHER_PUBLIC_SELECT,
+    omitPassword,
+    normalizeEmail,
+    validateAccessibleEmail,
+    checkEmailAvailable,
+    verifyNeonAuthUserForLink
+} = require('../utils/accountProvisioning');
 
 exports.getTeachers = async (req, res) => {
     try {
-        const teachers = await prisma.teacher.findMany({
+        let isVerifiedAdmin = false;
+        if (req.neonAuth && req.neonAuth.verified) {
+            const resolved = await requireNeonAdmin.resolveVerifiedNeonUser(req).catch(() => null);
+            isVerifiedAdmin = Boolean(resolved && resolved.ok && resolved.roles.includes('admin'));
+        }
+
+        if (isVerifiedAdmin) {
+            const teachers = await prisma.teacher.findMany({
+                where: { is_active: true },
+                orderBy: { name: 'asc' }
+            });
+            return res.json(teachers.map(omitPassword));
+        }
+
+        const publicTeachers = await prisma.teacher.findMany({
             where: { is_active: true },
-            orderBy: { name: 'asc' }
+            orderBy: { name: 'asc' },
+            select: SAFE_TEACHER_PUBLIC_SELECT
         });
-        res.json(teachers);
+        return res.json(publicTeachers);
     } catch (error) {
+        console.error('Fetch Teachers Error:', error.message);
         res.status(500).json({ error: 'Failed to fetch teachers' });
+    }
+};
+
+/**
+ * Pre-flight validation endpoint called by the Admin Dashboard BEFORE creating
+ * a Neon Auth user. Checks required fields, accessible email, Staff ID uniqueness,
+ * and cross-table email uniqueness.
+ */
+exports.validateTeacherCreation = async (req, res) => {
+    try {
+        const { name, staff_id, email, designation, experience } = req.body;
+        const cleanName = typeof name === 'string' ? name.trim() : '';
+        const cleanStaffId = typeof staff_id === 'string' ? staff_id.trim() : '';
+        const cleanDesignation = typeof designation === 'string' ? designation.trim() : '';
+
+        if (!cleanName || !cleanStaffId || !cleanDesignation || experience === undefined || experience === null || String(experience).trim() === '') {
+            return res.status(400).json({ error: 'Name, Staff ID, Designation, Experience, and Email are required.' });
+        }
+
+        const emailCheck = validateAccessibleEmail(email);
+        if (!emailCheck.valid) {
+            return res.status(400).json({ error: emailCheck.error });
+        }
+
+        const existingStaff = await prisma.teacher.findFirst({
+            where: { staff_id: { equals: cleanStaffId, mode: 'insensitive' } },
+            select: { id: true }
+        });
+        if (existingStaff) {
+            return res.status(400).json({ error: 'Staff ID already exists.' });
+        }
+
+        const avail = await checkEmailAvailable(emailCheck.email, { includeNeonAuth: true });
+        if (!avail.available) {
+            return res.status(409).json({ error: avail.error });
+        }
+
+        return res.json({
+            valid: true,
+            staff_id: cleanStaffId,
+            email: emailCheck.email
+        });
+    } catch (error) {
+        console.error('Validate Teacher Error:', error.message);
+        return res.status(500).json({ error: 'Failed to validate teacher registration details.' });
     }
 };
 
 exports.createTeacher = async (req, res) => {
     try {
-        const { name, subject, medium, designation, experience, category, staff_id, email, password, phone } = req.body;
+        const { name, subject, medium, designation, experience, category, staff_id, email, phone, auth_user_id } = req.body;
         const cleanName = typeof name === 'string' ? name.trim() : '';
         const cleanSubject = typeof subject === 'string' && subject.trim() ? subject.trim() : 'General';
         const cleanMedium = typeof medium === 'string' && medium.trim() ? medium.trim() : 'Both';
         const cleanStaffId = typeof staff_id === 'string' ? staff_id.trim() : '';
-        const cleanEmail = typeof email === 'string' && email.trim() ? email.trim().toLowerCase() : null;
-        const cleanPassword = typeof password === 'string' && password.trim() ? password.trim() : cleanStaffId;
 
-        if (!cleanName || !cleanStaffId || !cleanEmail) {
-            return res.status(400).json({ error: 'Name, staff ID, and email are required' });
+        if (!cleanName || !cleanStaffId) {
+            return res.status(400).json({ error: 'Name, Staff ID, and Email are required.' });
         }
 
-        const existingStaff = await prisma.teacher.findUnique({
-            where: { staff_id: cleanStaffId }
+        const emailCheck = validateAccessibleEmail(email);
+        if (!emailCheck.valid) {
+            return res.status(400).json({ error: emailCheck.error });
+        }
+
+        if (!auth_user_id) {
+            return res.status(400).json({ error: 'Neon Auth auth_user_id is required to create a teacher account.' });
+        }
+
+        const existingStaff = await prisma.teacher.findFirst({
+            where: { staff_id: { equals: cleanStaffId, mode: 'insensitive' } },
+            select: { id: true }
         });
         if (existingStaff) {
-            return res.status(400).json({ error: 'Staff ID already exists' });
+            return res.status(400).json({ error: 'Staff ID already exists.' });
         }
 
-        const existingEmail = await prisma.teacher.findUnique({
-            where: { email: cleanEmail }
-        });
-        if (existingEmail) {
-            return res.status(400).json({ error: 'Teacher email already exists' });
+        const avail = await checkEmailAvailable(emailCheck.email, { includeNeonAuth: false });
+        if (!avail.available) {
+            return res.status(409).json({ error: avail.error });
         }
 
-
+        const linkCheck = await verifyNeonAuthUserForLink(auth_user_id, emailCheck.email);
+        if (!linkCheck.ok) {
+            return res.status(linkCheck.status).json({ error: linkCheck.error });
+        }
 
         let photo_url = null;
         if (req.file) {
-            const fs = require('fs');
-            const path = require('path');
             const uploadsDir = path.join(__dirname, '../uploads');
-            if (!fs.existsSync(uploadsDir)) {
-                fs.mkdirSync(uploadsDir, { recursive: true });
-            }
-            const cleanFileName = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-            fs.writeFileSync(path.join(uploadsDir, cleanFileName), req.file.buffer);
-            photo_url = `/uploads/${cleanFileName}`;
+            photo_url = validateAndSaveImageBuffer(req.file.buffer, uploadsDir);
         }
 
         const teacher = await prisma.teacher.create({
-            data: { 
+            data: {
                 name: cleanName,
                 subject: cleanSubject,
                 medium: cleanMedium,
                 designation: designation || null,
-                experience: experience || null,
+                experience: experience !== undefined && experience !== null ? String(experience) : null,
                 category: category || null,
                 photo_url,
                 staff_id: cleanStaffId,
-                email: cleanEmail,
-                password: cleanPassword,
+                email: emailCheck.email,
+                password: null,
+                auth_user_id: linkCheck.authUserId,
                 phone: phone || null
             }
         });
-        res.status(201).json(teacher);
+        res.status(201).json(omitPassword(teacher));
     } catch (error) {
-        console.error("Create Teacher Error:", error);
-        res.status(500).json({ error: error.message || 'Failed to create teacher' });
+        console.error('Create Teacher Error:', error.message);
+        res.status(error.status === 400 ? 400 : 500).json({
+            error: error.status === 400 ? error.message : 'Failed to create teacher'
+        });
     }
 };
 
 exports.deleteTeacher = async (req, res) => {
     try {
-        const id = parseInt(req.params.id);
+        const id = parseInt(req.params.id, 10);
         const teacher = await prisma.teacher.findUnique({ where: { id } });
         if (!teacher) return res.status(404).json({ error: 'Teacher not found' });
-        
+
         // Hard delete: remove associated records first to avoid foreign key constraints
         await prisma.subjectTeacher.deleteMany({
             where: { teacher_id: id }
         });
-        
+
         const deleted = await prisma.teacher.delete({
             where: { id }
         });
-        res.json({ message: 'Teacher deleted successfully', teacher: deleted });
+        res.json({ message: 'Teacher deleted successfully', teacher: omitPassword(deleted) });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete teacher' });
     }
@@ -100,43 +176,58 @@ exports.deleteTeacher = async (req, res) => {
 
 exports.updateTeacher = async (req, res) => {
     try {
-        const id = parseInt(req.params.id);
+        const id = parseInt(req.params.id, 10);
         const { name, subject, medium, designation, experience, category, staff_id, email, password, phone } = req.body;
-        
+
         const teacher = await prisma.teacher.findUnique({ where: { id } });
         if (!teacher) return res.status(404).json({ error: 'Teacher not found' });
 
         const cleanStaffId = typeof staff_id === 'string' && staff_id.trim() ? staff_id.trim() : teacher.staff_id;
-        const cleanEmail = typeof email === 'string' && email.trim() ? email.trim().toLowerCase() : null;
+        const existingEmail = normalizeEmail(teacher.email);
+        const cleanEmail = normalizeEmail(email);
 
         if (cleanStaffId && cleanStaffId !== teacher.staff_id) {
-            const existingStaff = await prisma.teacher.findUnique({ where: { staff_id: cleanStaffId } });
+            const existingStaff = await prisma.teacher.findFirst({
+                where: {
+                    staff_id: { equals: cleanStaffId, mode: 'insensitive' },
+                    NOT: { id }
+                },
+                select: { id: true }
+            });
             if (existingStaff) {
-                return res.status(400).json({ error: 'Staff ID already exists' });
+                return res.status(400).json({ error: 'Staff ID already exists.' });
             }
         }
 
-        if (cleanEmail && cleanEmail !== teacher.email) {
-            const existingEmail = await prisma.teacher.findUnique({ where: { email: cleanEmail } });
-            if (existingEmail) {
-                return res.status(400).json({ error: 'Teacher email already exists' });
+        if (teacher.auth_user_id) {
+            if (email !== undefined && (!cleanEmail || cleanEmail !== existingEmail)) {
+                return res.status(400).json({
+                    error: 'Cannot change the registered email of a Neon Auth-linked teacher account directly. Changing a registered email requires an authenticated email-update process synced with Neon Auth.'
+                });
             }
-
-
+        } else if (email !== undefined && cleanEmail && cleanEmail !== existingEmail) {
+            const avail = await checkEmailAvailable(cleanEmail, {
+                excludeTeacherId: id,
+                includeNeonAuth: false
+            });
+            if (!avail.available) {
+                return res.status(409).json({ error: avail.error });
+            }
         }
 
         let photo_url = teacher.photo_url;
         if (req.file) {
-            const fs = require('fs');
-            const path = require('path');
             const uploadsDir = path.join(__dirname, '../uploads');
-            if (!fs.existsSync(uploadsDir)) {
-                fs.mkdirSync(uploadsDir, { recursive: true });
-            }
-            const cleanFileName = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-            fs.writeFileSync(path.join(uploadsDir, cleanFileName), req.file.buffer);
-            photo_url = `/uploads/${cleanFileName}`;
+            photo_url = validateAndSaveImageBuffer(req.file.buffer, uploadsDir);
         }
+
+        // Prevent overwriting passwords for Neon-linked accounts
+        const nextPassword = teacher.auth_user_id
+            ? null
+            : (typeof password === 'string' && password.trim() ? password.trim() : teacher.password);
+        const nextEmail = teacher.auth_user_id
+            ? teacher.email
+            : (email !== undefined ? cleanEmail : teacher.email);
 
         const updated = await prisma.teacher.update({
             where: { id },
@@ -149,14 +240,16 @@ exports.updateTeacher = async (req, res) => {
                 category: category !== undefined ? category : teacher.category,
                 photo_url: photo_url,
                 staff_id: staff_id !== undefined ? cleanStaffId : teacher.staff_id,
-                email: email !== undefined ? cleanEmail : teacher.email,
-                password: password !== undefined && password.trim() ? password.trim() : teacher.password,
+                email: nextEmail,
+                password: nextPassword,
                 phone: phone !== undefined ? phone : teacher.phone
             }
         });
-        res.json(updated);
+        res.json(omitPassword(updated));
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to update teacher' });
+        console.error('Update Teacher Error:', error.message);
+        res.status(error.status === 400 ? 400 : 500).json({
+            error: error.status === 400 ? error.message : 'Failed to update teacher'
+        });
     }
 };

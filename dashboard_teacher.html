@@ -939,6 +939,13 @@
 </head>
 
 <body>
+    <!-- Teacher Auth Verification Gate -->
+    <div id="teacherAuthGate" style="position:fixed;inset:0;background:#f0f2f5;z-index:99999;display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;color:#2c3e50;font-weight:600;">
+        <div style="text-align:center;">
+            <i class="fas fa-circle-notch fa-spin" style="font-size:2rem;margin-bottom:12px;"></i>
+            <div>Verifying teacher session...</div>
+        </div>
+    </div>
     <!-- Teacher Overlay -->
     <div class="teacher-overlay" id="teacherOverlay"></div>
 
@@ -950,15 +957,15 @@
                 <h3 style="margin-top:10px; color:white; font-size: 1.1rem; line-height: 1.3;">SBS KARKALA<br><span style="font-size:0.85rem; font-weight:400; opacity: 0.8;">Teacher Panel</span></h3>
             </div>
             <nav class="sidebar-menu">
-                <a href="#attendance-section" class="active" onclick="showSection('attendance')"><i
+                <a href="#attendance-section" class="active" onclick="showSection('attendance', event)"><i
                         class="fas fa-clipboard-check"></i> Attendance</a>
-                <a href="#marks-section" onclick="showSection('marks')"><i class="fas fa-pen-alt"></i> Enter Marks</a>
-                <a href="#history-section" onclick="showSection('history')"><i class="fas fa-history"></i> History</a>
-                <a href="#download-section" onclick="showSection('download')"><i class="fas fa-file-excel"></i> Download
+                <a href="#marks-section" onclick="showSection('marks', event)"><i class="fas fa-pen-alt"></i> Enter Marks</a>
+                <a href="#history-section" onclick="showSection('history', event)"><i class="fas fa-history"></i> History</a>
+                <a href="#download-section" onclick="showSection('download', event)"><i class="fas fa-file-excel"></i> Download
                     Reports</a>
             </nav>
             <div style="margin-top: auto; padding: 20px;">
-                <a href="#" onclick="sessionStorage.clear(); window.location.href='login.html'; return false;"
+                <a href="#" onclick="logoutTeacher(); return false;"
                     style="color: #ea5455; display: flex; align-items: center; gap: 8px; text-decoration: none;">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </a>
@@ -973,8 +980,8 @@
                         <i class="fas fa-bars"></i>
                     </button>
                     <div>
-                        <h2>Welcome, Teacher</h2>
-                        <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 4px;">Mark daily attendance & record
+                        <h2 id="teacherHeaderName">Welcome, Teacher</h2>
+                        <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 4px;">Mark daily attendance &amp; record
                             topics</p>
                     </div>
                 </div>
@@ -1196,7 +1203,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label><i class="fas fa-chalkboard"></i> Class</label>
-                                    <select id="dlMarksClass" disabled>
+                                    <select id="dlMarksClass" disabled onchange="onDlMarksClassChange()">
                                         <option value="">-- Select Class --</option>
                                     </select>
                                 </div>
@@ -1288,30 +1295,36 @@
         <span id="toastMessage">Done!</span>
     </div>
 
-    <script>
+    <script type="module">
+        import { getApiBase, verifyCookieBackedSession, authFetch, downloadAuthenticatedFile } from './neon-auth-client.js';
+
         // ===================== INITIALIZATION =====================
-        const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-            ? `http://${window.location.hostname}:5000/api`
-            : 'https://school-webpage-1uky.onrender.com/api';
+        const API_BASE = getApiBase();
         const today = new Date();
         document.getElementById('todayDate').textContent = today.toLocaleDateString('en-IN', {
             weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
         });
 
         // Cache objects
+        let verifiedTeacherProfile = null;
         let allMediums = [];
         let classesByMedium = {}; // medium_id -> classes array
         let relationalSubjects = {}; // class_id -> subjects array
         let activeStudentList = [];
 
-        // Dynamic API fetchers
+        // Authenticated API fetchers
         async function apiFetch(endpoint) {
             try {
-                const res = await fetch(`${API_BASE}${endpoint}`);
+                const res = await authFetch(`${API_BASE}${endpoint}`, { authMode: 'cookie' });
+                if (res.status === 401 || res.status === 403) {
+                    sessionStorage.clear();
+                    window.location.replace('login.html?reason=auth_required');
+                    return null;
+                }
                 if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                 return await res.json();
             } catch (e) {
-                console.error(`API Fetch failed for ${endpoint}:`, e);
+                console.error(`API Fetch failed for ${endpoint}:`, e.message);
                 showToast(`Server Connection Failure: ${e.message}`, 'error');
                 return null;
             }
@@ -1319,33 +1332,71 @@
 
         async function apiPost(endpoint, data) {
             try {
-                const res = await fetch(`${API_BASE}${endpoint}`, {
+                const res = await authFetch(`${API_BASE}${endpoint}`, {
                     method: 'POST',
+                    authMode: 'cookie',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
+                if (res.status === 401 || res.status === 403) {
+                    sessionStorage.clear();
+                    window.location.replace('login.html?reason=auth_required');
+                    return null;
+                }
                 const result = await res.json();
                 if (!res.ok) throw new Error(result.error || `Server returned error ${res.status}`);
                 return result;
             } catch (e) {
-                console.error(`API Post failed for ${endpoint}:`, e);
+                console.error(`API Post failed for ${endpoint}:`, e.message);
                 showToast(`Failed: ${e.message}`, 'error');
                 return null;
             }
         }
 
-        // ===================== ON LOAD DROPDOWNS POPULATION =====================
+        // ===================== AUTH GUARD & INITIALIZATION =====================
         document.addEventListener('DOMContentLoaded', async () => {
-            // Fetch mediums
-            const mediums = await apiFetch('/mediums');
-            if (mediums) {
+            const session = await verifyCookieBackedSession({ expectedRole: 'teacher' });
+            if (!session.authenticated) {
+                sessionStorage.clear();
+                window.location.replace('login.html?reason=auth_required');
+                return;
+            }
+            if (!session.authorized || !session.profile) {
+                if (session.role === 'admin') {
+                    window.location.replace('dashboard_admin.html');
+                    return;
+                }
+                if (session.role === 'student') {
+                    window.location.replace('dashboard_student.html');
+                    return;
+                }
+                sessionStorage.clear();
+                window.location.replace('login.html?reason=teacher_only');
+                return;
+            }
+
+            verifiedTeacherProfile = session.profile;
+            const headerName = document.getElementById('teacherHeaderName');
+            if (headerName) {
+                headerName.textContent = `Welcome, ${verifiedTeacherProfile.name || 'Teacher'}`;
+            }
+
+            sessionStorage.setItem('role', 'teacher');
+            sessionStorage.setItem('teacher_name', verifiedTeacherProfile.name || '');
+            sessionStorage.setItem('staff_id', verifiedTeacherProfile.staff_id || '');
+
+            const gate = document.getElementById('teacherAuthGate');
+            if (gate) gate.remove();
+
+            // Load protected dropdown metadata AFTER authentication succeeds
+            const mediums = await apiFetch('/mediums?is_active=true');
+            if (Array.isArray(mediums) && mediums.length > 0) {
                 allMediums = mediums;
                 populateMediumDropdowns();
             }
 
-            // Fetch exams
-            const exams = await apiFetch('/exams');
-            if (exams && exams.length > 0) {
+            const exams = await apiFetch('/exams?is_active=true');
+            if (Array.isArray(exams) && exams.length > 0) {
                 populateExamDropdowns(exams);
             }
 
@@ -1383,17 +1434,23 @@
         });
 
         function populateMediumDropdowns() {
+            if (!Array.isArray(allMediums) || allMediums.length === 0) return;
             const dropdownIds = ['selectMedium', 'marksMedium', 'dlMarksMedium', 'dlAttMedium'];
             dropdownIds.forEach(id => {
                 const select = document.getElementById(id);
                 if (select) {
+                    const prevVal = select.value;
                     select.innerHTML = '<option value="">-- Select Medium --</option>';
                     allMediums.forEach(med => {
                         // Map internal name to display CBSE for English Medium to match existing layout
                         const displayName = med.name === 'English' ? 'CBSE (English Medium)' : `${med.name} Medium`;
                         const optVal = med.name === 'English' ? 'CBSE' : med.name;
-                        select.innerHTML += `<option value="${optVal}">${displayName}</option>`;
+                        const opt = document.createElement('option');
+                        opt.value = optVal;
+                        opt.textContent = displayName;
+                        select.appendChild(opt);
                     });
+                    if (prevVal) select.value = prevVal;
                 }
             });
         }
@@ -1412,7 +1469,7 @@
         }
 
         // ===================== SECTION NAVIGATION =====================
-        function showSection(section) {
+        function showSection(section, evt) {
             document.getElementById('attendance-section').style.display = section === 'attendance' ? 'block' : 'none';
             document.getElementById('marks-section').style.display = section === 'marks' ? 'block' : 'none';
             document.getElementById('history-section').style.display = section === 'history' ? 'block' : 'none';
@@ -1420,7 +1477,8 @@
 
             // Update sidebar active
             document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+            const triggerEl = (evt && evt.currentTarget) || document.querySelector(`.sidebar-menu a[href="#${section}-section"]`);
+            if (triggerEl) triggerEl.classList.add('active');
 
             if (section === 'history') loadHistory();
         }
@@ -1458,6 +1516,13 @@
 
         // ===================== MEDIUM / CLASS / SUBJECT DYNAMIC LOADS =====================
         async function fetchClassesForMedium(mediumName) {
+            if (allMediums.length === 0) {
+                const fetchedMediums = await apiFetch('/mediums?is_active=true');
+                if (Array.isArray(fetchedMediums) && fetchedMediums.length > 0) {
+                    allMediums = fetchedMediums;
+                    populateMediumDropdowns();
+                }
+            }
             const normalized = mediumName === 'CBSE' ? 'English' : mediumName;
             const medRecord = allMediums.find(m => m.name === normalized || m.name.toLowerCase() === normalized.toLowerCase());
             if (!medRecord) return [];
@@ -1465,7 +1530,8 @@
             if (classesByMedium[medRecord.id]) return classesByMedium[medRecord.id];
             
             const classes = await apiFetch(`/classes?medium_id=${medRecord.id}&is_active=true`);
-            if (classes) {
+            if (Array.isArray(classes)) {
+                classes.sort((a, b) => parseInt(String(a.name || ''), 10) - parseInt(String(b.name || ''), 10));
                 classesByMedium[medRecord.id] = classes;
                 return classes;
             }
@@ -1476,7 +1542,8 @@
             if (relationalSubjects[classId]) return relationalSubjects[classId];
 
             const subjects = await apiFetch(`/subjects/relational?class_id=${classId}&is_active=true`);
-            if (subjects) {
+            if (Array.isArray(subjects)) {
+                subjects.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
                 relationalSubjects[classId] = subjects;
                 return subjects;
             }
@@ -1603,9 +1670,28 @@
             if (mediumName) {
                 const classes = await fetchClassesForMedium(mediumName);
                 classes.forEach(c => {
-                    classSelect.innerHTML += `<option value="${c.name}">Class ${c.name}</option>`;
+                    classSelect.innerHTML += `<option value="${c.name}" data-id="${c.id}">Class ${c.name}</option>`;
                 });
                 classSelect.disabled = false;
+            }
+        }
+
+        async function onDlMarksClassChange() {
+            const clsSelect = document.getElementById('dlMarksClass');
+            const selectedOpt = clsSelect.options[clsSelect.selectedIndex];
+            const classId = selectedOpt ? selectedOpt.getAttribute('data-id') : null;
+            const subjectSelect = document.getElementById('dlMarksSubject');
+            if (!classId || !subjectSelect) return;
+
+            const subjects = await fetchSubjectsForClass(classId);
+            if (subjects && subjects.length > 0) {
+                subjectSelect.innerHTML = '';
+                subjects.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.name;
+                    opt.textContent = s.name;
+                    subjectSelect.appendChild(opt);
+                });
             }
         }
 
@@ -1793,7 +1879,7 @@
                 medium: queryMedium,
                 period: period,
                 subject: subject,
-                teacher_name: 'Audit Teacher',
+                teacher_name: (verifiedTeacherProfile && verifiedTeacherProfile.name) || 'Teacher',
                 date: new Date().toISOString(),
                 attendance_list
             };
@@ -1938,8 +2024,8 @@
             });
         }
 
-        // ===================== EXCEL EXPORTS =====================
-        window.downloadMarksExcel = function() {
+        // ===================== EXCEL EXPORTS (AUTHENTICATED BLOB) =====================
+        async function downloadMarksExcel() {
             const medium = document.getElementById('dlMarksMedium').value;
             const cls = document.getElementById('dlMarksClass').value;
             const exam = document.getElementById('dlMarksExam').value;
@@ -1952,13 +2038,19 @@
 
             const queryMedium = medium;
             const queryClass = String(cls).replace(/[^0-9]/g, '');
-            const downloadUrl = `${API_BASE}/export/marks?class=${encodeURIComponent(queryClass)}&medium=${encodeURIComponent(queryMedium)}&exam_type=${encodeURIComponent(exam)}&subject=${encodeURIComponent(subject)}`;
-            
-            showToast('Generating marks excel report...', 'success');
-            window.location.href = downloadUrl;
-        };
+            const downloadPath = `/export/marks?class=${encodeURIComponent(queryClass)}&medium=${encodeURIComponent(queryMedium)}&exam_type=${encodeURIComponent(exam)}&subject=${encodeURIComponent(subject)}`;
+            const fallbackName = `Marks_${queryClass}_${queryMedium}_${exam}_${subject}.xlsx`;
 
-        window.downloadAttendanceExcel = function() {
+            showToast('Generating marks excel report...', 'success');
+            try {
+                await downloadAuthenticatedFile(downloadPath, fallbackName, { authMode: 'cookie' });
+            } catch (err) {
+                console.error('Marks export failed:', err.message);
+                showToast(err.message || 'Failed to download marks report', 'error');
+            }
+        }
+
+        async function downloadAttendanceExcel() {
             const medium = document.getElementById('dlAttMedium').value;
             const cls = document.getElementById('dlAttClass').value;
             const month = document.getElementById('dlAttMonth').value;
@@ -1971,11 +2063,32 @@
 
             const queryMedium = medium;
             const queryClass = String(cls).replace(/[^0-9]/g, '');
-            const downloadUrl = `${API_BASE}/export/attendance?class=${encodeURIComponent(queryClass)}&medium=${encodeURIComponent(queryMedium)}&month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}`;
-            
+            const downloadPath = `/export/attendance?class=${encodeURIComponent(queryClass)}&medium=${encodeURIComponent(queryMedium)}&month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}`;
+            const fallbackName = `Register_Attendance_${queryClass}_${queryMedium}.xlsx`;
+
             showToast('Generating attendance register report...', 'success');
-            window.location.href = downloadUrl;
-        };
+            try {
+                await downloadAuthenticatedFile(downloadPath, fallbackName, { authMode: 'cookie' });
+            } catch (err) {
+                console.error('Attendance export failed:', err.message);
+                showToast(err.message || 'Failed to download attendance report', 'error');
+            }
+        }
+
+        // ===================== LOGOUT =====================
+        async function logoutTeacher() {
+            try {
+                await fetch(`${API_BASE}/auth/logout`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+            } catch (_) {
+                // Ignore network failure during logout cleanup
+            } finally {
+                sessionStorage.clear();
+                window.location.href = 'login.html';
+            }
+        }
 
         // ===================== TOAST =====================
         function showToast(message, type = 'success') {
@@ -1988,6 +2101,30 @@
                 toast.classList.remove('show');
             }, 3000);
         }
+
+        Object.assign(window, {
+            showSection,
+            onMediumChange,
+            onClassChange,
+            onPeriodChange,
+            onSubjectChange,
+            onTopicInput,
+            loadStudentList,
+            markAllPresent,
+            saveAttendance,
+            toggleAttendance,
+            onMarksMediumChange,
+            onMarksClassChange,
+            checkMarksReady,
+            loadMarksStudents,
+            saveMarks,
+            onDlMarksMediumChange,
+            onDlMarksClassChange,
+            downloadMarksExcel,
+            onDlAttMediumChange,
+            downloadAttendanceExcel,
+            logoutTeacher
+        });
     </script>
 </body>
 

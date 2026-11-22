@@ -1,4 +1,5 @@
 const prisma = require('../prismaClient');
+const { SAFE_TEACHER_ASSIGNMENT_SELECT } = require('../utils/accountProvisioning');
 
 exports.getAllSubjectTeachers = async (req, res) => {
     try {
@@ -7,7 +8,9 @@ exports.getAllSubjectTeachers = async (req, res) => {
         if (subject_id) {
             where.subject_id = parseInt(subject_id);
         }
-        if (teacher_id) {
+        if (req.auth && req.auth.role === 'teacher' && req.auth.teacher) {
+            where.teacher_id = req.auth.teacher.id;
+        } else if (teacher_id) {
             where.teacher_id = parseInt(teacher_id);
         }
         if (is_active !== undefined) {
@@ -23,7 +26,9 @@ exports.getAllSubjectTeachers = async (req, res) => {
                         medium: true
                     }
                 },
-                teacher: true
+                teacher: {
+                    select: SAFE_TEACHER_ASSIGNMENT_SELECT
+                }
             }
         });
         res.json(assignments);
@@ -75,7 +80,9 @@ exports.assignSubjectTeacher = async (req, res) => {
             },
             include: {
                 subject: true,
-                teacher: true
+                teacher: {
+                    select: SAFE_TEACHER_ASSIGNMENT_SELECT
+                }
             }
         });
         res.status(201).json(assignment);

@@ -1,5 +1,23 @@
 const prisma = require('../prismaClient');
 
+async function getTeacherAssignedSubjectIds(req) {
+    if (!req.auth || req.auth.role !== 'teacher' || !req.auth.teacher) {
+        return null;
+    }
+    const assignments = await prisma.subjectTeacher.findMany({
+        where: {
+            teacher_id: req.auth.teacher.id,
+            is_active: true,
+            subject: { is_active: true }
+        },
+        select: { subject_id: true }
+    });
+    if (assignments.length === 0) {
+        return null;
+    }
+    return assignments.map((a) => a.subject_id);
+}
+
 // ==================== LEGACY ENDPOINTS ====================
 
 exports.getSubjectsByClass = async (req, res) => {
@@ -21,12 +39,19 @@ exports.getSubjectsByClass = async (req, res) => {
         });
         if (!cls) return res.json([]);
 
+        const assignedSubjectIds = await getTeacherAssignedSubjectIds(req);
+        const where = {
+            class_id: cls.id,
+            medium_id: med.id,
+            is_active: true
+        };
+        if (assignedSubjectIds !== null) {
+            where.id = { in: assignedSubjectIds };
+        }
+
         const subjects = await prisma.subject.findMany({
-            where: { 
-                class_id: cls.id,
-                medium_id: med.id,
-                is_active: true
-            }
+            where,
+            orderBy: { name: 'asc' }
         });
         
         // Map to legacy format
@@ -74,7 +99,14 @@ exports.addSubjectToClass = async (req, res) => {
         });
 
         if (existing) {
-            return res.status(400).json({ error: 'This subject is already added to this class' });
+            if (existing.is_active) {
+                return res.status(400).json({ error: 'This subject is already added to this class' });
+            }
+            const reactivated = await prisma.subject.update({
+                where: { id: existing.id },
+                data: { is_active: true }
+            });
+            return res.status(201).json(reactivated);
         }
 
         const newSubject = await prisma.subject.create({
@@ -119,8 +151,14 @@ exports.getAllSubjects = async (req, res) => {
             where.is_active = is_active === 'true';
         }
 
+        const assignedSubjectIds = await getTeacherAssignedSubjectIds(req);
+        if (assignedSubjectIds !== null) {
+            where.id = { in: assignedSubjectIds };
+        }
+
         const subjects = await prisma.subject.findMany({
             where,
+            orderBy: { name: 'asc' },
             include: {
                 class: true,
                 medium: true
@@ -168,7 +206,18 @@ exports.createRelationalSubject = async (req, res) => {
             }
         });
         if (existing) {
-            return res.status(400).json({ error: 'Subject already exists for this class and medium' });
+            if (existing.is_active) {
+                return res.status(400).json({ error: 'Subject already exists for this class and medium' });
+            }
+            const reactivated = await prisma.subject.update({
+                where: { id: existing.id },
+                data: { is_active: true },
+                include: {
+                    class: true,
+                    medium: true
+                }
+            });
+            return res.status(201).json(reactivated);
         }
 
         const subject = await prisma.subject.create({

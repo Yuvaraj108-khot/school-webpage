@@ -1,5 +1,24 @@
+const path = require('path');
 const prisma = require('../prismaClient');
-const supabase = require('../supabaseClient');
+const { validateAndSaveImageBuffer } = require('../utils/imageUpload');
+
+function sanitizeSafeImageUrl(urlValue) {
+    if (typeof urlValue !== 'string') return null;
+    const trimmed = urlValue.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('/uploads/') || trimmed.startsWith('images/')) {
+        return trimmed;
+    }
+    try {
+        const parsed = new URL(trimmed);
+        if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+            return trimmed;
+        }
+    } catch (_) {
+        return null;
+    }
+    return null;
+}
 
 exports.getGallery = async (req, res) => {
     try {
@@ -8,6 +27,7 @@ exports.getGallery = async (req, res) => {
         });
         res.json(gallery);
     } catch (error) {
+        console.error('Get Gallery Error:', error.message);
         res.status(500).json({ error: 'Failed to fetch gallery items' });
     }
 };
@@ -15,24 +35,22 @@ exports.getGallery = async (req, res) => {
 exports.uploadGalleryItem = async (req, res) => {
     try {
         const { category, description, image_url: body_url } = req.body;
-        let publicUrl = body_url;
+        let publicUrl = null;
 
         if (req.file) {
-            const fs = require('fs');
-            const path = require('path');
             const uploadsDir = path.join(__dirname, '../uploads');
-            if (!fs.existsSync(uploadsDir)) {
-                fs.mkdirSync(uploadsDir, { recursive: true });
+            publicUrl = validateAndSaveImageBuffer(req.file.buffer, uploadsDir);
+        } else if (body_url) {
+            publicUrl = sanitizeSafeImageUrl(body_url);
+            if (!publicUrl) {
+                return res.status(400).json({ error: 'Invalid image URL protocol.' });
             }
-            const cleanFileName = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-            fs.writeFileSync(path.join(uploadsDir, cleanFileName), req.file.buffer);
-            publicUrl = `/uploads/${cleanFileName}`;
         }
 
         if (!publicUrl) {
             return res.status(400).json({ error: 'No image file or URL provided' });
         }
-        
+
         const galleryItem = await prisma.gallery.create({
             data: {
                 image_url: publicUrl,
@@ -43,20 +61,23 @@ exports.uploadGalleryItem = async (req, res) => {
         });
         res.status(201).json(galleryItem);
     } catch (error) {
-        console.error("Supabase Upload Error:", error);
-        res.status(500).json({ error: 'Failed to upload gallery item to Supabase' });
+        console.error('Gallery Upload Error:', error.message);
+        res.status(error.status === 400 ? 400 : 500).json({
+            error: error.status === 400 ? error.message : 'Failed to upload gallery item'
+        });
     }
 };
 
 exports.deleteGalleryItem = async (req, res) => {
     try {
-        const id = parseInt(req.params.id);
+        const id = parseInt(req.params.id, 10);
         const galleryItem = await prisma.gallery.findUnique({ where: { id } });
         if (!galleryItem) return res.status(404).json({ error: 'Gallery item not found' });
-        
+
         await prisma.gallery.delete({ where: { id } });
         res.json({ message: 'Gallery item deleted successfully' });
     } catch (error) {
+        console.error('Delete Gallery Error:', error.message);
         res.status(500).json({ error: 'Failed to delete gallery item' });
     }
 };

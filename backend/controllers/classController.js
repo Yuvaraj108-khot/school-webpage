@@ -11,9 +11,42 @@ exports.getAllClasses = async (req, res) => {
             where.is_active = is_active === 'true';
         }
 
+        if (req.auth && req.auth.role === 'teacher' && req.auth.teacher) {
+            const assignments = await prisma.subjectTeacher.findMany({
+                where: {
+                    teacher_id: req.auth.teacher.id,
+                    is_active: true,
+                    subject: { is_active: true }
+                },
+                include: {
+                    subject: {
+                        select: { class_id: true }
+                    }
+                }
+            });
+            if (assignments.length > 0) {
+                const assignedClassIds = [...new Set(
+                    assignments
+                        .map((a) => a.subject && a.subject.class_id)
+                        .filter((cid) => Number.isInteger(cid))
+                )];
+                if (assignedClassIds.length > 0) {
+                    where.id = { in: assignedClassIds };
+                }
+            }
+        }
+
         const classes = await prisma.schoolClass.findMany({
             where,
             include: { medium: true }
+        });
+        classes.sort((a, b) => {
+            const numA = parseInt(String(a.name || '').replace(/\D/g, ''), 10);
+            const numB = parseInt(String(b.name || '').replace(/\D/g, ''), 10);
+            if (!Number.isNaN(numA) && !Number.isNaN(numB) && numA !== numB) {
+                return numA - numB;
+            }
+            return String(a.name || '').localeCompare(String(b.name || ''));
         });
         res.json(classes);
     } catch (error) {

@@ -19,6 +19,7 @@ model Student {
   roll_no      String?
   email        String? @unique
   password     String?
+  auth_user_id String? @unique @db.Uuid
 
   // Additive fields & relations
   class_id      Int?
@@ -42,6 +43,7 @@ model Teacher {
   email       String?  @unique
   phone       String?
   password    String?
+  auth_user_id String? @unique @db.Uuid
   name        String
   subject     String
   medium      String

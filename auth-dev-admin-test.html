@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 4A Local Admin Test | SBS Karkala (auth-dev)</title>
+    <link rel="icon" href="images/logo.png" type="image/png">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #1f2937;
+            padding: 24px 16px;
+        }
+        .container { max-width: 920px; margin: 0 auto; }
+        .card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 20px 24px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.24);
+            margin-bottom: 18px;
+        }
+        .top-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        h1 { margin: 0 0 4px; font-size: 1.3rem; color: #0f172a; }
+        h2 { margin: 0 0 8px; font-size: 1.05rem; color: #0f172a; }
+        .subtitle { margin: 0; font-size: 0.86rem; color: #64748b; }
+        .badge {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            font-weight: 700;
+            font-size: 0.78rem;
+            padding: 5px 12px;
+            border-radius: 999px;
+            border: 1px solid #fde68a;
+        }
+        .status-box {
+            margin-top: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.86rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            white-space: pre-wrap;
+        }
+        .status-box.ok { background: #dcfce7; color: #166534; border-color: #86efac; }
+        .status-box.err { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+        .status-box.info { background: #e0f2fe; color: #075985; border-color: #7dd3fc; }
+        label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #374151;
+            margin: 10px 0 4px;
+        }
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.92rem;
+        }
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: #1d4ed8;
+            color: #fff;
+        }
+        button:hover { opacity: 0.92; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button.primary { background: #15803d; }
+        button.secondary { background: #475569; }
+        button.danger { background: #b91c1c; }
+        pre {
+            margin: 10px 0 0;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            overflow-x: auto;
+            max-height: 360px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="top-row">
+                <div>
+                    <h1>Phase 4A: Local-Only Neon Admin Verification</h1>
+                    <p class="subtitle">Tests real admin JWT authorization and <code>admin.createUser()</code> + cleanup on <code>auth-dev</code>. Never stores or prints passwords or JWTs.</p>
+                </div>
+                <span class="badge">Local-Only | auth-dev</span>
+            </div>
+            <div id="sessionBanner" class="status-box info">Checking environment &amp; current Neon session...</div>
+        </div>
+
+        <div class="card" id="authCard">
+            <h2>1. Administrator Browser Session (Optional if already signed in)</h2>
+            <form id="adminSignInForm">
+                <label for="adminEmail">Administrator Email</label>
+                <input id="adminEmail" type="email" placeholder="srimadbhuvanendraeducationalin@gmail.com" autocomplete="email" required>
+
+                <label for="adminPassword">Administrator Password</label>
+                <input id="adminPassword" type="password" placeholder="Enter administrator password" autocomplete="current-password" required>
+
+                <div class="btn-row">
+                    <button type="submit" id="btnSignIn">Sign In as Admin</button>
+                    <button type="button" id="btnRefreshSession" class="secondary">Refresh Session Status</button>
+                    <button type="button" id="btnSignOut" class="danger">Sign Out</button>
+                </div>
+            </form>
+            <div id="authMsg" class="status-box" style="display:none;"></div>
+        </div>
+
+        <div class="card" id="checksCard">
+            <h2>2. Phase 4A Security &amp; Admin Provisioning Checks</h2>
+            <p class="subtitle">Run the complete suite or individual checks using your active Neon Admin session.</p>
+
+            <div class="btn-row">
+                <button type="button" id="btnRunAll" class="primary">Run All Phase 4A Admin Checks</button>
+                <button type="button" id="btnCheckMe" class="secondary">1. Test GET /api/auth/me</button>
+                <button type="button" id="btnCheckAdmin" class="secondary">2. Test GET /api/dev/admin-check</button>
+                <button type="button" id="btnTestCreateRemove">3. Test admin.createUser() + removeUser()</button>
+                <button type="button" id="btnCheckPublicSignup" class="secondary">4. Verify Public Sign-Up Rejected</button>
+            </div>
+
+            <div id="checkSummary" class="status-box" style="display:none;"></div>
+            <pre id="outputLog">Ready.</pre>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initNeonAuth, getInMemoryToken, fetchAuthMe, verifyAdminSession, signOutNeonAuth, getApiBase } from './neon-auth-client.js';
+
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const sessionBanner = document.getElementById('sessionBanner');
+        const authMsg = document.getElementById('authMsg');
+        const checkSummary = document.getElementById('checkSummary');
+        const outputLog = document.getElementById('outputLog');
+
+        function setBox(el, text, kind = 'info') {
+            el.textContent = text;
+            el.className = `status-box ${kind}`;
+            el.style.display = 'block';
+        }
+
+        function writeLog(title, payload) {
+            outputLog.textContent = `[${new Date().toLocaleTimeString()}] ${title}\n` + JSON.stringify(payload, null, 2);
+        }
+
+        function setAllButtonsDisabled(disabled) {
+            document.querySelectorAll('button').forEach((b) => { b.disabled = disabled; });
+        }
+
+        function generateRandomTempPassword(length = 20) {
+            const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
+            const bytes = new Uint32Array(length);
+            window.crypto.getRandomValues(bytes);
+            let out = '';
+            for (let i = 0; i < length; i++) {
+                out += charset[bytes[i] % charset.length];
+            }
+            return out + 'Aa1!';
+        }
+
+        if (!isLocal) {
+            setBox(sessionBanner, 'Blocked: auth-dev-admin-test.html is restricted strictly to localhost / 127.0.0.1.', 'err');
+            setAllButtonsDisabled(true);
+            throw new Error('Local-only verification page blocked on non-local host.');
+        }
+
+        async function refreshSessionBanner() {
+            const status = await verifyAdminSession();
+            const baseLine = status.authBaseUrl ? ` | Auth URL: ${status.authBaseUrl}` : '';
+            let browserUserId = null;
+            if (status.authClient) {
+                const s = await status.authClient.getSession().catch(() => null);
+                browserUserId = s?.data?.user?.id || null;
+            }
+            if (status.isAdmin) {
+                const email = status.profile?.email || '';
+                const name = status.profile?.name || 'Administrator';
+                setBox(sessionBanner, `Active Neon Admin session confirmed on auth-dev: ${name} (${email}) | User ID: ${status.userId}${baseLine}`, 'ok');
+            } else if (status.authenticated) {
+                setBox(sessionBanner, `Signed in as non-admin (${status.role}) | User ID: ${status.userId || browserUserId}${baseLine}. Sign out and sign in with an Administrator account.`, 'err');
+            } else {
+                const extra = browserUserId ? ` | Browser session User ID: ${browserUserId}` : '';
+                setBox(sessionBanner, `No active administrator session (${status.reason || 'signed out'})${extra}${baseLine}. Sign in below.`, 'info');
+            }
+            return status;
+        }
+
+        await refreshSessionBanner();
+
+        document.getElementById('btnRefreshSession').addEventListener('click', refreshSessionBanner);
+
+        document.getElementById('adminSignInForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            authMsg.style.display = 'none';
+            const email = document.getElementById('adminEmail').value.trim();
+            const password = document.getElementById('adminPassword').value;
+            const btn = document.getElementById('btnSignIn');
+            btn.disabled = true;
+            try {
+                const { authClient, authBaseUrl } = await initNeonAuth();
+                const res = await authClient.signIn.email({ email, password });
+                document.getElementById('adminPassword').value = '';
+                if (res && res.error) {
+                    setBox(authMsg, `Sign in failed: ${res.error.message || res.error.code}`, 'err');
+                    return;
+                }
+                const token = await getInMemoryToken(authClient, authBaseUrl);
+                if (!token) {
+                    setBox(authMsg, 'Sign in succeeded, but JWT could not be retrieved in memory.', 'err');
+                    return;
+                }
+                const me = await fetchAuthMe(token);
+                if (!me.ok) {
+                    setBox(authMsg, `Backend verification error (HTTP ${me.status}): ${(me.data && me.data.error) || 'Failed to verify session'}. Please click Refresh Session Status to retry.`, 'err');
+                    await refreshSessionBanner();
+                    return;
+                }
+                if (me.data?.role !== 'admin') {
+                    await authClient.signOut().catch(() => {});
+                    setBox(authMsg, `Rejected: Account (${me.data?.userId}) has role "${me.data?.role}", not "admin".`, 'err');
+                    await refreshSessionBanner();
+                    return;
+                }
+                setBox(authMsg, `Signed in as Neon Admin (${me.data.profile?.email}).`, 'ok');
+                await refreshSessionBanner();
+            } catch (err) {
+                setBox(authMsg, `Error: ${err.message}`, 'err');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('btnSignOut').addEventListener('click', async () => {
+            await signOutNeonAuth();
+            setBox(authMsg, 'Signed out of Neon Auth.', 'info');
+            await refreshSessionBanner();
+        });
+
+        async function runCheckMe() {
+            const { authClient, authBaseUrl } = await initNeonAuth();
+            const token = await getInMemoryToken(authClient, authBaseUrl);
+            if (!token) throw new Error('No active admin session. Please sign in first.');
+            const me = await fetchAuthMe(token);
+            const passed = me.status === 200 && me.data?.authenticated === true && me.data?.role === 'admin';
+            return { passed, httpStatus: me.status, response: me.data };
+        }
+
+        async function runCheckAdminEndpoint() {
+            const { authClient, authBaseUrl } = await initNeonAuth();
+            const token = await getInMemoryToken(authClient, authBaseUrl);
+            if (!token) throw new Error('No active admin session. Please sign in first.');
+            const resp = await fetch(`${getApiBase()}/dev/admin-check`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await resp.json().catch(() => ({}));
+            const passed = resp.status === 200 && data?.authorized === true && data?.role === 'admin';
+            return { passed, httpStatus: resp.status, response: data };
+        }
+
+        async function runTestCreateAndRemoveUser() {
+            const { authClient } = await initNeonAuth();
+            const testEmail = `phase4a_disposable_${Date.now()}@example.com`;
+            const tempPassword = generateRandomTempPassword(20);
+
+            let createdUser = null;
+            let createResult = null;
+            let removeResult = null;
+            let orphanCheckResult = null;
+
+            try {
+                let createResp;
+                try {
+                    createResp = await authClient.admin.createUser({
+                        email: testEmail,
+                        password: tempPassword,
+                        name: 'Phase 4A Disposable Test User',
+                        role: 'user'
+                    });
+                } catch (err) {
+                    return {
+                        passed: false,
+                        step: 'admin.createUser',
+                        error: {
+                            status: err?.status || null,
+                            code: err?.error?.code || err?.code || null,
+                            message: err?.message || String(err)
+                        }
+                    };
+                }
+
+                if (createResp?.error) {
+                    return {
+                        passed: false,
+                        step: 'admin.createUser',
+                        error: createResp.error
+                    };
+                }
+
+                createdUser = createResp?.data?.user || null;
+                createResult = {
+                    created: Boolean(createdUser && createdUser.id),
+                    userId: createdUser?.id || null,
+                    email: createdUser?.email || null,
+                    role: createdUser?.role || null
+                };
+            } finally {
+                if (createdUser && createdUser.id) {
+                    try {
+                        const rmResp = await authClient.admin.removeUser({ userId: createdUser.id });
+                        removeResult = {
+                            attempted: true,
+                            error: rmResp?.error || null,
+                            success: Boolean(rmResp?.data?.success && !rmResp?.error)
+                        };
+                    } catch (rmErr) {
+                        removeResult = {
+                            attempted: true,
+                            error: {
+                                status: rmErr?.status || null,
+                                code: rmErr?.error?.code || rmErr?.code || null,
+                                message: rmErr?.message || String(rmErr)
+                            },
+                            success: false
+                        };
+                    }
+
+                    const listResp = await authClient.admin.listUsers({
+                        query: { searchValue: testEmail, searchField: 'email' }
+                    }).catch(() => null);
+                    const remaining = listResp?.data?.users || [];
+                    orphanCheckResult = {
+                        checked: Boolean(listResp && !listResp.error),
+                        remainingCount: remaining.length
+                    };
+                }
+            }
+
+            const passed = Boolean(
+                createResult?.created &&
+                removeResult?.success &&
+                (!orphanCheckResult?.checked || orphanCheckResult.remainingCount === 0)
+            );
+            return { passed, createResult, removeResult, orphanCheckResult };
+        }
+
+        async function runCheckPublicSignupDisabled() {
+            const { authBaseUrl } = await initNeonAuth();
+            const blockedEmail = `phase4a_public_blocked_${Date.now()}@example.com`;
+            const tempPassword = generateRandomTempPassword(20);
+            const cleanBase = authBaseUrl.replace(/\/+$/, '');
+
+            const resp = await fetch(`${cleanBase}/sign-up/email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: 'Blocked Public Test',
+                    email: blockedEmail,
+                    password: tempPassword
+                })
+            });
+            const body = await resp.json().catch(() => ({}));
+            const passed = resp.status === 400 && body?.code === 'EMAIL_PASSWORD_SIGN_UP_DISABLED';
+
+            return {
+                passed,
+                httpStatus: resp.status,
+                code: body?.code || null,
+                errorMessage: body?.message || null,
+                successMessage: passed ? 'Public self-sign-up correctly rejected.' : null
+            };
+        }
+
+        async function executeSingleCheck(name, fn) {
+            setAllButtonsDisabled(true);
+            try {
+                const result = await fn();
+                writeLog(name, result);
+                const msg = (result.passed && result.successMessage)
+                    ? result.successMessage
+                    : `${name}: ${result.passed ? 'PASSED' : 'FAILED'}`;
+                setBox(checkSummary, msg, result.passed ? 'ok' : 'err');
+            } catch (err) {
+                writeLog(name + ' (ERROR)', { message: err.message });
+                setBox(checkSummary, `${name} failed: ${err.message}`, 'err');
+            } finally {
+                setAllButtonsDisabled(false);
+            }
+        }
+
+        document.getElementById('btnCheckMe').addEventListener('click', () => executeSingleCheck('GET /api/auth/me', runCheckMe));
+        document.getElementById('btnCheckAdmin').addEventListener('click', () => executeSingleCheck('GET /api/dev/admin-check', runCheckAdminEndpoint));
+        document.getElementById('btnTestCreateRemove').addEventListener('click', () => executeSingleCheck('admin.createUser + admin.removeUser', runTestCreateAndRemoveUser));
+        document.getElementById('btnCheckPublicSignup').addEventListener('click', () => executeSingleCheck('Public Self-Sign-Up Rejected', runCheckPublicSignupDisabled));
+
+        document.getElementById('btnRunAll').addEventListener('click', async () => {
+            setAllButtonsDisabled(true);
+            try {
+                const me = await runCheckMe();
+                const adminCheck = await runCheckAdminEndpoint();
+                const createRemove = await runTestCreateAndRemoveUser();
+                const publicSignup = await runCheckPublicSignupDisabled();
+
+                const report = {
+                    allPassed: me.passed && adminCheck.passed && createRemove.passed && publicSignup.passed,
+                    checks: {
+                        authMeAdmin: me,
+                        adminCheckEndpoint: adminCheck,
+                        adminCreateAndRemoveUser: createRemove,
+                        publicSignupRejected: publicSignup
+                    }
+                };
+                writeLog('Run All Phase 4A Admin Checks', report);
+                setBox(
+                    checkSummary,
+                    report.allPassed
+                        ? 'ALL 4 PHASE 4A ADMIN CHECKS PASSED! (me=admin, admin-check=200, createUser+removeUser clean, public sign-up rejected)'
+                        : 'One or more checks failed — inspect JSON output below.',
+                    report.allPassed ? 'ok' : 'err'
+                );
+            } catch (err) {
+                writeLog('Run All (ERROR)', { message: err.message });
+                setBox(checkSummary, `Suite stopped: ${err.message}`, 'err');
+            } finally {
+                setAllButtonsDisabled(false);
+            }
+        });
+    </script>
+</body>
+</html>

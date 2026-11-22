@@ -34,6 +34,40 @@
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
+
+        .admin-login-section {
+            margin-top: 1.25rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+            text-align: center;
+        }
+
+        .admin-login-prompt {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .admin-login-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            border-radius: 5px;
+            background-color: transparent;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .admin-login-link:hover {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
     </style>
 </head>
 
@@ -54,8 +88,8 @@
 
             <form id="loginForm" class="contact-form">
                 <div style="margin-bottom: 1rem;">
-                    <label style="display: block; margin-bottom: 5px; color: #333;">Username / ID / Email</label>
-                    <input type="text" id="username" placeholder="Admin, staff ID, student ID, name, or email" required>
+                    <label style="display: block; margin-bottom: 5px; color: #333;">Staff ID or Student ID</label>
+                    <input type="text" id="username" placeholder="Staff ID or Student ID" required>
                 </div>
                 <div style="margin-bottom: 1.5rem;">
                     <label style="display: block; margin-bottom: 5px; color: #333;">Password</label>
@@ -68,17 +102,44 @@
                 <p>Forgot user ID or password? <a href="reset_password.html" style="color: var(--primary-color);">Reset Password</a></p>
             </div>
 
-
+            <div class="admin-login-section">
+                <p class="admin-login-prompt">Are you a school administrator?</p>
+                <a href="login_admin.html" id="adminLoginLink" class="admin-login-link">
+                    <i class="fas fa-shield-alt" aria-hidden="true"></i> Admin Login
+                </a>
+            </div>
         </div>
     </div>
 
-    <script>
-        // Redirect if already logged in
-        (function () {
-            var role = sessionStorage.getItem('role');
-            if (role === 'admin') window.location.href = 'dashboard_admin.html';
-            else if (role === 'teacher') window.location.href = 'dashboard_teacher.html';
-            else if (role === 'student') window.location.href = 'dashboard_student.html';
+    <script type="module">
+        import { getApiBase, verifyAdminSession, verifyCookieBackedSession } from './neon-auth-client.js';
+
+        (async function checkExistingSession() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('reason') === 'auth_required' || params.get('reason') === 'teacher_only' || params.get('reason') === 'student_only') {
+                sessionStorage.clear();
+                return;
+            }
+
+            const cookieCheck = await verifyCookieBackedSession();
+            if (cookieCheck.authenticated) {
+                if (cookieCheck.role === 'teacher') {
+                    window.location.replace('dashboard_teacher.html');
+                    return;
+                }
+                if (cookieCheck.role === 'student') {
+                    window.location.replace('dashboard_student.html');
+                    return;
+                }
+            }
+
+            const adminCheck = await verifyAdminSession();
+            if (adminCheck.isAdmin) {
+                window.location.replace('dashboard_admin.html');
+                return;
+            }
+
+            sessionStorage.clear();
         })();
 
         document.getElementById('loginForm').addEventListener('submit', async function (e) {
@@ -86,26 +147,26 @@
             const user = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value;
 
-            // Resolve API Endpoint dynamically
-            const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-                ? 'http://localhost:5000/api'
-                : 'https://school-webpage-1uky.onrender.com/api';
+            if (user.toLowerCase() === 'admin') {
+                alert('Administrator login has moved to login_admin.html.');
+                return;
+            }
 
-            // Try backend login first
             try {
-                const response = await fetch(`${API}/auth/login`, {
+                const response = await fetch(`${getApiBase()}/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ username: user, password: pass })
                 });
-                const data = await response.json();
+                const data = await response.json().catch(() => ({}));
                 if (response.ok && data.success) {
-                    if (data.role === 'admin') {
-                        sessionStorage.setItem('role', 'admin');
-                        sessionStorage.setItem('staff_id', data.staff_id);
-                        window.location.href = 'dashboard_admin.html';
+                    if (data.authProvider === 'legacy') {
+                        sessionStorage.clear();
+                        alert('Legacy test accounts without Neon Managed Auth cannot open protected dashboards. Please sign in with a Neon-linked Staff ID or Student ID.');
                         return;
-                    } else if (data.role === 'teacher') {
+                    }
+                    if (data.role === 'teacher') {
                         sessionStorage.setItem('role', 'teacher');
                         sessionStorage.setItem('teacher_name', data.teacher_name);
                         sessionStorage.setItem('staff_id', data.staff_id);
@@ -120,60 +181,12 @@
                         window.location.href = 'dashboard_student.html';
                         return;
                     }
-                } else if (!response.ok && data.error && !data.error.includes('not found in database')) {
-                    alert(data.error);
-                    return;
                 }
+                alert(data.error || 'Invalid ID or password.');
             } catch (err) {
-                console.warn('Backend login unavailable, falling back to local checks:', err);
+                console.error('Login request failed:', err.message);
+                alert('Unable to reach authentication server. Please verify the backend is running.');
             }
-
-            // Admin
-            if (user.toLowerCase() === 'admin' && pass === 'pass') {
-                sessionStorage.setItem('role', 'admin');
-                sessionStorage.setItem('staff_id', user);
-                window.location.href = 'dashboard_admin.html';
-                return;
-            }
-
-            // Student â€” look up from localStorage and validate password
-            {
-                let found = false;
-                const userLower = user.toLowerCase();
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (!key || !key.startsWith('SBS_students_')) continue;
-                    try {
-                        const students = JSON.parse(localStorage.getItem(key) || '[]');
-                        const student = students.find(s =>
-                            (s.student_code && s.student_code.toLowerCase() === userLower) ||
-                            (s.email && s.email.toLowerCase() === userLower) ||
-                            (s.name && s.name.toLowerCase() === userLower)
-                        );
-                        if (student) {
-                            const correctPass = student.password || student.student_code;
-                            if (pass === correctPass) {
-                                sessionStorage.setItem('role', 'student');
-                                sessionStorage.setItem('student_code', student.student_code);
-                                sessionStorage.setItem('student_name', student.name);
-                                sessionStorage.setItem('student_class', student.class || '');
-                                sessionStorage.setItem('student_medium', student.medium || '');
-                                window.location.href = 'dashboard_student.html';
-                            } else {
-                                alert('Incorrect password. Default password is your Student ID (e.g. C1-001).');
-                            }
-                            found = true;
-                            break;
-                        }
-                    } catch (err) { /* skip */ }
-                }
-                if (!found) {
-                    alert('User not found. Use Admin, teacher Staff ID/email, or student ID/name/email.');
-                }
-                return;
-            }
-
-            alert('Invalid Username or Password. Please use the correct login portal.');
         });
     </script>
 </body>

@@ -43,36 +43,84 @@ exports.getCertificateByStudent = async (req, res) => {
     }
 };
 
+const VALID_CERTIFICATE_STATUSES = new Set(['Pending', 'Accepted', 'Rejected']);
+
 exports.createCertificate = async (req, res) => {
     try {
-        const { student_code, certificate_type, status, request_date } = req.body;
+        const { student_code, certificate_type } = req.body;
+        const cleanType = typeof certificate_type === 'string' ? certificate_type.trim() : '';
+        if (!cleanType) {
+            return res.status(400).json({ error: 'Certificate type is required.' });
+        }
+
+        let targetStudent = null;
+        if (req.auth && req.auth.role === 'student') {
+            if (!req.auth.student || !req.auth.student.id || !req.auth.student.student_code) {
+                return res.status(403).json({ error: 'Authenticated student profile not found.' });
+            }
+            const cleanBodyCode = typeof student_code === 'string' ? student_code.trim() : '';
+            if (cleanBodyCode && cleanBodyCode.toLowerCase() !== String(req.auth.student.student_code).trim().toLowerCase()) {
+                return res.status(403).json({
+                    error: 'Access denied: Students cannot submit certificate requests for another student.'
+                });
+            }
+            targetStudent = {
+                id: req.auth.student.id,
+                student_code: req.auth.student.student_code
+            };
+        } else if (req.auth && req.auth.role === 'admin') {
+            const cleanCode = typeof student_code === 'string' ? student_code.trim() : '';
+            if (!cleanCode) {
+                return res.status(400).json({ error: 'Valid student code is required.' });
+            }
+            targetStudent = await prisma.student.findFirst({
+                where: {
+                    student_code: { equals: cleanCode, mode: 'insensitive' },
+                    is_active: true
+                },
+                select: { id: true, student_code: true }
+            });
+            if (!targetStudent) {
+                return res.status(404).json({ error: 'Active student record not found.' });
+            }
+        } else {
+            return res.status(403).json({ error: 'Insufficient permissions to submit certificate request.' });
+        }
+
         const certificate = await prisma.certificateRequest.create({
             data: {
-                student_code,
-                certificate_type,
-                status: status || "Pending",
-                request_date: request_date ? new Date(request_date) : new Date()
+                student_code: targetStudent.student_code,
+                student_id: targetStudent.id,
+                certificate_type: cleanType,
+                status: 'Pending',
+                request_date: new Date()
             }
         });
         res.status(201).json(certificate);
     } catch (error) {
+        console.error('Create Certificate Error:', error.message);
         res.status(500).json({ error: 'Failed to create certificate request' });
     }
 };
 
 exports.updateCertificate = async (req, res) => {
     try {
-        const id = parseInt(req.params.id);
+        const id = parseInt(req.params.id, 10);
         const existing = await prisma.certificateRequest.findUnique({ where: { id } });
         if (!existing) return res.status(404).json({ error: 'Certificate request not found' });
 
         const { status } = req.body;
+        if (!VALID_CERTIFICATE_STATUSES.has(status)) {
+            return res.status(400).json({ error: 'Invalid certificate status.' });
+        }
+
         const certificate = await prisma.certificateRequest.update({
             where: { id },
             data: { status }
         });
         res.json(certificate);
     } catch (error) {
+        console.error('Update Certificate Error:', error.message);
         res.status(500).json({ error: 'Failed to update certificate request' });
     }
 };
