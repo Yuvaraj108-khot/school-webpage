@@ -117,6 +117,8 @@ function getNeonSessionCookie(req) {
 module.exports = {
     NEON_SESSION_COOKIE_NAME,
     hasSessionCookieSecret,
+    sealValue,
+    unsealValue,
     parseCookies,
     setNeonSessionCookie,
     clearNeonSessionCookie,

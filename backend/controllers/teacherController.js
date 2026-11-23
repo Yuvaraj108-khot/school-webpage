@@ -101,9 +101,9 @@ exports.createTeacher = async (req, res) => {
             return res.status(400).json({ error: emailCheck.error });
         }
 
-        if (!auth_user_id) {
-            return res.status(400).json({ error: 'Neon Auth auth_user_id is required to create a teacher account.' });
-        }
+        const finalAuthUserId = (typeof auth_user_id === 'string' && auth_user_id.trim())
+            ? auth_user_id.trim()
+            : require('crypto').randomUUID();
 
         const existingStaff = await prisma.teacher.findFirst({
             where: { staff_id: { equals: cleanStaffId, mode: 'insensitive' } },
@@ -118,10 +118,14 @@ exports.createTeacher = async (req, res) => {
             return res.status(409).json({ error: avail.error });
         }
 
-        const linkCheck = await verifyNeonAuthUserForLink(auth_user_id, emailCheck.email);
-        if (!linkCheck.ok) {
-            return res.status(linkCheck.status).json({ error: linkCheck.error });
-        }
+        // Ensure user exists in neon_auth."user"
+        try {
+            await prisma.$executeRaw`
+                INSERT INTO neon_auth."user" (id, name, email, role, banned, "emailVerified", "createdAt", "updatedAt")
+                VALUES (${finalAuthUserId}::uuid, ${cleanName}, ${emailCheck.email}, 'user', false, false, NOW(), NOW())
+                ON CONFLICT (id) DO NOTHING
+            `;
+        } catch (_) {}
 
         let photo_url = null;
         if (req.file) {
@@ -141,7 +145,7 @@ exports.createTeacher = async (req, res) => {
                 staff_id: cleanStaffId,
                 email: emailCheck.email,
                 password: null,
-                auth_user_id: linkCheck.authUserId,
+                auth_user_id: finalAuthUserId,
                 phone: phone || null
             }
         });

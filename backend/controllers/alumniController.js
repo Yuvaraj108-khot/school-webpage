@@ -2,6 +2,7 @@ const path = require('path');
 const prisma = require('../prismaClient');
 const requireNeonAdmin = require('../middleware/requireNeonAdmin');
 const { validateAndSaveImageBuffer } = require('../utils/imageUpload');
+const { sendAdminNotification } = require('../utils/emailService');
 
 async function isRequestFromNeonAdmin(req) {
     if (!req.neonAuth || !req.neonAuth.verified) return false;
@@ -88,6 +89,26 @@ exports.createAlumni = async (req, res) => {
                 applied_at: true
             }
         });
+
+        if (status === 'Pending') {
+            sendAdminNotification({
+                subject: `New Alumni Registration: ${name} (Batch ${batch_year})`,
+                title: 'New Alumni Registration Submitted',
+                details: {
+                    'Full Name': name,
+                    'Batch Year': batch_year,
+                    'Profession': profession || 'Not specified',
+                    'Email': email || 'Not provided',
+                    'Applied Date': new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+                    'Status': 'Pending Approval'
+                },
+                actionUrl: `${process.env.FRONTEND_URL || 'http://localhost:8000'}/dashboard_admin.html`,
+                actionText: 'Review Alumni Applications'
+            }).catch(err => {
+                console.error('[Admin Alert] Error dispatching alumni notification:', err.message);
+            });
+        }
+
         res.status(201).json(alumni);
     } catch (error) {
         console.error('Create Alumni Error:', error.message);

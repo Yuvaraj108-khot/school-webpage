@@ -134,42 +134,49 @@ async function checkEmailAvailable(email, options = {}) {
 
     const { excludeStudentId = null, excludeTeacherId = null, includeNeonAuth = true } = options;
 
-    const existingStudent = await prisma.student.findFirst({
+    const studentPromise = prisma.student.findFirst({
         where: {
             email: { equals: clean, mode: 'insensitive' },
             ...(excludeStudentId !== null ? { NOT: { id: excludeStudentId } } : {})
         },
         select: { id: true }
     });
-    if (existingStudent) {
-        return { available: false, conflictIn: 'students', error: 'This email address is already assigned to a student.' };
-    }
 
-    const existingTeacher = await prisma.teacher.findFirst({
+    const teacherPromise = prisma.teacher.findFirst({
         where: {
             email: { equals: clean, mode: 'insensitive' },
             ...(excludeTeacherId !== null ? { NOT: { id: excludeTeacherId } } : {})
         },
         select: { id: true }
     });
-    if (existingTeacher) {
-        return { available: false, conflictIn: 'teachers', error: 'This email address is already assigned to a teacher.' };
-    }
 
-    if (includeNeonAuth) {
-        const neonRows = await withDbRetry(() => prisma.$queryRaw`
+    const neonPromise = includeNeonAuth
+        ? withDbRetry(() => prisma.$queryRaw`
             SELECT id
             FROM neon_auth."user"
             WHERE LOWER(email) = ${clean}
             LIMIT 1
-        `);
-        if (neonRows && neonRows.length > 0) {
-            return {
-                available: false,
-                conflictIn: 'neon_auth',
-                error: 'This email address already exists in Neon Auth.'
-            };
-        }
+        `)
+        : Promise.resolve([]);
+
+    const [existingStudent, existingTeacher, neonRows] = await Promise.all([
+        studentPromise,
+        teacherPromise,
+        neonPromise
+    ]);
+
+    if (existingStudent) {
+        return { available: false, conflictIn: 'students', error: 'This email address is already assigned to a student.' };
+    }
+    if (existingTeacher) {
+        return { available: false, conflictIn: 'teachers', error: 'This email address is already assigned to a teacher.' };
+    }
+    if (neonRows && neonRows.length > 0) {
+        return {
+            available: false,
+            conflictIn: 'neon_auth',
+            error: 'This email address already exists in Neon Auth.'
+        };
     }
 
     return { available: true };

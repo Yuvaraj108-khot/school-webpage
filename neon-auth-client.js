@@ -109,6 +109,35 @@ export async function fetchAuthMe(token) {
  */
 export async function verifyAdminSession() {
     try {
+        const storedAdminToken = sessionStorage.getItem('admin_token');
+        if (storedAdminToken) {
+            const me = await fetchAuthMe(storedAdminToken);
+            if (me.ok && me.data && me.data.authenticated && me.data.role === 'admin') {
+                return {
+                    authenticated: true,
+                    isAdmin: true,
+                    role: 'admin',
+                    userId: me.data.userId,
+                    profile: me.data.profile || null
+                };
+            }
+        }
+
+        const cookieTokRes = await getCookieSessionToken().catch(() => null);
+        if (cookieTokRes && cookieTokRes.token) {
+            const me = await fetchAuthMe(cookieTokRes.token);
+            if (me.ok && me.data && me.data.authenticated && me.data.role === 'admin') {
+                sessionStorage.setItem('admin_token', cookieTokRes.token);
+                return {
+                    authenticated: true,
+                    isAdmin: true,
+                    role: 'admin',
+                    userId: me.data.userId,
+                    profile: me.data.profile || null
+                };
+            }
+        }
+
         const { authClient, authBaseUrl } = await initNeonAuth();
         const token = await getInMemoryToken(authClient, authBaseUrl);
         if (!token) {
@@ -265,9 +294,19 @@ export async function verifyCookieBackedSession(options = {}) {
 }
 
 async function resolveBearerTokenForMode(authMode, forceRefresh = false) {
+    const storedAdminToken = sessionStorage.getItem('admin_token');
+    if (storedAdminToken) {
+        return storedAdminToken;
+    }
+
     if (authMode === 'admin') {
-        const { authClient, authBaseUrl } = await initNeonAuth();
-        return getInMemoryToken(authClient, authBaseUrl);
+        try {
+            const { authClient, authBaseUrl } = await initNeonAuth();
+            const tok = await getInMemoryToken(authClient, authBaseUrl);
+            if (tok) return tok;
+        } catch (_) {}
+        const cookieRes = await getCookieSessionToken().catch(() => ({ token: null }));
+        return cookieRes && cookieRes.token;
     }
 
     if (authMode === 'cookie') {

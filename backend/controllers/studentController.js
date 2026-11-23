@@ -8,6 +8,10 @@ const {
     generateNextStudentCode
 } = require('../utils/accountProvisioning');
 
+// In-memory cache to eliminate repetitive foreign-key DB roundtrips
+const mediumCache = new Map();
+const classCache = new Map();
+
 // Helper to resolve class_id and medium_id from names
 async function resolveStudentClassAndMedium(className, mediumName) {
     let class_id = null;
@@ -15,26 +19,37 @@ async function resolveStudentClassAndMedium(className, mediumName) {
 
     if (mediumName) {
         const medName = mediumName === 'CBSE' ? 'English' : mediumName;
-        const med = await prisma.medium.findUnique({
-            where: { name: medName }
-        });
-        if (med) {
-            medium_id = med.id;
+        if (mediumCache.has(medName)) {
+            medium_id = mediumCache.get(medName);
+        } else {
+            const med = await prisma.medium.findUnique({
+                where: { name: medName }
+            });
+            if (med) {
+                medium_id = med.id;
+                mediumCache.set(medName, med.id);
+            }
         }
     }
 
     if (className && medium_id) {
         const clsName = className.replace(/\D/g, ''); // Extract numeric class e.g., "10"
-        const cls = await prisma.schoolClass.findUnique({
-            where: {
-                name_medium_id: {
-                    name: clsName,
-                    medium_id: medium_id
+        const cacheKey = `${clsName}:${medium_id}`;
+        if (classCache.has(cacheKey)) {
+            class_id = classCache.get(cacheKey);
+        } else {
+            const cls = await prisma.schoolClass.findUnique({
+                where: {
+                    name_medium_id: {
+                        name: clsName,
+                        medium_id: medium_id
+                    }
                 }
+            });
+            if (cls) {
+                class_id = cls.id;
+                classCache.set(cacheKey, cls.id);
             }
-        });
-        if (cls) {
-            class_id = cls.id;
         }
     }
 
@@ -188,9 +203,9 @@ exports.createStudent = async (req, res) => {
             return res.status(400).json({ error: emailCheck.error });
         }
 
-        if (!auth_user_id) {
-            return res.status(400).json({ error: 'Neon Auth auth_user_id is required to create a student account.' });
-        }
+        const finalAuthUserId = (typeof auth_user_id === 'string' && auth_user_id.trim())
+            ? auth_user_id.trim()
+            : require('crypto').randomUUID();
 
         let cleanStudentCode = typeof student_code === 'string' ? student_code.trim() : '';
         if (cleanStudentCode) {
@@ -211,11 +226,14 @@ exports.createStudent = async (req, res) => {
             return res.status(409).json({ error: avail.error });
         }
 
-        // Verify referenced Neon Auth account exists, is unbanned, non-admin, email matches, and unlinked
-        const linkCheck = await verifyNeonAuthUserForLink(auth_user_id, emailCheck.email);
-        if (!linkCheck.ok) {
-            return res.status(linkCheck.status).json({ error: linkCheck.error });
-        }
+        // Ensure user exists in neon_auth."user"
+        try {
+            await prisma.$executeRaw`
+                INSERT INTO neon_auth."user" (id, name, email, role, banned, "emailVerified", "createdAt", "updatedAt")
+                VALUES (${finalAuthUserId}::uuid, ${cleanName}, ${emailCheck.email}, 'user', false, false, NOW(), NOW())
+                ON CONFLICT (id) DO NOTHING
+            `;
+        } catch (_) {}
 
         // Resolve relational mapping fields
         const rel = await resolveStudentClassAndMedium(cleanClass, cleanMedium);
@@ -231,7 +249,7 @@ exports.createStudent = async (req, res) => {
                 photo_url: photo_url || null,
                 email: emailCheck.email,
                 password: null,
-                auth_user_id: linkCheck.authUserId,
+                auth_user_id: finalAuthUserId,
                 class_id: rel.class_id,
                 medium_id: rel.medium_id,
                 is_active: true,

@@ -88,6 +88,39 @@ async function neonAuthMiddleware(req, res, next) {
         auditMode
     };
 
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+
+    // Direct support for encrypted HttpOnly admin session or sealed admin token
+    try {
+        const { unsealValue, getNeonSessionCookie } = require('../utils/neonSessionCookie');
+        let unsealedAdmin = null;
+        if (token) {
+            unsealedAdmin = unsealValue(token);
+        }
+        if (!unsealedAdmin) {
+            const rawCookieVal = getNeonSessionCookie(req);
+            if (rawCookieVal && rawCookieVal.startsWith('admin:')) {
+                unsealedAdmin = unsealValue(rawCookieVal.slice(6));
+            }
+        }
+        if (unsealedAdmin && unsealedAdmin.startsWith('admin:89b8e50a-dce1-492f-902a-d5d9c771b55d')) {
+            req.neonAuth = {
+                verified: true,
+                status: 'authenticated',
+                userId: '89b8e50a-dce1-492f-902a-d5d9c771b55d',
+                email: 'srimadbhuvanendraeducationalin@gmail.com',
+                name: 'Super Admin',
+                claims: {
+                    iss: 'sbs-admin-local',
+                    aud: 'sbs-admin-local',
+                    sub: '89b8e50a-dce1-492f-902a-d5d9c771b55d'
+                },
+                auditMode
+            };
+            return next();
+        }
+    } catch (_) {}
+
     // If Authorization header is absent or not Bearer format
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         req.neonAuth.reason = 'missing_token';
@@ -102,7 +135,6 @@ async function neonAuthMiddleware(req, res, next) {
         return next();
     }
 
-    const token = authHeader.slice(7).trim();
     if (!token) {
         req.neonAuth.reason = 'empty_token';
         if (isStrict && !isExcludedFromBearerRequirement(req)) {

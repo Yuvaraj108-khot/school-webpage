@@ -1,4 +1,5 @@
 const prisma = require('../prismaClient');
+const { sendAdminNotification } = require('../utils/emailService');
 
 exports.getCertificates = async (req, res) => {
     try {
@@ -96,6 +97,31 @@ exports.createCertificate = async (req, res) => {
                 request_date: new Date()
             }
         });
+
+        // Trigger asynchronous admin notification email
+        prisma.student.findUnique({
+            where: { id: targetStudent.id },
+            select: { name: true, student_code: true, class: true, medium: true }
+        }).then(st => {
+            const studentDisplayName = st ? `${st.name} (${st.student_code})` : targetStudent.student_code;
+            return sendAdminNotification({
+                subject: `New Certificate Request: ${cleanType} - ${studentDisplayName}`,
+                title: 'New Certificate Request Submitted',
+                details: {
+                    'Student Name': st ? st.name : 'N/A',
+                    'Student Code': targetStudent.student_code,
+                    'Class / Medium': st ? `${st.class} (${st.medium || 'N/A'})` : 'N/A',
+                    'Certificate Type': cleanType,
+                    'Request Date': new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+                    'Status': 'Pending Approval'
+                },
+                actionUrl: `${process.env.FRONTEND_URL || 'http://localhost:8000'}/dashboard_admin.html`,
+                actionText: 'Review Certificate Requests'
+            });
+        }).catch(err => {
+            console.error('[Admin Alert] Error dispatching certificate notification:', err.message);
+        });
+
         res.status(201).json(certificate);
     } catch (error) {
         console.error('Create Certificate Error:', error.message);
@@ -122,5 +148,63 @@ exports.updateCertificate = async (req, res) => {
     } catch (error) {
         console.error('Update Certificate Error:', error.message);
         res.status(500).json({ error: 'Failed to update certificate request' });
+    }
+};
+
+exports.getPendingSummary = async (req, res) => {
+    try {
+        const [pendingCerts, pendingAlumni] = await Promise.all([
+            prisma.certificateRequest.findMany({
+                where: { status: 'Pending' },
+                orderBy: { request_date: 'desc' },
+                take: 10
+            }),
+            prisma.alumni.findMany({
+                where: { status: 'Pending' },
+                orderBy: { applied_at: 'desc' },
+                take: 10
+            })
+        ]);
+
+        const studentCodes = [...new Set(pendingCerts.map(c => c.student_code))];
+        const students = await prisma.student.findMany({
+            where: { student_code: { in: studentCodes } },
+            select: { student_code: true, name: true, class: true }
+        });
+        const studentMap = new Map(students.map(s => [s.student_code.toLowerCase(), s]));
+
+        const enrichedCerts = pendingCerts.map(c => {
+            const st = studentMap.get((c.student_code || '').toLowerCase());
+            return {
+                id: c.id,
+                student_code: c.student_code,
+                student_name: st ? st.name : c.student_code,
+                class: st ? st.class : 'N/A',
+                certificate_type: c.certificate_type,
+                request_date: c.request_date
+            };
+        });
+
+        res.json({
+            totalPending: enrichedCerts.length + pendingAlumni.length,
+            certificates: {
+                count: enrichedCerts.length,
+                items: enrichedCerts
+            },
+            alumni: {
+                count: pendingAlumni.length,
+                items: pendingAlumni.map(a => ({
+                    id: a.id,
+                    name: a.name,
+                    batch_year: a.batch_year,
+                    profession: a.profession,
+                    email: a.email,
+                    applied_at: a.applied_at
+                }))
+            }
+        });
+    } catch (error) {
+        console.error('Pending Summary Error:', error.message);
+        res.status(500).json({ error: 'Failed to fetch pending requests summary' });
     }
 };
