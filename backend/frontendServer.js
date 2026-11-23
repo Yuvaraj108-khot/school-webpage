@@ -2,6 +2,8 @@ const http = require('http');
 const path = require('path');
 const express = require('express');
 
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+
 const ROOT_DIR = path.join(__dirname, '../');
 const FRONTEND_PORT = parseInt(process.env.FRONTEND_PORT || '8000', 10);
 const BACKEND_ORIGIN = process.env.BACKEND_URL || 'http://localhost:5000';

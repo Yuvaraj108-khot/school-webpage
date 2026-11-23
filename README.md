@@ -1,4 +1,4 @@
-# Srimad Bhuvanendra School (SBS) Website Project
+# Srimad Bhuvanendra School (SBEI) Website Project
 
 **Project Version:** 1.0.0  
 **Last Updated:** February 6, 2026  
