@@ -1,4 +1,5 @@
 const prisma = require('../prismaClient');
+const { hashPassword } = require('../utils/passwordSecurity');
 const {
     omitPassword,
     normalizeEmail,
@@ -327,7 +328,7 @@ exports.updateStudent = async (req, res) => {
         // Prevent overwriting passwords for Neon-linked accounts
         const nextPassword = existing.auth_user_id
             ? null
-            : (typeof password === 'string' && password.trim() ? password.trim() : existing.password);
+            : (typeof password === 'string' && password.trim() ? hashPassword(password.trim()) : existing.password);
         const nextEmail = existing.auth_user_id
             ? existing.email
             : (email !== undefined ? cleanEmail : existing.email);

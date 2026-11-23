@@ -703,7 +703,7 @@
                 </a>
             </nav>
             <div style="margin-top:auto; padding:20px;">
-                <a href="#" onclick="if (window.logoutAdmin) { window.logoutAdmin(); } else { sessionStorage.clear(); window.location.href='login_admin.html'; } return false;" style="color:#ea5455;">
+                <a href="#" id="adminLogoutBtn" onclick="if (window.logoutAdmin) { window.logoutAdmin(); } else { sessionStorage.clear(); window.location.href='login_admin.html?reason=logout'; } return false;" style="color:#ea5455; display:inline-flex; align-items:center; gap:8px; text-decoration:none; font-weight:600; cursor:pointer;">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </a>
             </div>
@@ -2804,15 +2804,19 @@
         };
 
         window.logoutAdmin = async function () {
-            sessionStorage.removeItem('role');
-            sessionStorage.removeItem('admin_name');
-            sessionStorage.removeItem('admin_token');
-            sessionStorage.removeItem('staff_id');
-            await signOutNeonAuth().catch(() => {});
+            const btn = document.getElementById('adminLogoutBtn');
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging out...';
+                btn.style.pointerEvents = 'none';
+            }
+            sessionStorage.clear();
             try {
-                await fetch('/api/auth/logout', { method: 'POST' });
+                localStorage.removeItem('admin_token');
             } catch (_) {}
-            window.location.replace('login_admin.html');
+
+            await signOutNeonAuth().catch(() => {});
+            sessionStorage.clear();
+            window.location.replace('login_admin.html?reason=logout');
         };
 
         function escapeHtml(str) {

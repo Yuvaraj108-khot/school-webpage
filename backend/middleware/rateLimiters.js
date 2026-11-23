@@ -35,9 +35,45 @@ function createOtpRateLimiter(options = {}) {
 const loginRateLimiter = createLoginRateLimiter();
 const otpRateLimiter = createOtpRateLimiter();
 
+function createGlobalApiLimiter(options = {}) {
+    return rateLimit({
+        windowMs: options.windowMs || FIFTEEN_MINUTES_MS,
+        limit: options.limit || 400,
+        standardHeaders: 'draft-7',
+        legacyHeaders: false,
+        handler: (req, res) => {
+            console.log(`[RateLimit] API rate limit exceeded for ${req.method} ${req.originalUrl}`);
+            res.status(429).json({
+                error: 'Too many requests. Please slow down and try again later.'
+            });
+        }
+    });
+}
+
+function createExportRateLimiter(options = {}) {
+    return rateLimit({
+        windowMs: options.windowMs || FIFTEEN_MINUTES_MS,
+        limit: options.limit || 30,
+        standardHeaders: 'draft-7',
+        legacyHeaders: false,
+        handler: (req, res) => {
+            res.status(429).json({
+                error: 'Too many export requests generated. Please wait a few minutes before exporting again.'
+            });
+        }
+    });
+}
+
+const globalApiLimiter = createGlobalApiLimiter();
+const exportRateLimiter = createExportRateLimiter();
+
 module.exports = {
     loginRateLimiter,
     otpRateLimiter,
+    globalApiLimiter,
+    exportRateLimiter,
     createLoginRateLimiter,
-    createOtpRateLimiter
+    createOtpRateLimiter,
+    createGlobalApiLimiter,
+    createExportRateLimiter
 };

@@ -194,6 +194,11 @@
                 showInfo('Please sign in with your Neon Auth administrator account.');
                 return;
             }
+            if (reason === 'logout') {
+                sessionStorage.clear();
+                showInfo('You have been logged out successfully.');
+                return;
+            }
             if (reason === 'teacher_only') {
                 switchPortal('teacher');
                 sessionStorage.clear();

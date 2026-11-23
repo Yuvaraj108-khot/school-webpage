@@ -2,6 +2,7 @@ const path = require('path');
 const prisma = require('../prismaClient');
 const requireNeonAdmin = require('../middleware/requireNeonAdmin');
 const { validateAndSaveImageBuffer } = require('../utils/imageUpload');
+const { hashPassword } = require('../utils/passwordSecurity');
 const {
     SAFE_TEACHER_PUBLIC_SELECT,
     omitPassword,
@@ -228,7 +229,7 @@ exports.updateTeacher = async (req, res) => {
         // Prevent overwriting passwords for Neon-linked accounts
         const nextPassword = teacher.auth_user_id
             ? null
-            : (typeof password === 'string' && password.trim() ? password.trim() : teacher.password);
+            : (typeof password === 'string' && password.trim() ? hashPassword(password.trim()) : teacher.password);
         const nextEmail = teacher.auth_user_id
             ? teacher.email
             : (email !== undefined ? cleanEmail : teacher.email);

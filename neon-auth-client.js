@@ -7,8 +7,11 @@ let inMemoryCookieJwt = null;
  * Resolves the Express backend API base URL for local dev or same-origin deployment.
  */
 export function getApiBase() {
+    if (window.location.port === '5000' || window.location.port === '8000') {
+        return '/api';
+    }
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return `http://${window.location.hostname}:5001/api`;
+        return `http://${window.location.hostname}:5000/api`;
     }
     return '/api';
 }
@@ -408,16 +411,39 @@ export async function downloadAuthenticatedFile(urlOrPath, fallbackFilename = 'd
 }
 
 /**
- * Signs out of Neon Auth and clears local UI sessionStorage markers.
+ * Signs out of Neon Auth and clears local UI sessionStorage markers and HttpOnly session cookies.
  */
 export async function signOutNeonAuth() {
     inMemoryCookieJwt = null;
     try {
-        const { authClient } = await initNeonAuth();
-        await authClient.signOut();
-    } catch (_) {
-        // Ignore network failures during sign-out cleanup
-    } finally {
         sessionStorage.clear();
-    }
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('token');
+    } catch (_) {}
+
+    const backendLogout = fetch(`${getApiBase()}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include'
+    }).catch(() => {});
+
+    let sdkLogout = Promise.resolve();
+    try {
+        if (initPromise) {
+            const resolved = await Promise.race([
+                initPromise,
+                new Promise(resolve => setTimeout(() => resolve(null), 500))
+            ]);
+            if (resolved && resolved.authClient && typeof resolved.authClient.signOut === 'function') {
+                sdkLogout = Promise.race([
+                    resolved.authClient.signOut().catch(() => {}),
+                    new Promise(resolve => setTimeout(resolve, 800))
+                ]);
+            }
+        }
+    } catch (_) {}
+
+    await Promise.allSettled([backendLogout, sdkLogout]);
+    try {
+        sessionStorage.clear();
+    } catch (_) {}
 }

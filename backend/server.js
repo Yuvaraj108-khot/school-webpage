@@ -5,6 +5,23 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const isProductionEnv = process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
+
+// Hide server implementation details
+app.disable('x-powered-by');
+
+// Security HTTP Headers
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    if (req.secure || req.headers['x-forwarded-proto'] === 'https') {
+        res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
+    next();
+});
 
 // Middleware
 const allowedOriginPatterns = [
@@ -30,14 +47,20 @@ app.use(cors({
         if (trustedOrigins.has(normalizedOrigin)) {
             return callback(null, true);
         }
-        if (allowedOriginPatterns.some((re) => re.test(normalizedOrigin))) {
+        if (!isProductionEnv && allowedOriginPatterns.some((re) => re.test(normalizedOrigin))) {
             return callback(null, true);
         }
         return callback(null, false);
     },
     credentials: true
 }));
-app.use(express.json());
+
+const { globalApiLimiter } = require('./middleware/rateLimiters');
+const { sanitizeBodyMiddleware } = require('./utils/sanitize');
+
+app.use(express.json({ limit: '5mb' }));
+app.use(sanitizeBodyMiddleware);
+app.use('/api', globalApiLimiter);
 app.use((req, res, next) => {
     const rawPathname = String(req.originalUrl || '/').split('?')[0];
     let decoded = rawPathname;
@@ -176,8 +199,6 @@ app.get('/api/health', async (req, res) => {
     }
 });
 
-const isProductionEnv = process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
-
 function blockDevDiagnosticsInProduction(req, res, next) {
     if (isProductionEnv) {
         return res.status(404).json({ error: 'Not found' });
@@ -186,7 +207,7 @@ function blockDevDiagnosticsInProduction(req, res, next) {
 }
 
 // Temporary Phase 1 dev-only config endpoint for auth-dev-test.html (never exposes production Auth URL)
-app.get('/api/dev/neon-auth-config', (req, res) => {
+app.get('/api/dev/neon-auth-config', blockDevDiagnosticsInProduction, (req, res) => {
     const devAuthUrl = (process.env.NEON_AUTH_DEV_BASE_URL || '').trim();
     const prodAuthUrl = (process.env.NEON_AUTH_BASE_URL || '').trim();
 
@@ -293,6 +314,18 @@ app.get('/api/dev/orphan-auth-check', blockDevDiagnosticsInProduction, requireNe
         console.error('[NeonAuth OrphanCheck] Error:', err.message);
         res.status(500).json({ error: 'Failed to inspect orphaned Neon Auth accounts.' });
     }
+});
+
+// Centralized error handler - prevents leaking internal stack traces or database errors
+app.use((err, req, res, next) => {
+    console.error('[Server Error]', err.stack || err.message);
+    if (res.headersSent) {
+        return next(err);
+    }
+    const statusCode = err.status || err.statusCode || 500;
+    res.status(statusCode).json({
+        error: isProductionEnv ? 'An unexpected server error occurred.' : (err.message || 'An unexpected server error occurred.')
+    });
 });
 
 if (!process.env.VERCEL) {

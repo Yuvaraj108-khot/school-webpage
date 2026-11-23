@@ -1,10 +1,28 @@
 node_modules
-# Keep environment variables out of version control
+# Keep environment variables and secrets out of version control
 .env
+.env.local
+.env.*.local
+!.env.example
 
+# Logs and debug output
+*.log
+npm-debug.log*
+yarn-debug.log*
+server.log
+server_debug.log
+
+# Build, generated and cache artifacts
 /generated/prisma
 .neon
 backend/uploads/*
 !backend/uploads/.gitkeep
 scratch/
 prisma/schema.prisma.supabase_backup
+
+# Backup / recovered working copies
+*.backup.*
+*_recovered.html
+*_utf8.html
+test-*.json
+verified-*.json

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
 const prisma = require('../prismaClient');
+const { hashPassword, verifyPassword } = require('../utils/passwordSecurity');
 const requireNeonAdmin = require('../middleware/requireNeonAdmin');
 const { loginRateLimiter, otpRateLimiter } = require('../middleware/rateLimiters');
 const {
@@ -177,7 +178,8 @@ router.post('/login', loginRateLimiter, async (req, res) => {
     try {
         // 1. Admin login
         if (userLower === 'admin' || userLower === 'srimadbhuvanendraeducationalin@gmail.com') {
-            if (password === 'pass') {
+            const adminPass = process.env.ADMIN_PASSWORD || 'pass';
+            if (password === adminPass) {
                 const adminToken = sealValue('admin:89b8e50a-dce1-492f-902a-d5d9c771b55d:' + Date.now());
                 setNeonSessionCookie(req, res, 'admin:' + adminToken);
                 return res.json({
@@ -495,7 +497,8 @@ router.post('/neon/reset-password', otpRateLimiter, async (req, res) => {
         const stored = localResetOtpStore.get(cleanIdent);
 
         if (stored && stored.otp === cleanOtp) {
-            // Update password in database
+            const hashedPassword = hashPassword(password);
+            // Update password in database with cryptographic hash
             const student = await prisma.student.findFirst({
                 where: {
                     OR: [
@@ -507,7 +510,7 @@ router.post('/neon/reset-password', otpRateLimiter, async (req, res) => {
             if (student) {
                 await prisma.student.update({
                     where: { id: student.id },
-                    data: { password }
+                    data: { password: hashedPassword }
                 });
             }
 
@@ -522,7 +525,7 @@ router.post('/neon/reset-password', otpRateLimiter, async (req, res) => {
             if (teacher) {
                 await prisma.teacher.update({
                     where: { id: teacher.id },
-                    data: { password }
+                    data: { password: hashedPassword }
                 });
             }
 
