@@ -265,3 +265,15 @@ model GraduatedStudent {
 
   @@map("graduated_students")
 }
+
+model ContactQuery {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String
+  phone      String?
+  message    String
+  status     String   @default("Unread") // Unread, Read
+  created_at DateTime @default(now()) @db.Timestamp(6)
+
+  @@map("contact_queries")
+}

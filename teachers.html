@@ -330,8 +330,9 @@
                             <div class="teacher-info">
                                 <h3>${t.name}</h3>
                                 <span class="designation">${t.designation || t.subject || ''}</span>
-                                <div class="teacher-details">
+                                <div class="teacher-details" style="flex-direction:column; gap:6px;">
                                     <p><i class="fas fa-briefcase"></i> ${t.experience ? (t.experience.toString().toLowerCase().includes('year') ? t.experience : t.experience + ' Years Experience') : 'N/A'}</p>
+                                    ${t.phone ? `<p><i class="fas fa-phone-alt"></i> <a href="tel:${t.phone}" style="color: inherit; text-decoration: none; font-weight: 600;">${t.phone}</a></p>` : ''}
                                 </div>
                             </div>
                         `;

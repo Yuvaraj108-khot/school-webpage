@@ -36,7 +36,8 @@ const PUBLIC_API_ROUTES = new Set([
     'GET /notices',
     'GET /events',
     'GET /alumni',
-    'POST /alumni'
+    'POST /alumni',
+    'POST /contact'
 ]);
 
 // Authenticated exclusively inside the handler via encrypted HttpOnly session cookie (never public data)

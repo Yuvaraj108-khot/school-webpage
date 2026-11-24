@@ -59,12 +59,13 @@
             <!-- Map and Form -->
             <div>
                 <h3 style="color: var(--primary-color); margin-bottom: 1.5rem;">Send us a specific query</h3>
-                <form class="contact-form">
-                    <input type="text" placeholder="Your Name" required>
-                    <input type="email" placeholder="Your Email" required>
-                    <input type="tel" placeholder="Your Phone Number">
-                    <textarea rows="5" placeholder="Your Message" required></textarea>
-                    <button type="submit" class="btn btn-primary">Send Message</button>
+                <form class="contact-form" id="contactForm">
+                    <input type="text" id="contactName" placeholder="Your Name" required>
+                    <input type="email" id="contactEmail" placeholder="Your Email" required>
+                    <input type="tel" id="contactPhone" placeholder="Your Phone Number">
+                    <textarea id="contactMessage" rows="5" placeholder="Your Message" required></textarea>
+                    <button type="submit" id="contactSubmitBtn" class="btn btn-primary">Send Message</button>
+                    <div id="contactFormStatus" style="margin-top: 12px; display: none; font-size: 0.9rem; font-weight: 500;"></div>
                 </form>
 
                 <!-- Embedded Google Map -->
@@ -132,15 +133,69 @@
 
     <script src="script.js"></script>
     <script>
-        document.querySelector('.contact-form')?.addEventListener('submit', function (e) {
-            e.preventDefault();
-            const name = this.querySelector('input[type="text"]').value;
-            const email = this.querySelector('input[type="email"]').value;
-            if (name && email) {
-                alert('Thank you, ' + name + '! Your message has been sent successfully. We will get back to you shortly.');
-                this.reset();
-            }
-        });
+        const contactForm = document.getElementById('contactForm');
+        const contactStatus = document.getElementById('contactFormStatus');
+        const contactSubmitBtn = document.getElementById('contactSubmitBtn');
+
+        if (contactForm) {
+            contactForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const name = document.getElementById('contactName').value.trim();
+                const email = document.getElementById('contactEmail').value.trim();
+                const phone = document.getElementById('contactPhone').value.trim();
+                const message = document.getElementById('contactMessage').value.trim();
+
+                if (!name || !email || !message) {
+                    alert('Please fill in your name, email, and message.');
+                    return;
+                }
+
+                if (contactSubmitBtn) {
+                    contactSubmitBtn.disabled = true;
+                    contactSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                }
+
+                if (contactStatus) {
+                    contactStatus.style.display = 'none';
+                }
+
+                try {
+                    const res = await fetch('/api/contact', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, email, phone, message })
+                    });
+                    const data = await res.json();
+
+                    if (!res.ok) {
+                        throw new Error(data.message || 'Failed to submit inquiry.');
+                    }
+
+                    if (contactStatus) {
+                        contactStatus.style.display = 'block';
+                        contactStatus.style.color = '#15803d';
+                        contactStatus.innerHTML = '<i class="fas fa-check-circle"></i> ' + (data.message || 'Your inquiry has been sent successfully!');
+                    } else {
+                        alert('Thank you, ' + name + '! Your message has been sent successfully.');
+                    }
+                    contactForm.reset();
+                } catch (err) {
+                    console.error('Contact submission error:', err);
+                    if (contactStatus) {
+                        contactStatus.style.display = 'block';
+                        contactStatus.style.color = '#dc2626';
+                        contactStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (err.message || 'Submission failed. Please try again.');
+                    } else {
+                        alert('Failed to send message: ' + err.message);
+                    }
+                } finally {
+                    if (contactSubmitBtn) {
+                        contactSubmitBtn.disabled = false;
+                        contactSubmitBtn.innerHTML = 'Send Message';
+                    }
+                }
+            });
+        }
     </script>
 </body>
 

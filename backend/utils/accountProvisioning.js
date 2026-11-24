@@ -53,7 +53,8 @@ const SAFE_TEACHER_PUBLIC_SELECT = {
     category: true,
     designation: true,
     experience: true,
-    photo_url: true
+    photo_url: true,
+    phone: true
 };
 
 const SAFE_TEACHER_ASSIGNMENT_SELECT = {
