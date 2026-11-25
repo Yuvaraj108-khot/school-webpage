@@ -457,47 +457,46 @@ router.post('/neon/request-reset-otp', otpRateLimiter, async (req, res) => {
         console.log(`[PASSWORD RESET OTP] YOUR VERIFICATION CODE IS: ${otpCode}`);
         console.log('======================================================\n');
 
-        // Send OTP directly via Nodemailer to registered email asynchronously in background — NEVER block response!
+        // Send OTP directly via Nodemailer to registered email
         const targetEmail = resolvedEmail || (identifier.includes('@') ? identifier.trim() : null);
-        const schoolEmail = process.env.SCHOOL_EMAIL || 'srimadbhuvanendraeducationalin@gmail.com';
-        const schoolEmailPass = process.env.SCHOOL_EMAIL_PASSWORD || 'mldx xrfw pwsi jjgh';
+        const schoolEmail = (process.env.SCHOOL_EMAIL || 'srimadbhuvanendraeducationalin@gmail.com').trim();
+        const schoolEmailPass = (process.env.SCHOOL_EMAIL_PASSWORD || 'mldx xrfw pwsi jjgh').replace(/\s+/g, '');
 
-        if (targetEmail && schoolEmail && schoolEmailPass) {
-            try {
-                const transporter = nodemailer.createTransport({
-                    service: 'gmail',
-                    auth: {
-                        user: schoolEmail,
-                        pass: schoolEmailPass
-                    },
-                    connectionTimeout: 4000,
-                    greetingTimeout: 4000,
-                    socketTimeout: 5000
-                });
-                transporter.sendMail({
-                    from: `"Srimad Bhuvanendra School" <${schoolEmail}>`,
-                    to: targetEmail,
-                    subject: 'Password Reset Verification Code - SBEI',
-                    text: `Your password reset verification code is: ${otpCode}. It will expire in 15 minutes.`,
-                    html: `
-                        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #e0e0e0; border-radius: 8px;">
-                            <h2 style="color: #1a3a5c; margin-top: 0;">Password Reset Request</h2>
-                            <p style="colo
-                            r: #444; font-size: 15px;">You requested to reset your password. Use the verification code below:</p>
-                            <div style="text-align: center; margin: 24px 0;">
-                                <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #1a3a5c; background: #f0f4f8; padding: 12px 24px; border-radius: 6px; display: inline-block;">${otpCode}</span>
-                            </div>
-                            <p style="color: #777; font-size: 13px;">This code will expire in 15 minutes. If you did not request this, please ignore this email.</p>
+        if (!targetEmail) {
+            return res.status(404).json({ error: 'No registered account found with that ID or email.' });
+        }
+
+        try {
+            const transporter = nodemailer.createTransport({
+                host: 'smtp.gmail.com',
+                port: 465,
+                secure: true,
+                auth: {
+                    user: schoolEmail,
+                    pass: schoolEmailPass
+                }
+            });
+
+            await transporter.sendMail({
+                from: `"Srimad Bhuvanendra School" <${schoolEmail}>`,
+                to: targetEmail,
+                subject: 'Password Reset Verification Code - SBEI',
+                text: `Your password reset verification code is: ${otpCode}. It will expire in 15 minutes.`,
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                        <h2 style="color: #1a3a5c; margin-top: 0;">Password Reset Request</h2>
+                        <p style="color: #444; font-size: 15px;">You requested to reset your password. Use the verification code below:</p>
+                        <div style="text-align: center; margin: 24px 0;">
+                            <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #1a3a5c; background: #f0f4f8; padding: 12px 24px; border-radius: 6px; display: inline-block;">${otpCode}</span>
                         </div>
-                    `
-                }).then(() => {
-                    console.log(`[EMAIL OTP] Successfully delivered verification code to ${targetEmail}`);
-                }).catch((mailErr) => {
-                    console.error(`[EMAIL OTP ERROR] Could not deliver email to ${targetEmail}:`, mailErr.message);
-                });
-            } catch (mailErr) {
-                console.error(`[EMAIL OTP SETUP ERROR]`, mailErr.message);
-            }
+                        <p style="color: #777; font-size: 13px;">This code will expire in 15 minutes. If you did not request this, please ignore this email.</p>
+                    </div>
+                `
+            });
+            console.log(`[EMAIL OTP] Successfully delivered verification code to ${targetEmail}`);
+        } catch (mailErr) {
+            console.error(`[EMAIL OTP ERROR] Could not deliver email to ${targetEmail}:`, mailErr.message);
+            return res.status(500).json({ error: 'Failed to send verification email. Please check your network and try again.' });
         }
 
         // Forward to upstream Neon Auth in background with short timeout
@@ -512,11 +511,10 @@ router.post('/neon/request-reset-otp', otpRateLimiter, async (req, res) => {
             }).catch(() => {});
         }
 
-        // Return immediately with success and OTP code so password reset is never blocked
+        // Return strictly success message — NO OTP IN RESPONSE
         return res.json({
             success: true,
-            message: 'A 6-digit verification code has been sent to your registered email address.',
-            otp: otpCode
+            message: 'A 6-digit verification code has been sent to your registered email address.'
         });
     } catch (err) {
         console.error('[NeonOTP Request] Error:', err.message);
