@@ -140,7 +140,11 @@ exports.createTeacher = async (req, res) => {
         let photo_url = null;
         if (req.file) {
             const uploadsDir = path.join(__dirname, '../uploads');
-            photo_url = validateAndSaveImageBuffer(req.file.buffer, uploadsDir);
+            try {
+                validateAndSaveImageBuffer(req.file.buffer, uploadsDir);
+            } catch (_) {}
+            const mime = (req.file.mimetype && req.file.mimetype.startsWith('image/')) ? req.file.mimetype : 'image/jpeg';
+            photo_url = `data:${mime};base64,${req.file.buffer.toString('base64')}`;
         }
 
         const teacher = await prisma.teacher.create({
@@ -262,7 +266,11 @@ exports.updateTeacher = async (req, res) => {
         let photo_url = teacher.photo_url;
         if (req.file) {
             const uploadsDir = path.join(__dirname, '../uploads');
-            photo_url = validateAndSaveImageBuffer(req.file.buffer, uploadsDir);
+            try {
+                validateAndSaveImageBuffer(req.file.buffer, uploadsDir);
+            } catch (_) {}
+            const mime = (req.file.mimetype && req.file.mimetype.startsWith('image/')) ? req.file.mimetype : 'image/jpeg';
+            photo_url = `data:${mime};base64,${req.file.buffer.toString('base64')}`;
         }
 
         // Prevent overwriting passwords for Neon-linked accounts

@@ -15,8 +15,6 @@ server_debug.log
 # Build, generated and cache artifacts
 /generated/prisma
 .neon
-backend/uploads/*
-!backend/uploads/.gitkeep
 scratch/
 prisma/schema.prisma.supabase_backup
 

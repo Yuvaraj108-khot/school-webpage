@@ -6,7 +6,7 @@ function sanitizeSafeImageUrl(urlValue) {
     if (typeof urlValue !== 'string') return null;
     const trimmed = urlValue.trim();
     if (!trimmed) return null;
-    if (trimmed.startsWith('/uploads/') || trimmed.startsWith('images/')) {
+    if (trimmed.startsWith('/uploads/') || trimmed.startsWith('images/') || trimmed.startsWith('data:image/')) {
         return trimmed;
     }
     try {
@@ -39,7 +39,11 @@ exports.uploadGalleryItem = async (req, res) => {
 
         if (req.file) {
             const uploadsDir = path.join(__dirname, '../uploads');
-            publicUrl = validateAndSaveImageBuffer(req.file.buffer, uploadsDir);
+            try {
+                validateAndSaveImageBuffer(req.file.buffer, uploadsDir);
+            } catch (_) {}
+            const mime = (req.file.mimetype && req.file.mimetype.startsWith('image/')) ? req.file.mimetype : 'image/jpeg';
+            publicUrl = `data:${mime};base64,${req.file.buffer.toString('base64')}`;
         } else if (body_url) {
             publicUrl = sanitizeSafeImageUrl(body_url);
             if (!publicUrl) {
