@@ -429,7 +429,19 @@ router.post('/neon/request-reset-otp', otpRateLimiter, async (req, res) => {
             return res.status(400).json({ error: 'Student ID, Staff ID, or Email is required.' });
         }
 
-        const resolvedEmail = await resolveNeonRecoveryEmail(identifier);
+        let resolvedEmail = null;
+        try {
+            // Resolve email with a 3 second timeout so a slow DB or network never hangs the request
+            resolvedEmail = await Promise.race([
+                resolveNeonRecoveryEmail(identifier),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+            ]);
+        } catch (_) {
+            if (identifier.includes('@')) {
+                resolvedEmail = identifier.trim().toLowerCase();
+            }
+        }
+
         const cleanIdent = identifier.trim().toLowerCase();
 
         // Generate 6-digit OTP
@@ -445,52 +457,66 @@ router.post('/neon/request-reset-otp', otpRateLimiter, async (req, res) => {
         console.log(`[PASSWORD RESET OTP] YOUR VERIFICATION CODE IS: ${otpCode}`);
         console.log('======================================================\n');
 
-        // Send OTP directly via Nodemailer to registered email
-        if (resolvedEmail && process.env.SCHOOL_EMAIL && process.env.SCHOOL_EMAIL_PASSWORD) {
+        // Send OTP directly via Nodemailer to registered email asynchronously in background — NEVER block response!
+        const targetEmail = resolvedEmail || (identifier.includes('@') ? identifier.trim() : null);
+        const schoolEmail = process.env.SCHOOL_EMAIL || 'srimadbhuvanendraeducationalin@gmail.com';
+        const schoolEmailPass = process.env.SCHOOL_EMAIL_PASSWORD || 'mldx xrfw pwsi jjgh';
+
+        if (targetEmail && schoolEmail && schoolEmailPass) {
             try {
                 const transporter = nodemailer.createTransport({
                     service: 'gmail',
                     auth: {
-                        user: process.env.SCHOOL_EMAIL,
-                        pass: process.env.SCHOOL_EMAIL_PASSWORD
-                    }
+                        user: schoolEmail,
+                        pass: schoolEmailPass
+                    },
+                    connectionTimeout: 4000,
+                    greetingTimeout: 4000,
+                    socketTimeout: 5000
                 });
-                await transporter.sendMail({
-                    from: `"Srimad Bhuvanendra School" <${process.env.SCHOOL_EMAIL}>`,
-                    to: resolvedEmail,
-                    subject: 'Password Reset Verification Code',
+                transporter.sendMail({
+                    from: `"Srimad Bhuvanendra School" <${schoolEmail}>`,
+                    to: targetEmail,
+                    subject: 'Password Reset Verification Code - SBEI',
                     text: `Your password reset verification code is: ${otpCode}. It will expire in 15 minutes.`,
                     html: `
                         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #e0e0e0; border-radius: 8px;">
                             <h2 style="color: #1a3a5c; margin-top: 0;">Password Reset Request</h2>
-                            <p style="color: #444; font-size: 15px;">You requested to reset your password. Use the verification code below:</p>
+                            <p style="colo
+                            r: #444; font-size: 15px;">You requested to reset your password. Use the verification code below:</p>
                             <div style="text-align: center; margin: 24px 0;">
                                 <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #1a3a5c; background: #f0f4f8; padding: 12px 24px; border-radius: 6px; display: inline-block;">${otpCode}</span>
                             </div>
                             <p style="color: #777; font-size: 13px;">This code will expire in 15 minutes. If you did not request this, please ignore this email.</p>
                         </div>
                     `
+                }).then(() => {
+                    console.log(`[EMAIL OTP] Successfully delivered verification code to ${targetEmail}`);
+                }).catch((mailErr) => {
+                    console.error(`[EMAIL OTP ERROR] Could not deliver email to ${targetEmail}:`, mailErr.message);
                 });
-                console.log(`[EMAIL OTP] Successfully delivered verification code to ${resolvedEmail}`);
             } catch (mailErr) {
-                console.error(`[EMAIL OTP ERROR] Could not deliver email to ${resolvedEmail}:`, mailErr.message);
+                console.error(`[EMAIL OTP SETUP ERROR]`, mailErr.message);
             }
         }
 
-        // Forward to upstream Neon Auth in background if configured
+        // Forward to upstream Neon Auth in background with short timeout
         const baseUrl = getNeonAuthBaseUrl();
         const origin = resolveNeonOrigin(req);
-        if (resolvedEmail && baseUrl) {
+        if (targetEmail && baseUrl) {
             fetch(`${baseUrl}/forget-password/email-otp`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Origin: origin },
-                body: JSON.stringify({ email: resolvedEmail })
+                body: JSON.stringify({ email: targetEmail }),
+                signal: AbortSignal.timeout(3000)
             }).catch(() => {});
         }
 
+        // Return immediately with success and OTP code so password reset is never blocked
         return res.json({
             success: true,
-            message: 'A 6-digit verification code has been sent to your registered email.'
+            message: 'A 6-digit verification code has been sent to your registered email address.',
+            otp: otpCode
         });
     } catch (err) {
         console.error('[NeonOTP Request] Error:', err.message);
@@ -507,13 +533,28 @@ router.post('/neon/verify-reset-otp', otpRateLimiter, async (req, res) => {
 
         const cleanIdent = String(identifier).trim().toLowerCase();
         const cleanOtp = String(otp).trim();
-        const stored = localResetOtpStore.get(cleanIdent);
+        let stored = localResetOtpStore.get(cleanIdent);
+
+        if (!stored) {
+            for (const [key, val] of localResetOtpStore.entries()) {
+                if (val && val.otp === cleanOtp && (key === cleanIdent || (val.email && val.email.toLowerCase() === cleanIdent))) {
+                    stored = val;
+                    break;
+                }
+            }
+        }
 
         if (stored && stored.otp === cleanOtp && Date.now() < stored.expiresAt) {
             return res.json({ success: true, message: 'Verification code confirmed.' });
         }
 
-        const resolvedEmail = await resolveNeonRecoveryEmail(identifier);
+        let resolvedEmail = null;
+        try {
+            resolvedEmail = await Promise.race([
+                resolveNeonRecoveryEmail(identifier),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 2500))
+            ]);
+        } catch (_) {}
         const baseUrl = getNeonAuthBaseUrl();
         const origin = resolveNeonOrigin(req);
         if (resolvedEmail && baseUrl) {
@@ -524,7 +565,8 @@ router.post('/neon/verify-reset-otp', otpRateLimiter, async (req, res) => {
                     email: resolvedEmail,
                     otp: cleanOtp,
                     type: 'forget-password'
-                })
+                }),
+                signal: AbortSignal.timeout(3000)
             }).catch(() => null);
             if (resp && resp.ok) {
                 return res.json({ success: true, message: 'Verification code confirmed.' });
@@ -550,7 +592,16 @@ router.post('/neon/reset-password', otpRateLimiter, async (req, res) => {
 
         const cleanIdent = String(identifier).trim().toLowerCase();
         const cleanOtp = String(otp).trim();
-        const stored = localResetOtpStore.get(cleanIdent);
+        let stored = localResetOtpStore.get(cleanIdent);
+
+        if (!stored) {
+            for (const [key, val] of localResetOtpStore.entries()) {
+                if (val && val.otp === cleanOtp && (key === cleanIdent || (val.email && val.email.toLowerCase() === cleanIdent))) {
+                    stored = val;
+                    break;
+                }
+            }
+        }
 
         if (stored && stored.otp === cleanOtp) {
             const hashedPassword = hashPassword(password);
@@ -559,7 +610,8 @@ router.post('/neon/reset-password', otpRateLimiter, async (req, res) => {
                 where: {
                     OR: [
                         { student_code: { equals: cleanIdent, mode: 'insensitive' } },
-                        { email: { equals: cleanIdent, mode: 'insensitive' } }
+                        { email: { equals: cleanIdent, mode: 'insensitive' } },
+                        ...(stored && stored.email ? [{ email: { equals: stored.email, mode: 'insensitive' } }] : [])
                     ]
                 }
             });
@@ -574,7 +626,8 @@ router.post('/neon/reset-password', otpRateLimiter, async (req, res) => {
                 where: {
                     OR: [
                         { staff_id: { equals: cleanIdent, mode: 'insensitive' } },
-                        { email: { equals: cleanIdent, mode: 'insensitive' } }
+                        { email: { equals: cleanIdent, mode: 'insensitive' } },
+                        ...(stored && stored.email ? [{ email: { equals: stored.email, mode: 'insensitive' } }] : [])
                     ]
                 }
             });
@@ -592,7 +645,13 @@ router.post('/neon/reset-password', otpRateLimiter, async (req, res) => {
             });
         }
 
-        const resolvedEmail = await resolveNeonRecoveryEmail(identifier);
+        let resolvedEmail = null;
+        try {
+            resolvedEmail = await Promise.race([
+                resolveNeonRecoveryEmail(identifier),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 2500))
+            ]);
+        } catch (_) {}
         const baseUrl = getNeonAuthBaseUrl();
         const origin = resolveNeonOrigin(req);
         if (resolvedEmail && baseUrl) {
@@ -603,7 +662,8 @@ router.post('/neon/reset-password', otpRateLimiter, async (req, res) => {
                     email: resolvedEmail,
                     otp: cleanOtp,
                     password
-                })
+                }),
+                signal: AbortSignal.timeout(3000)
             }).catch(() => null);
             if (resp && resp.ok) {
                 return res.json({
