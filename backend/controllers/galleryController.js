@@ -2,6 +2,17 @@ const path = require('path');
 const prisma = require('../prismaClient');
 const { validateAndSaveImageBuffer } = require('../utils/imageUpload');
 
+let cachedGallery = null;
+let lastGalleryFetch = 0;
+const GALLERY_CACHE_TTL_MS = 300000; // 5 minutes cache
+
+function clearGalleryCache() {
+    cachedGallery = null;
+    lastGalleryFetch = 0;
+}
+
+exports.clearGalleryCache = clearGalleryCache;
+
 function sanitizeSafeImageUrl(urlValue) {
     if (typeof urlValue !== 'string') return null;
     const trimmed = urlValue.trim();
@@ -22,9 +33,19 @@ function sanitizeSafeImageUrl(urlValue) {
 
 exports.getGallery = async (req, res) => {
     try {
+        const now = Date.now();
+        if (cachedGallery && (now - lastGalleryFetch < GALLERY_CACHE_TTL_MS)) {
+            res.setHeader('Cache-Control', 'public, max-age=120');
+            return res.json(cachedGallery);
+        }
+
         const gallery = await prisma.gallery.findMany({
             orderBy: { upload_date: 'desc' }
         });
+
+        cachedGallery = gallery;
+        lastGalleryFetch = now;
+        res.setHeader('Cache-Control', 'public, max-age=120');
         res.json(gallery);
     } catch (error) {
         console.error('Get Gallery Error:', error.message);
@@ -63,6 +84,7 @@ exports.uploadGalleryItem = async (req, res) => {
                 upload_date: new Date().toISOString()
             }
         });
+        clearGalleryCache();
         res.status(201).json(galleryItem);
     } catch (error) {
         console.error('Gallery Upload Error:', error.message);
@@ -90,6 +112,7 @@ exports.deleteGalleryItem = async (req, res) => {
         }
 
         await prisma.gallery.delete({ where: { id } });
+        clearGalleryCache();
         res.json({ message: 'Gallery item permanently deleted from database and storage' });
     } catch (error) {
         console.error('Delete Gallery Error:', error.message);

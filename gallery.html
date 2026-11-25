@@ -161,6 +161,49 @@
         </div>
 
         <div class="cards-grid" id="galleryGrid" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+            <!-- Loading Skeletons -->
+            <div class="skeleton-card">
+                <div class="skeleton-image skeleton-shimmer"></div>
+                <div class="skeleton-content">
+                    <div class="skeleton-line skeleton-shimmer short"></div>
+                    <div class="skeleton-line skeleton-shimmer"></div>
+                </div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-image skeleton-shimmer"></div>
+                <div class="skeleton-content">
+                    <div class="skeleton-line skeleton-shimmer short"></div>
+                    <div class="skeleton-line skeleton-shimmer"></div>
+                </div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-image skeleton-shimmer"></div>
+                <div class="skeleton-content">
+                    <div class="skeleton-line skeleton-shimmer short"></div>
+                    <div class="skeleton-line skeleton-shimmer"></div>
+                </div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-image skeleton-shimmer"></div>
+                <div class="skeleton-content">
+                    <div class="skeleton-line skeleton-shimmer short"></div>
+                    <div class="skeleton-line skeleton-shimmer"></div>
+                </div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-image skeleton-shimmer"></div>
+                <div class="skeleton-content">
+                    <div class="skeleton-line skeleton-shimmer short"></div>
+                    <div class="skeleton-line skeleton-shimmer"></div>
+                </div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-image skeleton-shimmer"></div>
+                <div class="skeleton-content">
+                    <div class="skeleton-line skeleton-shimmer short"></div>
+                    <div class="skeleton-line skeleton-shimmer"></div>
+                </div>
+            </div>
             <!-- No Results -->
             <div class="gallery-no-results" id="galleryNoResults">
                 <i class="fas fa-images"></i>
@@ -220,17 +263,23 @@
 
                 const grid = document.getElementById('galleryGrid');
                 if (grid) {
-                    // Skip existing hardcoded items if preferred, or just append
+                    // Remove loading skeletons
+                    const skeletons = grid.querySelectorAll('.skeleton-card');
+                    skeletons.forEach(s => s.remove());
+
                     items.forEach(item => {
                         const div = document.createElement('div');
-                        div.className = 'card';
+                        div.className = 'card fade-in-img';
                         div.setAttribute('data-category', item.category);
                         div.style.padding = '0';
                         div.style.overflow = 'hidden';
 
-                        const fullImageUrl = item.image_url.startsWith('http') ? item.image_url : `${BACKEND_URL}${item.image_url}`;
+                        const fullImageUrl = (item.image_url.startsWith('http') || item.image_url.startsWith('data:')) 
+                            ? item.image_url 
+                            : `${BACKEND_URL}${item.image_url}`;
+
                         div.innerHTML = `
-                            <img src="${fullImageUrl}" alt="${item.category}" style="width: 100%; height: 200px; object-fit: cover;">
+                            <img src="${fullImageUrl}" alt="${item.category}" loading="lazy" style="width: 100%; height: 200px; object-fit: cover;">
                             <div style="padding: 1rem;">
                                 <h4>${item.category}</h4>
                                 <p style="font-size: 0.8rem; color: #666;">${item.description || ''}</p>
@@ -243,6 +292,11 @@
 
             } catch (error) {
                 console.error(error);
+                const grid = document.getElementById('galleryGrid');
+                if (grid) {
+                    const skeletons = grid.querySelectorAll('.skeleton-card');
+                    skeletons.forEach(s => s.remove());
+                }
             } finally {
                 // Always setup filters even if fetch fails so buttons remain interactive
                 setupFilters();

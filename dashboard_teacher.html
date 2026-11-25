@@ -1789,11 +1789,16 @@
                 return;
             }
 
+            const container = document.getElementById('studentListContainer');
+            if (container) {
+                container.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><span>Loading students for attendance...</span></div>';
+            }
+            document.getElementById('attendanceArea').style.display = 'block';
+
             const students = await fetchStudents(medium, cls);
             activeStudentList = students;
             
-            const container = document.getElementById('studentListContainer');
-            container.innerHTML = '';
+            if (container) container.innerHTML = '';
 
             if (students.length === 0) {
                 container.innerHTML = `
@@ -1950,11 +1955,15 @@
             const cls = document.getElementById('marksClass').value;
             if (!medium || !cls) return;
 
+            const container = document.getElementById('marksListContainer');
+            if (container) {
+                container.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><span>Loading students for marks entry...</span></div>';
+            }
+
             const students = await fetchStudents(medium, cls);
             activeStudentList = students;
 
-            const container = document.getElementById('marksListContainer');
-            container.innerHTML = '';
+            if (container) container.innerHTML = '';
 
             if (students.length === 0) {
                 container.innerHTML = `

@@ -249,6 +249,28 @@
         </div>
 
         <div class="cards-grid" id="teacherGrid">
+            <!-- Loading Skeletons -->
+            <div class="skeleton-card">
+                <div class="skeleton-avatar skeleton-shimmer"></div>
+                <div class="skeleton-content" style="align-items: center;">
+                    <div class="skeleton-line skeleton-shimmer" style="width: 70%;"></div>
+                    <div class="skeleton-line skeleton-shimmer short"></div>
+                </div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-avatar skeleton-shimmer"></div>
+                <div class="skeleton-content" style="align-items: center;">
+                    <div class="skeleton-line skeleton-shimmer" style="width: 70%;"></div>
+                    <div class="skeleton-line skeleton-shimmer short"></div>
+                </div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-avatar skeleton-shimmer"></div>
+                <div class="skeleton-content" style="align-items: center;">
+                    <div class="skeleton-line skeleton-shimmer" style="width: 70%;"></div>
+                    <div class="skeleton-line skeleton-shimmer short"></div>
+                </div>
+            </div>
             <!-- No Results Message -->
             <div class="no-results" id="noResults">
                 <i class="fas fa-search"></i>
@@ -309,16 +331,19 @@
                 const noResults = document.getElementById('noResults');
                 
                 if (grid) {
+                    const skeletons = grid.querySelectorAll('.skeleton-card');
+                    skeletons.forEach(s => s.remove());
+
                     teachers.forEach(t => {
                         const card = document.createElement('div');
-                        card.className = 'teacher-card';
+                        card.className = 'teacher-card fade-in-img';
                         card.setAttribute('data-subject', (t.category || 'other').toLowerCase());
                         card.setAttribute('data-name', t.name.toLowerCase());
 
                         const photoUrl = t.photo_url ? (t.photo_url.startsWith('http') ? t.photo_url : `${t.photo_url}`) : 'images/logo.png';
                         card.innerHTML = `
                             <div class="teacher-img-container">
-                                <img src="${photoUrl}" alt="${t.name}" class="teacher-img" onerror="this.src='images/logo.png'">
+                                <img src="${photoUrl}" alt="${t.name}" class="teacher-img" loading="lazy" onerror="this.src='images/logo.png'">
                             </div>
                             <div class="teacher-info">
                                 <h3>${t.name}</h3>

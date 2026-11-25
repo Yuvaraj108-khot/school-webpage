@@ -788,6 +788,10 @@
 
         async function loadMarks() {
             if (!STUDENT_CODE) return;
+            const tbody = document.querySelector('.marks-table tbody');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem;"><div class="loading-indicator"><div class="spinner"></div><span>Loading your marks card...</span></div></td></tr>';
+            }
             try {
                 const res = await authFetch(`${API}/marks/${encodeURIComponent(STUDENT_CODE)}`, { authMode: 'cookie' });
                 if (handleStudentAuthError(res)) return;

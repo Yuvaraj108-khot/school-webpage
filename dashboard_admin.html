@@ -1382,27 +1382,33 @@
         }
 
         async function loadGallery() {
+            var grid = document.getElementById('previewGrid');
+            if (grid) {
+                grid.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><span>Loading gallery images...</span></div>';
+            }
             try {
                 const res = await adminFetch('/gallery');
                 const gallery = await res.json();
-                var grid = document.getElementById('previewGrid');
                 if (!grid) return;
-                if (gallery.length === 0) {
+                if (!Array.isArray(gallery) || gallery.length === 0) {
                     grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#888;">No images uploaded yet.</p>';
                     return;
                 }
                 grid.innerHTML = '';
                 gallery.forEach(function (item) {
                     var div = document.createElement('div');
-                    div.className = 'preview-item';
-                    const fullUrl = item.image_url.startsWith('http') ? item.image_url : API_BASE.replace('/api', '') + item.image_url;
+                    div.className = 'preview-item fade-in-img';
+                    const fullUrl = (item.image_url.startsWith('http') || item.image_url.startsWith('data:')) 
+                        ? item.image_url 
+                        : (API_BASE.replace('/api', '') + item.image_url);
                     div.innerHTML = '<button class="delete-btn" onclick="deleteImage(' + item.id + ')"><i class="fas fa-times"></i></button>' +
-                        '<img src="' + fullUrl + '" alt="Gallery">' +
+                        '<img src="' + fullUrl + '" alt="Gallery" loading="lazy">' +
                         '<div class="preview-desc"><strong>' + item.category + '</strong><br>' + item.description + '</div>';
                     grid.appendChild(div);
                 });
             } catch (err) {
                 console.error(err);
+                if (grid) grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#ef4444;">Failed to load gallery images.</p>';
                 toast('Failed to load gallery', 'error');
             }
         }
@@ -1463,6 +1469,7 @@
         async function loadNotices() {
             var list = document.getElementById('noticeList');
             if (!list) return;
+            list.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><span>Loading notices...</span></div>';
             try {
                 const res = await adminFetch('/events');
                 const notices = await res.json();
@@ -1655,6 +1662,11 @@
             document.getElementById('addStudentArea').style.display = 'block';
             if (document.getElementById('selectPrompt')) document.getElementById('selectPrompt').style.display = 'none';
             
+            var list = document.getElementById('studentsList');
+            if (list) {
+                list.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><span>Loading students...</span></div>';
+            }
+
             try {
                 const response = await adminFetch(`/students?medium=${encodeURIComponent(m)}&class=${encodeURIComponent(c)}`);
                 if (!response.ok) {
@@ -1976,6 +1988,9 @@
 
         async function loadTeachers() {
             var list = document.getElementById('teachersList');
+            if (list) {
+                list.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><span>Loading faculty members...</span></div>';
+            }
             try {
                 const res = await adminFetch('/teachers');
                 const teachers = await res.json();
@@ -2307,7 +2322,7 @@
             var filter = document.getElementById('admissionStatusFilter') ? document.getElementById('admissionStatusFilter').value : 'Pending';
             var countEl = document.getElementById('totalAdmissionsCount');
             if (!list) return;
-
+            list.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><span>Loading applications...</span></div>';
             try {
                 var url = '/admissions';
                 if (filter && filter !== 'All') {
@@ -2447,7 +2462,7 @@
             var filter = document.getElementById('contactQueryFilter') ? document.getElementById('contactQueryFilter').value : 'All';
             var countEl = document.getElementById('totalQueriesCount');
             if (!list) return;
-
+            list.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><span>Loading queries...</span></div>';
             try {
                 var url = '/contact';
                 if (filter && filter !== 'All') {
