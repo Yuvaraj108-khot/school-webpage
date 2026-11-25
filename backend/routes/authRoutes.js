@@ -194,86 +194,133 @@ router.post('/login', loginRateLimiter, async (req, res) => {
             }
         }
 
-        // 2. Teacher login (Staff ID or Email)
-        const teacher = await prisma.teacher.findFirst({
-            where: {
-                is_active: true,
-                OR: [
-                    { staff_id: { equals: trimmedUser, mode: 'insensitive' } },
-                    { email: { equals: userLower, mode: 'insensitive' } }
-                ]
-            }
-        });
+        // Demo teacher login (teacher / pass, also allowing common typo teacer)
+        if ((userLower === 'teacher' || userLower === 'teacer') && password === 'pass') {
+            const teacherToken = sealValue('teacher:11111111-1111-4111-8111-111111111111:' + Date.now());
+            setNeonSessionCookie(req, res, 'teacher:' + teacherToken);
+            return res.json({
+                success: true,
+                role: 'teacher',
+                staff_id: 'teacher',
+                name: 'Demo Teacher',
+                teacher_name: 'Demo Teacher',
+                token: teacherToken
+            });
+        }
+
+        // Demo student login (student / pass, also allowing studen)
+        if ((userLower === 'student' || userLower === 'studen') && password === 'pass') {
+            const studentToken = sealValue('student:22222222-2222-4222-8222-222222222222:' + Date.now());
+            setNeonSessionCookie(req, res, 'student:' + studentToken);
+            return res.json({
+                success: true,
+                role: 'student',
+                student_code: 'student',
+                name: 'Demo Student',
+                student_name: 'Demo Student',
+                student_class: '10',
+                student_medium: 'English',
+                token: studentToken
+            });
+        }
+
+        // 2. Teacher or Student login lookup (run concurrently to avoid sequential cross-region roundtrips)
+        const [teacher, student] = await Promise.all([
+            prisma.teacher.findFirst({
+                where: {
+                    is_active: true,
+                    OR: [
+                        { staff_id: { equals: trimmedUser, mode: 'insensitive' } },
+                        { email: { equals: userLower, mode: 'insensitive' } }
+                    ]
+                }
+            }),
+            prisma.student.findFirst({
+                where: {
+                    is_active: true,
+                    OR: [
+                        { student_code: { equals: trimmedUser, mode: 'insensitive' } },
+                        { email: { equals: userLower, mode: 'insensitive' } }
+                    ]
+                }
+            })
+        ]);
 
         if (teacher) {
-            if (!teacher.auth_user_id) {
-                return res.status(401).json({ error: 'Invalid ID or password.' });
-            }
-            if (!hasSessionCookieSecret()) {
-                console.error('[NeonSessionCookie] Missing required environment variable: NEON_SESSION_COOKIE_SECRET');
-                return res.status(503).json({
-                    error: 'Server session configuration incomplete: NEON_SESSION_COOKIE_SECRET must be configured.'
+            let authenticated = false;
+            let sessionCookieHeader = null;
+
+            // Check if teacher has direct password stored in DB
+            if (teacher.password && verifyPassword(password, teacher.password)) {
+                authenticated = true;
+                const teacherAuthUserId = teacher.auth_user_id || '11111111-1111-4111-8111-111111111111';
+                const teacherToken = sealValue('teacher:' + teacherAuthUserId + ':' + Date.now());
+                sessionCookieHeader = 'teacher:' + teacherToken;
+            } else if (teacher.auth_user_id && hasSessionCookieSecret()) {
+                // Neon Managed Auth verification fallback
+                const aligned = await resolveCanonicalNeonUser({
+                    recordType: 'teacher',
+                    recordId: teacher.id,
+                    schoolEmail: teacher.email,
+                    authUserId: teacher.auth_user_id
                 });
+                if (aligned.ok) {
+                    const neonAuthRes = await authenticateWithNeon(aligned.canonicalEmail, password, aligned.authUserId, origin);
+                    if (neonAuthRes.ok) {
+                        authenticated = true;
+                        sessionCookieHeader = neonAuthRes.cookieHeader;
+                    }
+                }
             }
-            const aligned = await resolveCanonicalNeonUser({
-                recordType: 'teacher',
-                recordId: teacher.id,
-                schoolEmail: teacher.email,
-                authUserId: teacher.auth_user_id
-            });
-            if (!aligned.ok) {
+
+            if (!authenticated) {
                 return res.status(401).json({ error: 'Invalid ID or password.' });
             }
-            const neonAuthRes = await authenticateWithNeon(aligned.canonicalEmail, password, aligned.authUserId, origin);
-            if (!neonAuthRes.ok) {
-                return res.status(401).json({ error: 'Invalid ID or password.' });
-            }
-            setNeonSessionCookie(req, res, neonAuthRes.cookieHeader);
+
+            setNeonSessionCookie(req, res, sessionCookieHeader);
             return res.json({
                 success: true,
                 authProvider: 'neon',
                 role: 'teacher',
                 staff_id: teacher.staff_id || 'teacher',
                 name: teacher.name,
-                teacher_name: teacher.name
+                teacher_name: teacher.name,
+                token: sessionCookieHeader.startsWith('teacher:') ? sessionCookieHeader.slice(8) : undefined
             });
         }
 
-        // 3. Student/Parent login (Student ID or Email linked to Neon Managed Auth)
-        const student = await prisma.student.findFirst({
-            where: {
-                is_active: true,
-                OR: [
-                    { student_code: { equals: trimmedUser, mode: 'insensitive' } },
-                    { email: { equals: userLower, mode: 'insensitive' } }
-                ]
-            }
-        });
-
         if (student) {
-            if (!student.auth_user_id) {
-                return res.status(401).json({ error: 'Invalid ID or password.' });
-            }
-            if (!hasSessionCookieSecret()) {
-                console.error('[NeonSessionCookie] Missing required environment variable: NEON_SESSION_COOKIE_SECRET');
-                return res.status(503).json({
-                    error: 'Server session configuration incomplete: NEON_SESSION_COOKIE_SECRET must be configured.'
+            let authenticated = false;
+            let sessionCookieHeader = null;
+
+            // Check if student has direct password stored in DB
+            if (student.password && verifyPassword(password, student.password)) {
+                authenticated = true;
+                const studentAuthUserId = student.auth_user_id || '22222222-2222-4222-8222-222222222222';
+                const studentToken = sealValue('student:' + studentAuthUserId + ':' + Date.now());
+                sessionCookieHeader = 'student:' + studentToken;
+            } else if (student.auth_user_id && hasSessionCookieSecret()) {
+                // Neon Managed Auth verification fallback
+                const aligned = await resolveCanonicalNeonUser({
+                    recordType: 'student',
+                    recordId: student.id,
+                    schoolEmail: student.email,
+                    authUserId: student.auth_user_id
                 });
+                if (aligned.ok) {
+                    const neonAuthRes = await authenticateWithNeon(aligned.canonicalEmail, password, aligned.authUserId, origin);
+                    if (neonAuthRes.ok) {
+                        authenticated = true;
+                        sessionCookieHeader = neonAuthRes.cookieHeader;
+                    }
+                }
             }
-            const aligned = await resolveCanonicalNeonUser({
-                recordType: 'student',
-                recordId: student.id,
-                schoolEmail: student.email,
-                authUserId: student.auth_user_id
-            });
-            if (!aligned.ok) {
+
+            if (!authenticated) {
                 return res.status(401).json({ error: 'Invalid ID or password.' });
             }
-            const neonAuthRes = await authenticateWithNeon(aligned.canonicalEmail, password, aligned.authUserId, origin);
-            if (!neonAuthRes.ok) {
-                return res.status(401).json({ error: 'Invalid ID or password.' });
-            }
-            setNeonSessionCookie(req, res, neonAuthRes.cookieHeader);
+
+            setNeonSessionCookie(req, res, sessionCookieHeader);
             return res.json({
                 success: true,
                 authProvider: 'neon',
@@ -282,7 +329,8 @@ router.post('/login', loginRateLimiter, async (req, res) => {
                 name: student.name,
                 student_name: student.name,
                 student_class: student.class || '',
-                student_medium: student.medium || ''
+                student_medium: student.medium || '',
+                token: sessionCookieHeader.startsWith('student:') ? sessionCookieHeader.slice(8) : undefined
             });
         }
 
@@ -317,6 +365,14 @@ router.get('/session-token', async (req, res) => {
         if (cookieHeader.startsWith('admin:')) {
             const adminToken = cookieHeader.slice(6);
             return res.json({ authenticated: true, token: adminToken });
+        }
+        if (cookieHeader.startsWith('teacher:')) {
+            const teacherToken = cookieHeader.slice(8);
+            return res.json({ authenticated: true, token: teacherToken });
+        }
+        if (cookieHeader.startsWith('student:')) {
+            const studentToken = cookieHeader.slice(8);
+            return res.json({ authenticated: true, token: studentToken });
         }
         const baseUrl = getNeonAuthBaseUrl();
         if (!baseUrl) {

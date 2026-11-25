@@ -809,11 +809,25 @@
                         tdExam.textContent = m.exam_type || '';
                         const tdMarks = document.createElement('td');
                         tdMarks.textContent = String(m.marks ?? '');
+                        
+                        const maxTotal = (m.total && Number(m.total) > 0) ? Number(m.total) : 100;
                         const tdTotal = document.createElement('td');
-                        tdTotal.textContent = String(m.total || 100);
+                        tdTotal.textContent = String(maxTotal);
+                        
+                        const score = Number(m.marks) || 0;
+                        const percentage = maxTotal > 0 ? (score / maxTotal) * 100 : 0;
+                        let grade = 'F';
+                        let gradeColor = '#dc2626';
+                        if (percentage >= 90) { grade = 'A+'; gradeColor = '#16a34a'; }
+                        else if (percentage >= 80) { grade = 'A'; gradeColor = '#16a34a'; }
+                        else if (percentage >= 70) { grade = 'B+'; gradeColor = '#2563eb'; }
+                        else if (percentage >= 60) { grade = 'B'; gradeColor = '#2563eb'; }
+                        else if (percentage >= 50) { grade = 'C'; gradeColor = '#d97706'; }
+                        else if (percentage >= 35) { grade = 'D'; gradeColor = '#d97706'; }
+
                         const tdGrade = document.createElement('td');
-                        tdGrade.style.cssText = 'color: green; font-weight: bold;';
-                        tdGrade.textContent = m.marks >= 90 ? 'A+' : m.marks >= 80 ? 'A' : 'B';
+                        tdGrade.style.cssText = `color: ${gradeColor}; font-weight: bold;`;
+                        tdGrade.textContent = grade;
                         tr.append(tdSub, tdExam, tdMarks, tdTotal, tdGrade);
                         tbody.appendChild(tr);
                     });

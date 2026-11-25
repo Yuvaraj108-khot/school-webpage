@@ -74,8 +74,19 @@ exports.deleteGalleryItem = async (req, res) => {
         const galleryItem = await prisma.gallery.findUnique({ where: { id } });
         if (!galleryItem) return res.status(404).json({ error: 'Gallery item not found' });
 
+        if (galleryItem.image_url && galleryItem.image_url.startsWith('/uploads/')) {
+            try {
+                const fs = require('fs');
+                const path = require('path');
+                const filePath = path.join(__dirname, '..', galleryItem.image_url);
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                }
+            } catch (_) {}
+        }
+
         await prisma.gallery.delete({ where: { id } });
-        res.json({ message: 'Gallery item deleted successfully' });
+        res.json({ message: 'Gallery item permanently deleted from database and storage' });
     } catch (error) {
         console.error('Delete Gallery Error:', error.message);
         res.status(500).json({ error: 'Failed to delete gallery item' });

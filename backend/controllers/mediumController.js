@@ -1,17 +1,25 @@
 const prisma = require('../prismaClient');
 
+let mediumCache = null;
+let mediumCacheTime = 0;
+const CACHE_TTL_MS = 120000;
+
 exports.getAllMediums = async (req, res) => {
     try {
         const { is_active } = req.query;
-        const where = {};
-        if (is_active !== undefined) {
-            where.is_active = is_active === 'true';
+        const now = Date.now();
+        if (!mediumCache || (now - mediumCacheTime) > CACHE_TTL_MS) {
+            mediumCache = await prisma.medium.findMany({
+                orderBy: { id: 'asc' }
+            });
+            mediumCacheTime = now;
         }
-        const mediums = await prisma.medium.findMany({
-            where,
-            orderBy: { id: 'asc' }
-        });
-        res.json(mediums);
+        let result = mediumCache;
+        if (is_active !== undefined) {
+            const activeBool = is_active === 'true';
+            result = result.filter(m => m.is_active === activeBool);
+        }
+        res.json(result);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch mediums' });
     }
@@ -68,14 +76,16 @@ exports.updateMedium = async (req, res) => {
 
 exports.deleteMedium = async (req, res) => {
     try {
-        const { id } = req.params;
-        // Soft delete
-        const medium = await prisma.medium.update({
-            where: { id: parseInt(id) },
-            data: { is_active: false }
+        const mediumId = parseInt(req.params.id, 10);
+        await prisma.student.updateMany({ where: { medium_id: mediumId }, data: { medium_id: null } }).catch(() => {});
+        await prisma.subject.deleteMany({ where: { medium_id: mediumId } }).catch(() => {});
+        await prisma.schoolClass.deleteMany({ where: { medium_id: mediumId } }).catch(() => {});
+        const medium = await prisma.medium.delete({
+            where: { id: mediumId }
         });
-        res.json({ message: 'Medium soft-deleted successfully', medium });
+        res.json({ message: 'Medium permanently deleted from database', medium });
     } catch (error) {
+        console.error('Delete Medium Error:', error);
         res.status(500).json({ error: 'Failed to delete medium' });
     }
 };

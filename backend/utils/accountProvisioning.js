@@ -153,7 +153,7 @@ async function checkEmailAvailable(email, options = {}) {
 
     const neonPromise = includeNeonAuth
         ? withDbRetry(() => prisma.$queryRaw`
-            SELECT id
+            SELECT id, role
             FROM neon_auth."user"
             WHERE LOWER(email) = ${clean}
             LIMIT 1
@@ -173,11 +173,51 @@ async function checkEmailAvailable(email, options = {}) {
         return { available: false, conflictIn: 'teachers', error: 'This email address is already assigned to a teacher.' };
     }
     if (neonRows && neonRows.length > 0) {
-        return {
-            available: false,
-            conflictIn: 'neon_auth',
-            error: 'This email address already exists in Neon Auth.'
-        };
+        const neonUser = neonRows[0];
+        if (neonUser.role === 'admin') {
+            return {
+                available: false,
+                conflictIn: 'neon_auth',
+                error: 'Administrator accounts cannot be assigned to students or teachers.'
+            };
+        }
+        // Check if already linked to a student or teacher
+        const linkedStudent = await prisma.student.findFirst({
+            where: {
+                OR: [
+                    { auth_user_id: neonUser.id },
+                    { email: { equals: clean, mode: 'insensitive' } }
+                ],
+                ...(excludeStudentId !== null ? { NOT: { id: excludeStudentId } } : {})
+            },
+            select: { id: true }
+        });
+        if (linkedStudent) {
+            return {
+                available: false,
+                conflictIn: 'students',
+                error: 'This email address is already assigned to a student.'
+            };
+        }
+        const linkedTeacher = await prisma.teacher.findFirst({
+            where: {
+                OR: [
+                    { auth_user_id: neonUser.id },
+                    { email: { equals: clean, mode: 'insensitive' } }
+                ],
+                ...(excludeTeacherId !== null ? { NOT: { id: excludeTeacherId } } : {})
+            },
+            select: { id: true }
+        });
+        if (linkedTeacher) {
+            return {
+                available: false,
+                conflictIn: 'teachers',
+                error: 'This email address is already assigned to a teacher.'
+            };
+        }
+        // It is an unlinked Neon Auth account: allow reuse and return its ID
+        return { available: true, existingNeonUserId: neonUser.id };
     }
 
     return { available: true };

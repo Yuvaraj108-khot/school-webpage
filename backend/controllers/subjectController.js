@@ -137,33 +137,48 @@ exports.removeSubjectFromClass = async (req, res) => {
 
 // ==================== NEW RELATIONAL ENDPOINTS ====================
 
+// In-memory cache for ultra-fast subject lookups
+let subjectCache = null;
+let subjectCacheTime = 0;
+const CACHE_TTL_MS = 120000;
+
 exports.getAllSubjects = async (req, res) => {
     try {
         const { class_id, medium_id, is_active } = req.query;
-        const where = {};
+
+        const now = Date.now();
+        if (!subjectCache || (now - subjectCacheTime) > CACHE_TTL_MS) {
+            subjectCache = await prisma.subject.findMany({
+                orderBy: { name: 'asc' },
+                include: {
+                    class: true,
+                    medium: true
+                }
+            });
+            subjectCacheTime = now;
+        }
+
+        let subjects = subjectCache;
+
         if (class_id) {
-            where.class_id = parseInt(class_id);
+            const cid = parseInt(class_id, 10);
+            subjects = subjects.filter(s => s.class_id === cid);
         }
         if (medium_id) {
-            where.medium_id = parseInt(medium_id);
+            const mid = parseInt(medium_id, 10);
+            subjects = subjects.filter(s => s.medium_id === mid);
         }
         if (is_active !== undefined) {
-            where.is_active = is_active === 'true';
+            const activeBool = is_active === 'true';
+            subjects = subjects.filter(s => s.is_active === activeBool);
         }
 
         const assignedSubjectIds = await getTeacherAssignedSubjectIds(req);
         if (assignedSubjectIds !== null) {
-            where.id = { in: assignedSubjectIds };
+            const assignedSet = new Set(assignedSubjectIds);
+            subjects = subjects.filter(s => assignedSet.has(s.id));
         }
 
-        const subjects = await prisma.subject.findMany({
-            where,
-            orderBy: { name: 'asc' },
-            include: {
-                class: true,
-                medium: true
-            }
-        });
         res.json(subjects);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch subjects' });
@@ -269,14 +284,15 @@ exports.updateRelationalSubject = async (req, res) => {
 
 exports.deleteRelationalSubject = async (req, res) => {
     try {
-        const { id } = req.params;
-        // Soft delete
-        const subject = await prisma.subject.update({
-            where: { id: parseInt(id) },
-            data: { is_active: false }
+        const subjectId = parseInt(req.params.id, 10);
+        await prisma.subjectTeacher.deleteMany({ where: { subject_id: subjectId } }).catch(() => {});
+        await prisma.marks.deleteMany({ where: { subject_id: subjectId } }).catch(() => {});
+        const subject = await prisma.subject.delete({
+            where: { id: subjectId }
         });
-        res.json({ message: 'Subject soft-deleted successfully', subject });
+        res.json({ message: 'Subject permanently deleted from database', subject });
     } catch (error) {
+        console.error('Delete Subject Error:', error);
         res.status(500).json({ error: 'Failed to delete subject' });
     }
 };

@@ -242,21 +242,47 @@ exports.createAttendanceBulk = async (req, res) => {
         const dateObj = new Date(date);
         const dayString = dateObj.toISOString().split('T')[0];
 
+        // Resolve shared metadata (Medium, Class, Subject, and Students) in parallel ONCE upfront
+        const codes = attendance_list.map(i => i.student_code.trim());
+        const medName = medium === 'CBSE' ? 'English' : medium;
+        const clsName = className ? className.replace(/\D/g, '') : '';
+
+        const [med, students] = await Promise.all([
+            medName ? prisma.medium.findUnique({ where: { name: medName } }) : null,
+            prisma.student.findMany({ where: { student_code: { in: codes } } })
+        ]);
+
+        const mediumId = med?.id || null;
+        let classId = null;
+        if (mediumId && clsName) {
+            const cls = await prisma.schoolClass.findUnique({
+                where: { name_medium_id: { name: clsName, medium_id: mediumId } }
+            });
+            classId = cls?.id || null;
+        }
+
+        let subjectId = null;
+        if (subject && classId && mediumId) {
+            const sub = await prisma.subject.findUnique({
+                where: { name_class_id_medium_id: { name: subject, class_id: classId, medium_id: mediumId } }
+            });
+            subjectId = sub?.id || null;
+        }
+        const studentMap = new Map(students.map(s => [s.student_code, s]));
+
         const results = await withDbRetry(() => prisma.$transaction(async (tx) => {
-            const txResults = [];
-            for (const item of attendance_list) {
+            return Promise.all(attendance_list.map(async (item) => {
                 const code = item.student_code;
                 const status = item.status;
+                const student = studentMap.get(code);
+                const studentId = student?.id || null;
 
-                // Resolve relational mappings on the active transaction client
-                const ids = await resolveRelationalIds(code, className, medium, subject, tx);
-
-                if (ids.studentId && ids.subjectId) {
-                    const result = await tx.attendance.upsert({
+                if (studentId && subjectId) {
+                    return tx.attendance.upsert({
                         where: {
                             student_id_subject_id_attendance_day_period: {
-                                student_id: ids.studentId,
-                                subject_id: ids.subjectId,
+                                student_id: studentId,
+                                subject_id: subjectId,
                                 attendance_day: dayString,
                                 period: String(period)
                             }
@@ -272,8 +298,8 @@ exports.createAttendanceBulk = async (req, res) => {
                             subject
                         },
                         create: {
-                            student_id: ids.studentId,
-                            subject_id: ids.subjectId,
+                            student_id: studentId,
+                            subject_id: subjectId,
                             attendance_day: dayString,
                             period: String(period),
                             status,
@@ -285,9 +311,7 @@ exports.createAttendanceBulk = async (req, res) => {
                             subject
                         }
                     });
-                    txResults.push(result);
                 } else {
-                    // Fallback legacy
                     const startOfDay = new Date(date);
                     startOfDay.setHours(0,0,0,0);
                     const endOfDay = new Date(date);
@@ -306,14 +330,13 @@ exports.createAttendanceBulk = async (req, res) => {
                         }
                     });
 
-                    let result;
                     if (existing) {
-                        result = await tx.attendance.update({
+                        return tx.attendance.update({
                             where: { id: existing.id },
                             data: { status, teacher_name: authoritativeTeacherName }
                         });
                     } else {
-                        result = await tx.attendance.create({
+                        return tx.attendance.create({
                             data: {
                                 student_code: code,
                                 class: className,
@@ -326,10 +349,8 @@ exports.createAttendanceBulk = async (req, res) => {
                             }
                         });
                     }
-                    txResults.push(result);
                 }
-            }
-            return txResults;
+            }));
         }, {
             maxWait: 15000,
             timeout: 60000

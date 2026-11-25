@@ -1,53 +1,49 @@
 const prisma = require('../prismaClient');
 
+// In-memory cache for ultra-fast class lookups
+let classCache = null;
+let classCacheTime = 0;
+const CACHE_TTL_MS = 120000; // 2 minutes
+
+function invalidateClassCache() {
+    classCache = null;
+    classCacheTime = 0;
+}
+exports.invalidateClassCache = invalidateClassCache;
+
 exports.getAllClasses = async (req, res) => {
     try {
         const { medium_id, is_active } = req.query;
-        const where = {};
-        if (medium_id) {
-            where.medium_id = parseInt(medium_id);
-        }
-        if (is_active !== undefined) {
-            where.is_active = is_active === 'true';
-        }
 
-        if (req.auth && req.auth.role === 'teacher' && req.auth.teacher) {
-            const assignments = await prisma.subjectTeacher.findMany({
-                where: {
-                    teacher_id: req.auth.teacher.id,
-                    is_active: true,
-                    subject: { is_active: true }
-                },
-                include: {
-                    subject: {
-                        select: { class_id: true }
-                    }
-                }
+        const now = Date.now();
+        if (!classCache || (now - classCacheTime) > CACHE_TTL_MS) {
+            const all = await prisma.schoolClass.findMany({
+                include: { medium: true }
             });
-            if (assignments.length > 0) {
-                const assignedClassIds = [...new Set(
-                    assignments
-                        .map((a) => a.subject && a.subject.class_id)
-                        .filter((cid) => Number.isInteger(cid))
-                )];
-                if (assignedClassIds.length > 0) {
-                    where.id = { in: assignedClassIds };
+            all.sort((a, b) => {
+                const numA = parseInt(String(a.name || '').replace(/\D/g, ''), 10);
+                const numB = parseInt(String(b.name || '').replace(/\D/g, ''), 10);
+                if (!Number.isNaN(numA) && !Number.isNaN(numB) && numA !== numB) {
+                    return numA - numB;
                 }
-            }
+                return String(a.name || '').localeCompare(String(b.name || ''));
+            });
+            classCache = all;
+            classCacheTime = now;
         }
 
-        const classes = await prisma.schoolClass.findMany({
-            where,
-            include: { medium: true }
-        });
-        classes.sort((a, b) => {
-            const numA = parseInt(String(a.name || '').replace(/\D/g, ''), 10);
-            const numB = parseInt(String(b.name || '').replace(/\D/g, ''), 10);
-            if (!Number.isNaN(numA) && !Number.isNaN(numB) && numA !== numB) {
-                return numA - numB;
-            }
-            return String(a.name || '').localeCompare(String(b.name || ''));
-        });
+        let classes = classCache;
+
+        if (medium_id) {
+            const mId = parseInt(medium_id, 10);
+            classes = classes.filter(c => c.medium_id === mId);
+        }
+
+        if (is_active !== undefined) {
+            const activeBool = is_active === 'true';
+            classes = classes.filter(c => c.is_active === activeBool);
+        }
+
         res.json(classes);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch classes' });
@@ -127,14 +123,29 @@ exports.updateClass = async (req, res) => {
 
 exports.deleteClass = async (req, res) => {
     try {
-        const { id } = req.params;
-        // Soft delete
-        const schoolClass = await prisma.schoolClass.update({
-            where: { id: parseInt(id) },
-            data: { is_active: false }
+        const classId = parseInt(req.params.id, 10);
+        // Disconnect students referencing this class
+        await prisma.student.updateMany({
+            where: { class_id: classId },
+            data: { class_id: null }
+        }).catch(() => {});
+
+        // Delete subject assignments and subjects linked to this class
+        const subjects = await prisma.subject.findMany({ where: { class_id: classId }, select: { id: true } });
+        const subjectIds = subjects.map(s => s.id);
+        if (subjectIds.length > 0) {
+            await prisma.subjectTeacher.deleteMany({ where: { subject_id: { in: subjectIds } } }).catch(() => {});
+            await prisma.marks.deleteMany({ where: { subject_id: { in: subjectIds } } }).catch(() => {});
+            await prisma.subject.deleteMany({ where: { id: { in: subjectIds } } }).catch(() => {});
+        }
+
+        // Hard delete class from database
+        const schoolClass = await prisma.schoolClass.delete({
+            where: { id: classId }
         });
-        res.json({ message: 'Class soft-deleted successfully', schoolClass });
+        res.json({ message: 'Class permanently deleted from database', schoolClass });
     } catch (error) {
+        console.error('Delete Class Error:', error);
         res.status(500).json({ error: 'Failed to delete class' });
     }
 };

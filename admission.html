@@ -37,7 +37,7 @@
                     style="background: var(--white); padding: 1.5rem; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); border-left: 5px solid var(--secondary-color); margin-bottom: 2rem;">
                     <h4 style="color: var(--accent-color); margin-bottom: 1rem;"><i class="fas fa-child"></i> Admission
                         For LKG</h4>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="req-card-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                         <ul style="list-style: none; padding: 0;">
                             <li style="margin-bottom: 8px;"><i class="fas fa-check-circle"
                                     style="color: #27ae60; margin-right: 8px;"></i> Application form</li>
@@ -64,7 +64,7 @@
                     style="background: var(--white); padding: 1.5rem; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); border-left: 5px solid var(--accent-color); margin-bottom: 2rem;">
                     <h4 style="color: var(--primary-color); margin-bottom: 1rem;"><i class="fas fa-user-graduate"></i>
                         For 1st Standard</h4>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="req-card-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                         <ul style="list-style: none; padding: 0;">
                             <li style="margin-bottom: 8px;"><i class="fas fa-check-circle"
                                     style="color: #27ae60; margin-right: 8px;"></i> Application form</li>
@@ -89,7 +89,7 @@
                     style="background: var(--white); padding: 1.5rem; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); border-left: 5px solid #bdc3c7; margin-bottom: 2rem;">
                     <h4 style="color: var(--primary-color); margin-bottom: 1rem;"><i class="fas fa-school"></i> High
                         School Requirements</h4>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; font-size: 0.8rem;">
+                    <div class="req-card-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; font-size: 0.8rem;">
                         <ul style="list-style: none; padding: 0;">
                             <li style="margin-bottom: 4px;"><i class="fas fa-check-circle"
                                     style="color: #27ae60; margin-right: 8px;"></i> Application / Photo-2</li>
@@ -117,45 +117,46 @@
             </div><!-- end Information Side -->
 
             <!-- Form Side -->
-            <div
+            <div class="admission-form-wrapper"
                 style="background: var(--light-bg); padding: 2rem; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
                 <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--primary-color);">Online
                     Application
                 </h3>
                 <form class="contact-form" id="admissionForm">
-                    <label>Student Name</label>
-                    <input type="text" placeholder="Full Name" required>
+                    <label>Student Name *</label>
+                    <input type="text" id="admStudentName" placeholder="Full Name" required>
 
-                    <label>Grade Applying For</label>
-                    <select>
-                        <option>Select Grade</option>
-                        <option>LKG</option>
-                        <option>UKG</option>
-                        <option>Class 1</option>
-                        <option>Class 2</option>
-                        <option>Class 3</option>
-                        <option>Class 4</option>
-                        <option>Class 5</option>
-                        <option>Class 6</option>
-                        <option>Class 7</option>
-                        <option>Class 8</option>
-                        <option>Class 9</option>
-                        <option>Class 10</option>
+                    <label>Grade Applying For *</label>
+                    <select id="admGrade" required>
+                        <option value="">Select Grade</option>
+                        <option value="LKG">LKG</option>
+                        <option value="UKG">UKG</option>
+                        <option value="Class 1">Class 1</option>
+                        <option value="Class 2">Class 2</option>
+                        <option value="Class 3">Class 3</option>
+                        <option value="Class 4">Class 4</option>
+                        <option value="Class 5">Class 5</option>
+                        <option value="Class 6">Class 6</option>
+                        <option value="Class 7">Class 7</option>
+                        <option value="Class 8">Class 8</option>
+                        <option value="Class 9">Class 9</option>
+                        <option value="Class 10">Class 10</option>
                     </select>
 
-                    <label>Parent/Guardian Name</label>
-                    <input type="text" placeholder="Parent Name" required>
+                    <label>Parent/Guardian Name *</label>
+                    <input type="text" id="admParentName" placeholder="Parent Name" required>
 
-                    <label>Email Address</label>
-                    <input type="email" placeholder="example@email.com" required>
+                    <label>Email Address *</label>
+                    <input type="email" id="admEmail" placeholder="example@email.com" required>
 
-                    <label>Phone Number</label>
-                    <input type="tel" placeholder="+91 XXXXX XXXXX" required>
+                    <label>Phone Number *</label>
+                    <input type="tel" id="admPhone" placeholder="+91 XXXXX XXXXX" required>
 
-                    <label>Upload Documents (Zip/PDF)</label>
-                    <input type="file">
+                    <label>Upload Documents (Zip/PDF/Image)</label>
+                    <input type="file" id="admDocument" accept=".pdf,.zip,.jpg,.jpeg,.png">
 
-                    <button type="submit" class="btn btn-primary">Submit Application</button>
+                    <button type="submit" id="admSubmitBtn" class="btn btn-primary">Submit Application</button>
+                    <div id="admStatus" style="margin-top: 12px; display: none; font-size: 0.9rem; font-weight: 500;"></div>
 
                     <p style="font-size: 0.8rem; margin-top: 1rem; text-align: center;">Already applied? <a href="contact.html"
                             style="color: var(--secondary-color);">Contact Office for Status</a></p>
@@ -368,16 +369,78 @@
         }
 
         // Admission form submit handler
-        document.querySelector('#admissionForm')?.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const name = this.querySelector('input[type="text"]')?.value;
-            if (name) {
-                alert('Thank you, ' + name + '! Your admission application has been submitted successfully. You will receive a confirmation email shortly.');
-                this.reset();
-            } else {
-                alert('Please fill in all required fields.');
-            }
-        });
+        const admissionForm = document.querySelector('#admissionForm');
+        const admStatus = document.getElementById('admStatus');
+        const admSubmitBtn = document.getElementById('admSubmitBtn');
+
+        if (admissionForm) {
+            admissionForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const student_name = document.getElementById('admStudentName').value.trim();
+                const grade = document.getElementById('admGrade').value;
+                const parent_name = document.getElementById('admParentName').value.trim();
+                const email = document.getElementById('admEmail').value.trim();
+                const phone = document.getElementById('admPhone').value.trim();
+                const docFile = document.getElementById('admDocument').files[0];
+
+                if (!student_name || !grade || !parent_name || !email || !phone) {
+                    alert('Please fill in all required fields.');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('student_name', student_name);
+                formData.append('grade', grade);
+                formData.append('parent_name', parent_name);
+                formData.append('email', email);
+                formData.append('phone', phone);
+                if (docFile) {
+                    formData.append('document', docFile);
+                }
+
+                if (admSubmitBtn) {
+                    admSubmitBtn.disabled = true;
+                    admSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+                }
+
+                if (admStatus) admStatus.style.display = 'none';
+
+                try {
+                    const res = await fetch('/api/admissions', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await res.json();
+
+                    if (!res.ok) {
+                        throw new Error(data.message || 'Submission failed.');
+                    }
+
+                    if (admStatus) {
+                        admStatus.style.display = 'block';
+                        admStatus.style.color = '#15803d';
+                        admStatus.innerHTML = '<i class="fas fa-check-circle"></i> ' + (data.message || 'Application submitted successfully!');
+                    } else {
+                        alert('Thank you, ' + student_name + '! Your admission application has been submitted successfully.');
+                    }
+                    admissionForm.reset();
+                } catch (err) {
+                    console.error('Admission submit error:', err);
+                    if (admStatus) {
+                        admStatus.style.display = 'block';
+                        admStatus.style.color = '#dc2626';
+                        admStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (err.message || 'Failed to submit application.');
+                    } else {
+                        alert('Error: ' + err.message);
+                    }
+                } finally {
+                    if (admSubmitBtn) {
+                        admSubmitBtn.disabled = false;
+                        admSubmitBtn.innerHTML = 'Submit Application';
+                    }
+                }
+            });
+        }
     </script>
 </body>
 

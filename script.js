@@ -77,22 +77,24 @@ document.addEventListener('DOMContentLoaded', () => {
             navMenu.classList.add('active');
             overlay.classList.add('active');
             menuToggle.classList.add('active');
-            document.body.style.overflow = 'hidden';
 
             const icon = menuToggle.querySelector('i');
-            icon.classList.remove('fa-bars');
-            icon.classList.add('fa-times');
+            if (icon) {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
+            }
         }
 
         function closeSidebar() {
             navMenu.classList.remove('active');
             overlay.classList.remove('active');
             menuToggle.classList.remove('active');
-            document.body.style.overflow = '';
 
             const icon = menuToggle.querySelector('i');
-            icon.classList.remove('fa-times');
-            icon.classList.add('fa-bars');
+            if (icon) {
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
         }
 
         // Event listeners
@@ -191,7 +193,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="close-dev" style="position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #666;">&times;</span>
                 <i class="fas fa-code" style="font-size: 3rem; color: var(--secondary-color); margin-bottom: 1rem;"></i>
                 <h2 style="color: var(--primary-color); margin-bottom: 0.5rem; font-family: var(--font-heading);">The Dev Team</h2>
-                <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem;">This website was proudly built by a team of 5 brilliant students from NMAM Institute of Technology, Nitte, as a college project under the mentorship of Mr. SRIKANTH BHAT K.</p>
+                <p style="color: #666; font-size: 0.95rem; margin-bottom: 1.2rem; line-height: 1.4;">
+                    <strong style="color: var(--primary-color);">NMAM Institute of Technology</strong><br>
+                    <span>Karkala, 574110</span>
+                </p>
                 <ul style="list-style: none; padding: 0; margin: 0; text-align: left; background: #f8fafc; padding: 1rem; border-radius: 10px; border: 1px solid #e2e8f0;">
                     <li style="padding: 8px 0; border-bottom: 2px solid #cbd5e1; font-weight: 700; color: var(--primary-color); margin-bottom: 5px;"><i class="fas fa-chalkboard-teacher" style="color: var(--secondary-color); margin-right: 10px;"></i> Mentor: Mr. Srikanth Bhat K</li>
                     <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-weight: 600;"><a href="https://www.linkedin.com/in/yuvaraj-khot-b827b7369/" target="_blank" style="color: inherit; text-decoration: none; display: flex; justify-content: space-between; align-items: center;">Yuvaraj Khot <i class="fab fa-linkedin" style="color: #0a66c2;"></i></a></li>

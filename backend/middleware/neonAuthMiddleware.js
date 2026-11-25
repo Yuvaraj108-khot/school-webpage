@@ -37,7 +37,8 @@ const PUBLIC_API_ROUTES = new Set([
     'GET /events',
     'GET /alumni',
     'POST /alumni',
-    'POST /contact'
+    'POST /contact',
+    'POST /admissions'
 ]);
 
 // Authenticated exclusively inside the handler via encrypted HttpOnly session cookie (never public data)
@@ -100,8 +101,14 @@ async function neonAuthMiddleware(req, res, next) {
         }
         if (!unsealedAdmin) {
             const rawCookieVal = getNeonSessionCookie(req);
-            if (rawCookieVal && rawCookieVal.startsWith('admin:')) {
-                unsealedAdmin = unsealValue(rawCookieVal.slice(6));
+            if (rawCookieVal) {
+                if (rawCookieVal.startsWith('admin:')) {
+                    unsealedAdmin = unsealValue(rawCookieVal.slice(6));
+                } else if (rawCookieVal.startsWith('teacher:')) {
+                    unsealedAdmin = unsealValue(rawCookieVal.slice(8));
+                } else if (rawCookieVal.startsWith('student:')) {
+                    unsealedAdmin = unsealValue(rawCookieVal.slice(8));
+                }
             }
         }
         if (unsealedAdmin && unsealedAdmin.startsWith('admin:89b8e50a-dce1-492f-902a-d5d9c771b55d')) {
@@ -115,6 +122,45 @@ async function neonAuthMiddleware(req, res, next) {
                     iss: 'sbs-admin-local',
                     aud: 'sbs-admin-local',
                     sub: '89b8e50a-dce1-492f-902a-d5d9c771b55d'
+                },
+                auditMode
+            };
+            return next();
+        }
+
+        // Direct support for demo and registered teacher & student sessions
+        if (unsealedAdmin && unsealedAdmin.startsWith('teacher:')) {
+            const parts = unsealedAdmin.split(':');
+            const teacherUserId = parts[1] || '11111111-1111-4111-8111-111111111111';
+            req.neonAuth = {
+                verified: true,
+                status: 'authenticated',
+                userId: teacherUserId,
+                email: 'teacher@sbei.edu.in',
+                name: 'Teacher',
+                claims: {
+                    iss: 'sbs-teacher-local',
+                    aud: 'sbs-teacher-local',
+                    sub: teacherUserId
+                },
+                auditMode
+            };
+            return next();
+        }
+
+        if (unsealedAdmin && unsealedAdmin.startsWith('student:')) {
+            const parts = unsealedAdmin.split(':');
+            const studentUserId = parts[1] || '22222222-2222-4222-8222-222222222222';
+            req.neonAuth = {
+                verified: true,
+                status: 'authenticated',
+                userId: studentUserId,
+                email: 'student@sbei.edu.in',
+                name: 'Student',
+                claims: {
+                    iss: 'sbs-student-local',
+                    aud: 'sbs-student-local',
+                    sub: studentUserId
                 },
                 auditMode
             };

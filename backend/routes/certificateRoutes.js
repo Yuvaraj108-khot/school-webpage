@@ -8,5 +8,6 @@ router.get('/', requireAuth, requireRole('admin'), certificateController.getCert
 router.get('/:code', requireAuth, requireStudentOwnerOrStaff({ paramName: 'code', allowTeacher: false }), certificateController.getCertificateByStudent);
 router.post('/', requireAuth, requireRole('student', 'admin'), certificateController.createCertificate);
 router.put('/:id', requireAuth, requireRole('admin'), certificateController.updateCertificate);
+router.delete('/:id', requireAuth, requireRole('admin'), certificateController.deleteCertificate);
 
 module.exports = router;

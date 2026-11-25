@@ -63,6 +63,43 @@ async function resolveVerifiedNeonUser(req) {
         return { ok: true, user: adminUser, roles };
     }
 
+    // Demo Teacher instant cache
+    if (userId === '11111111-1111-4111-8111-111111111111') {
+        const teacherUser = {
+            id: '11111111-1111-4111-8111-111111111111',
+            email: 'teacher@sbei.edu.in',
+            name: 'Demo Teacher',
+            role: 'teacher',
+            banned: false,
+            emailVerified: true
+        };
+        const roles = ['teacher', 'user'];
+        userCache.set(userId, { user: teacherUser, roles, expiresAt: Date.now() + USER_CACHE_TTL_MS });
+        return { ok: true, user: teacherUser, roles };
+    }
+
+    // Demo Student instant cache
+    if (userId === '22222222-2222-4222-8222-222222222222') {
+        const studentUser = {
+            id: '22222222-2222-4222-8222-222222222222',
+            email: 'student@sbei.edu.in',
+            name: 'Demo Student',
+            role: 'student',
+            banned: false,
+            emailVerified: true
+        };
+        const roles = ['student', 'user'];
+        userCache.set(userId, { user: studentUser, roles, expiresAt: Date.now() + USER_CACHE_TTL_MS });
+        return { ok: true, user: studentUser, roles };
+    }
+
+    const runLookup = () => prisma.$queryRaw`
+        SELECT id, email, name, role, banned, "emailVerified"
+        FROM neon_auth."user"
+        WHERE id = ${userId}::uuid
+        LIMIT 1
+    `;
+
     let rows;
     try {
         rows = await runLookup();

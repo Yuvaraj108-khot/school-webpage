@@ -13,6 +13,19 @@ const {
 const mediumCache = new Map();
 const classCache = new Map();
 
+// Auto-warm relational caches to eliminate database roundtrips for medium and class lookups
+async function warmStudentRelationalCache() {
+    try {
+        const [mediums, classes] = await Promise.all([
+            prisma.medium.findMany({ select: { id: true, name: true } }),
+            prisma.schoolClass.findMany({ select: { id: true, name: true, medium_id: true } })
+        ]);
+        mediums.forEach(m => mediumCache.set(m.name, m.id));
+        classes.forEach(c => classCache.set(`${c.name}:${c.medium_id}`, c.id));
+    } catch (_) {}
+}
+warmStudentRelationalCache();
+
 // Helper to resolve class_id and medium_id from names
 async function resolveStudentClassAndMedium(className, mediumName) {
     let class_id = null;
@@ -91,18 +104,21 @@ exports.getStudents = async (req, res) => {
         const where = andConditions.length > 0 ? { AND: andConditions } : {};
 
         const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
-        const totalItems = await prisma.student.count({ where });
 
-        const students = await prisma.student.findMany({
-            where,
-            skip,
-            take: parseInt(limit, 10),
-            orderBy: { name: 'asc' },
-            include: {
-                class_rel: true,
-                medium_rel: true
-            }
-        });
+        // Execute count and findMany concurrently to eliminate sequential network roundtrips
+        const [totalItems, students] = await Promise.all([
+            prisma.student.count({ where }),
+            prisma.student.findMany({
+                where,
+                skip,
+                take: parseInt(limit, 10),
+                orderBy: { name: 'asc' },
+                include: {
+                    class_rel: true,
+                    medium_rel: true
+                }
+            })
+        ]);
 
         res.json({
             data: students.map(omitPassword),
@@ -180,7 +196,8 @@ exports.validateStudentCreation = async (req, res) => {
         return res.json({
             valid: true,
             student_code: cleanStudentCode,
-            email: emailCheck.email
+            email: emailCheck.email,
+            existing_auth_user_id: avail.existingNeonUserId || null
         });
     } catch (error) {
         console.error('Validate Student Error:', error.message);
@@ -190,7 +207,7 @@ exports.validateStudentCreation = async (req, res) => {
 
 exports.createStudent = async (req, res) => {
     try {
-        const { student_code, name, class: className, medium, parent_name, roll_no, photo_url, email, auth_user_id } = req.body;
+        const { student_code, name, class: className, medium, parent_name, roll_no, photo_url, email, password, auth_user_id } = req.body;
         const cleanName = typeof name === 'string' ? name.trim() : '';
         const cleanClass = typeof className === 'string' ? className.trim() : '';
         const cleanMedium = typeof medium === 'string' ? medium.trim() : '';
@@ -209,20 +226,25 @@ exports.createStudent = async (req, res) => {
             : require('crypto').randomUUID();
 
         let cleanStudentCode = typeof student_code === 'string' ? student_code.trim() : '';
-        if (cleanStudentCode) {
-            const existing = await prisma.student.findFirst({
+
+        // Run student code check/generation, email availability, and class/medium resolution in parallel
+        const [codeCheck, avail, rel] = await Promise.all([
+            cleanStudentCode ? prisma.student.findFirst({
                 where: { student_code: { equals: cleanStudentCode, mode: 'insensitive' } },
                 select: { id: true }
-            });
-            if (existing) {
+            }) : generateNextStudentCode(cleanClass, cleanMedium),
+            checkEmailAvailable(emailCheck.email, { includeNeonAuth: false }),
+            resolveStudentClassAndMedium(cleanClass, cleanMedium)
+        ]);
+
+        if (cleanStudentCode) {
+            if (codeCheck) {
                 return res.status(400).json({ error: 'Student Code already exists.' });
             }
         } else {
-            cleanStudentCode = await generateNextStudentCode(cleanClass, cleanMedium);
+            cleanStudentCode = codeCheck;
         }
 
-        // Verify email uniqueness across students and teachers
-        const avail = await checkEmailAvailable(emailCheck.email, { includeNeonAuth: false });
         if (!avail.available) {
             return res.status(409).json({ error: avail.error });
         }
@@ -236,8 +258,9 @@ exports.createStudent = async (req, res) => {
             `;
         } catch (_) {}
 
-        // Resolve relational mapping fields
-        const rel = await resolveStudentClassAndMedium(cleanClass, cleanMedium);
+        // Hash initial password if provided, or default to 123456789
+        const rawPassword = (typeof password === 'string' && password.trim()) ? password.trim() : '123456789';
+        const initialHashedPassword = hashPassword(rawPassword);
 
         const student = await prisma.student.create({
             data: {
@@ -249,7 +272,7 @@ exports.createStudent = async (req, res) => {
                 roll_no: roll_no || null,
                 photo_url: photo_url || null,
                 email: emailCheck.email,
-                password: null,
+                password: initialHashedPassword,
                 auth_user_id: finalAuthUserId,
                 class_id: rel.class_id,
                 medium_id: rel.medium_id,
@@ -275,19 +298,64 @@ exports.deleteStudent = async (req, res) => {
         });
         if (!student) return res.status(404).json({ error: 'Student not found' });
 
-        // Hard delete: remove associated records first
         const id = student.id;
-        await prisma.alumniTracking.deleteMany({ where: { student_id: id } });
-        await prisma.attendance.deleteMany({ where: { student_id: id } });
-        await prisma.marks.deleteMany({ where: { student_id: id } });
-        await prisma.certificateRequest.deleteMany({ where: { student_id: id } });
+        const studentCode = student.student_code;
+        const studentEmail = (student.email || '').trim().toLowerCase();
+        const authUserId = student.auth_user_id;
 
+        // 1. Delete all relational and dependent child records
+        await prisma.alumniTracking.deleteMany({ where: { student_id: id } }).catch(() => {});
+        await prisma.attendance.deleteMany({
+            where: {
+                OR: [
+                    { student_id: id },
+                    ...(studentCode ? [{ student_code: studentCode }] : [])
+                ]
+            }
+        }).catch(() => {});
+        await prisma.marks.deleteMany({ where: { student_id: id } }).catch(() => {});
+        await prisma.certificateRequest.deleteMany({
+            where: {
+                OR: [
+                    { student_id: id },
+                    ...(studentCode ? [{ student_code: studentCode }] : [])
+                ]
+            }
+        }).catch(() => {});
+
+        // 2. Delete uploaded photo file from disk if present
+        if (student.photo_url && student.photo_url.startsWith('/uploads/')) {
+            try {
+                const fs = require('fs');
+                const path = require('path');
+                const filePath = path.join(__dirname, '..', student.photo_url);
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                }
+            } catch (_) {}
+        }
+
+        // 3. Completely purge from Neon Managed Auth user table
+        if (authUserId) {
+            try {
+                await prisma.$executeRaw`DELETE FROM neon_auth."user" WHERE id = ${authUserId}::uuid`;
+            } catch (_) {}
+        }
+        if (studentEmail) {
+            try {
+                await prisma.$executeRaw`DELETE FROM neon_auth."user" WHERE LOWER(email) = ${studentEmail} AND role != 'admin'`;
+            } catch (_) {}
+        }
+
+        // 4. Hard delete from student table
         const deleted = await prisma.student.delete({
             where: { id }
         });
-        res.json({ message: 'Student deleted successfully', student: omitPassword(deleted) });
+
+        res.json({ message: 'Student and all related records permanently deleted from database', student: omitPassword(deleted) });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to delete student' });
+        console.error('Delete Student Error:', error);
+        res.status(500).json({ error: 'Failed to delete student from database' });
     }
 };
 

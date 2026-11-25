@@ -1,14 +1,56 @@
 const prisma = require('../prismaClient');
 
+// In-memory cache for exams to guarantee instantaneous dropdowns (<5ms)
+let cachedExams = null;
+let lastExamsFetch = 0;
+const EXAMS_CACHE_TTL_MS = 120000; // 2 minutes
+
+function clearExamsCache() {
+    cachedExams = null;
+    lastExamsFetch = 0;
+}
+
+exports.clearExamsCache = clearExamsCache;
+
 exports.getAllExams = async (req, res) => {
     try {
         const { is_active } = req.query;
+        const now = Date.now();
+        if (cachedExams && (now - lastExamsFetch < EXAMS_CACHE_TTL_MS)) {
+            let filtered = cachedExams;
+            if (is_active !== undefined) {
+                const activeBool = is_active === 'true';
+                filtered = cachedExams.filter(e => e.is_active === activeBool);
+            }
+            return res.json(filtered);
+        }
+
         const where = {};
         if (is_active !== undefined) {
             where.is_active = is_active === 'true';
         }
-        const exams = await prisma.exam.findMany({ where });
-        res.json(exams);
+        let exams = await prisma.exam.findMany({ orderBy: { id: 'asc' } });
+        if (!exams || exams.length === 0) {
+            const defaults = ['Unit Test 1', 'Unit Test 2', 'Mid-Term Exam', 'Annual / Final Exam'];
+            for (const name of defaults) {
+                await prisma.exam.upsert({
+                    where: { name },
+                    update: { is_active: true },
+                    create: { name, academic_year: '2025-2026', is_active: true }
+                }).catch(() => {});
+            }
+            exams = await prisma.exam.findMany({ orderBy: { id: 'asc' } });
+        }
+
+        cachedExams = exams;
+        lastExamsFetch = now;
+
+        let result = exams;
+        if (is_active !== undefined) {
+            const activeBool = is_active === 'true';
+            result = exams.filter(e => e.is_active === activeBool);
+        }
+        res.json(result);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch exams' });
     }
@@ -34,6 +76,7 @@ exports.createExam = async (req, res) => {
                 academic_year: academic_year || '2025-2026'
             }
         });
+        clearExamsCache();
         res.status(201).json(exam);
     } catch (error) {
         res.status(500).json({ error: 'Failed to create exam' });
@@ -63,6 +106,7 @@ exports.updateExam = async (req, res) => {
             where: { id: parseInt(id) },
             data
         });
+        clearExamsCache();
         res.json(exam);
     } catch (error) {
         res.status(500).json({ error: 'Failed to update exam' });
@@ -71,13 +115,15 @@ exports.updateExam = async (req, res) => {
 
 exports.deleteExam = async (req, res) => {
     try {
-        const { id } = req.params;
-        const exam = await prisma.exam.update({
-            where: { id: parseInt(id) },
-            data: { is_active: false }
+        const examId = parseInt(req.params.id, 10);
+        await prisma.marks.deleteMany({ where: { exam_id: examId } }).catch(() => {});
+        const exam = await prisma.exam.delete({
+            where: { id: examId }
         });
-        res.json({ message: 'Exam soft-deleted successfully', exam });
+        clearExamsCache();
+        res.json({ message: 'Exam permanently deleted from database', exam });
     } catch (error) {
+        console.error('Delete Exam Error:', error);
         res.status(500).json({ error: 'Failed to delete exam' });
     }
 };

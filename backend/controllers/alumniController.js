@@ -124,8 +124,19 @@ exports.deleteAlumni = async (req, res) => {
         const alumni = await prisma.alumni.findUnique({ where: { id } });
         if (!alumni) return res.status(404).json({ error: 'Alumni not found' });
 
+        if (alumni.photo_url && alumni.photo_url.startsWith('/uploads/')) {
+            try {
+                const fs = require('fs');
+                const path = require('path');
+                const filePath = path.join(__dirname, '..', alumni.photo_url);
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                }
+            } catch (_) {}
+        }
+
         await prisma.alumni.delete({ where: { id } });
-        res.json({ message: 'Alumni deleted successfully' });
+        res.json({ message: 'Alumni permanently deleted from database and storage' });
     } catch (error) {
         console.error('Delete Alumni Error:', error.message);
         res.status(500).json({ error: 'Failed to delete alumni' });

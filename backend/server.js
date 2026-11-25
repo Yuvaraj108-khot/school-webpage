@@ -1,4 +1,9 @@
 require('dotenv').config();
+const dns = require('dns');
+try {
+    dns.setDefaultResultOrder('ipv4first');
+} catch (_) {}
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -23,10 +28,28 @@ app.use((req, res, next) => {
     next();
 });
 
+// Pre-warm database connection and keep serverless compute alive
+const prisma = require('./prismaClient');
+prisma.$connect()
+    .then(() => {
+        console.log('[Database] Pre-connected and warmed successfully.');
+    })
+    .catch((err) => {
+        console.warn('[Database] Pre-warm connection notice:', err.message);
+    });
+
+// Periodic keep-alive ping to eliminate Neon serverless cold starts (runs every 3.5 mins)
+setInterval(async () => {
+    try {
+        await prisma.$queryRaw`SELECT 1`;
+    } catch (_) {}
+}, 210000);
+
 // Middleware
 const allowedOriginPatterns = [
     /^http:\/\/localhost(:\d+)?$/i,
-    /^http:\/\/127\.0\.0\.1(:\d+)?$/i
+    /^http:\/\/127\.0\.0\.1(:\d+)?$/i,
+    /^http:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$/i
 ];
 const trustedOrigins = new Set();
 const configuredFrontend = (process.env.FRONTEND_URL || '').trim().replace(/\/+$/, '');
@@ -59,6 +82,7 @@ const { globalApiLimiter } = require('./middleware/rateLimiters');
 const { sanitizeBodyMiddleware } = require('./utils/sanitize');
 
 app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 app.use(sanitizeBodyMiddleware);
 app.use('/api', globalApiLimiter);
 app.use((req, res, next) => {
@@ -150,6 +174,7 @@ const subjectRoutes = require('./routes/subjectRoutes');
 const exportRoutes = require('./routes/exportRoutes');
 const authRoutes = require('./routes/authRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const admissionRoutes = require('./routes/admissionRoutes');
 
 // New Relational Routes Imports
 const mediumRoutes = require('./routes/mediumRoutes');
@@ -171,14 +196,13 @@ app.use('/api/subjects', subjectRoutes);
 app.use('/api/export', exportRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/admissions', admissionRoutes);
 
 // New Relational Route Registrations
 app.use('/api/mediums', mediumRoutes);
 app.use('/api/classes', classRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/subject-teachers', subjectTeacherRoutes);
-
-const prisma = require('./prismaClient');
 
 // Health Check & Neon Status
 app.get('/api/health', async (req, res) => {

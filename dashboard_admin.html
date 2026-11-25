@@ -18,10 +18,14 @@
             width: 250px;
             background: #1a252f;
             color: white;
-            padding: 2rem 0;
+            padding: 1.5rem 0;
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
         }
 
         .sidebar-menu a {
@@ -414,6 +418,10 @@
         }
 
         @media (max-width: 768px) {
+            .dashboard-container {
+                flex-direction: column;
+            }
+
             .sidebar {
                 position: fixed;
                 top: 0;
@@ -421,8 +429,9 @@
                 width: 260px;
                 height: 100vh;
                 z-index: 1050;
-                transition: left 0.4s;
+                transition: left 0.35s ease;
                 overflow-y: auto;
+                box-shadow: 4px 0 20px rgba(0,0,0,0.3);
             }
 
             .sidebar.active {
@@ -433,12 +442,51 @@
                 display: block;
             }
 
-            .main-content {
+            .header-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
                 padding: 1rem;
+            }
+
+            .header-bar > div:first-child {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .header-bar > div:last-child {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 8px;
+                width: 100%;
+            }
+
+            #adminUserIndicator {
+                order: -1;
+                width: 100%;
+                justify-content: center;
+                text-align: center;
+                font-size: 0.78rem !important;
+                padding: 4px 8px !important;
+            }
+
+            .main-content {
+                padding: 1rem 0.75rem;
+                width: 100%;
+                overflow-x: hidden;
+            }
+
+            .card-box {
+                padding: 1.25rem 1rem;
             }
 
             .mgmt-grid {
                 grid-template-columns: 1fr;
+                gap: 12px;
             }
 
             .mgmt-grid .full-width {
@@ -447,6 +495,52 @@
 
             .add-row {
                 flex-direction: column;
+                gap: 8px;
+            }
+
+            .add-row .btn-add,
+            .add-row button {
+                width: 100%;
+            }
+
+            .enrolled-header {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 10px;
+                padding: 12px;
+            }
+
+            .enrolled-header > span {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .enrolled-header button {
+                width: 100%;
+            }
+
+            .enrolled-row {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 12px !important;
+                padding: 12px !important;
+            }
+
+            .enrolled-row > div:last-child {
+                align-self: stretch !important;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .enrolled-row > div:last-child button {
+                flex: 1 1 auto;
+                min-width: 100px;
+            }
+
+            .notif-dropdown {
+                right: -40px;
+                width: min(320px, 92vw);
             }
 
             .admin-toast {
@@ -705,6 +799,10 @@
                     <span><i class="fas fa-envelope-open-text"></i> Contact Queries</span>
                     <span id="queryPendingBadge" class="sidebar-badge" style="display:none;">0</span>
                 </a>
+                <a href="#" onclick="showSection('admissions'); return false;" id="link-admissions" style="display:flex; align-items:center;">
+                    <span><i class="fas fa-user-plus"></i> Admissions</span>
+                    <span id="admissionPendingBadge" class="sidebar-badge" style="display:none;">0</span>
+                </a>
             </nav>
             <div style="margin-top:auto; padding:20px;">
                 <a href="#" id="adminLogoutBtn" onclick="if (window.logoutAdmin) { window.logoutAdmin(); } else { sessionStorage.clear(); window.location.href='login_admin.html?reason=logout'; } return false;" style="color:#ea5455; display:inline-flex; align-items:center; gap:8px; text-decoration:none; font-weight:600; cursor:pointer;">
@@ -746,9 +844,14 @@
                         <span id="adminUserLabel">Verifying admin session...</span>
                     </span>
                     <a href="index.html" class="btn btn-outline"
-                        style="border:1px solid #e67e22; color:#e67e22; padding:5px 15px; font-size:0.8rem; border-radius:6px; text-decoration:none;">
-                        Back to Home
+                        style="border:1px solid #e67e22; color:#e67e22; padding:6px 14px; font-size:0.8rem; border-radius:6px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                        <i class="fas fa-home"></i> Back to Home
                     </a>
+                    <button type="button" onclick="if (window.logoutAdmin) { window.logoutAdmin(); } else { sessionStorage.clear(); window.location.href='login_admin.html?reason=logout'; }"
+                        style="background: linear-gradient(135deg, #ef4444, #dc2626); color:white; border:none; padding:6px 14px; font-size:0.8rem; border-radius:6px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:0.2s; box-shadow:0 2px 5px rgba(220,38,38,0.25);"
+                        onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
                 </div>
             </div>
 
@@ -836,14 +939,15 @@
                             <input type="text" id="newStudentParent" placeholder="Parent Name">
                         </div>
                         <div class="add-row">
-                            <input type="email" id="newStudentEmail" placeholder="Student / Parent Email (Required for login &amp; OTP) *" required>
+                            <input type="email" id="newStudentEmail" placeholder="Student / Parent Email (Required for login) *" required>
+                            <input type="password" id="newStudentPassword" placeholder="Set Password (Optional, default: 123456789)">
                             <button class="btn-add" id="btnAddStudent" onclick="addStudent()">
                                 <i class="fas fa-user-plus"></i> Add Student
                             </button>
                         </div>
                         <p style="font-size:0.78rem; color:#64748b; margin:-8px 0 16px;">
-                            <i class="fas fa-shield-alt" style="color:#0369a1;"></i>
-                            A unique temporary password is generated automatically in Neon Auth. Students/parents set their permanent password on first login using Email OTP.
+                            <i class="fas fa-check-circle" style="color:#16a34a;"></i>
+                            The student can immediately log in with their email. If password is left blank, default is <strong>123456789</strong>.
                         </p>
                         <div style="margin-bottom: 1.5rem;">
                             <div class="search-bar" style="margin-bottom: 0;">
@@ -931,12 +1035,16 @@
                                 <input type="email" id="teacherEmail" placeholder="Accessible Email (e.g., teacher@gmail.com)" required>
                             </div>
                             <div>
+                                <label class="field-label">Password (Optional)</label>
+                                <input type="password" id="teacherPassword" placeholder="Set Password (default: 123456789)">
+                            </div>
+                            <div>
                                 <label class="field-label">Phone Number</label>
                                 <input type="text" id="teacherPhone" placeholder="e.g., 9876543210">
                             </div>
                             <div style="grid-column: 1 / -1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; color: #475569;">
-                                <i class="fas fa-shield-alt" style="color: #0284c7; margin-right: 6px;"></i>
-                                <strong>Neon Managed Auth:</strong> A unique random temporary password will be generated automatically in memory and never shown or stored. The teacher will set their own password via email OTP.
+                                <i class="fas fa-check-circle" style="color: #16a34a; margin-right: 6px;"></i>
+                                <strong>Direct Portal Login:</strong> The teacher can immediately log in on the Staff Portal using this email. If password is left blank, default is <strong>123456789</strong>.
                             </div>
                         </div>
                         <button id="btnAddTeacher" class="btn-full" onclick="addTeacher()">
@@ -1122,6 +1230,37 @@
                     </div>
                 </div>
             </div>
+
+            <!-- ══ ADMISSION APPLICATIONS SECTION ══ -->
+            <div id="section-admissions" class="admin-section">
+                <div class="card-box">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <h3 style="margin-bottom:4px;"><i class="fas fa-user-plus" style="color:var(--primary-color);"></i> Online Admission Applications</h3>
+                            <p style="color:#666; margin:0; font-size:0.9rem;">Review and manage student admission applications submitted online.</p>
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <select id="admissionStatusFilter" onchange="loadAdmissionApplications()" style="width:auto; margin-bottom:0; padding:8px 12px; font-size:0.85rem; border-radius:8px;">
+                                <option value="All">All Applications</option>
+                                <option value="Pending" selected>Pending</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Rejected">Rejected</option>
+                            </select>
+                            <button class="btn-full" style="width:auto; margin-top:0; padding:8px 16px; font-size:0.85rem;" onclick="loadAdmissionApplications()"><i class="fas fa-sync"></i> Refresh</button>
+                        </div>
+                    </div>
+
+                    <div class="enrolled-header" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">
+                        <span><i class="fas fa-id-card"></i> Submitted Applications (<span id="totalAdmissionsCount">0</span>)</span>
+                    </div>
+                    <div class="enrolled-list" id="admissionApplicationsList">
+                        <div class="empty-state">
+                            <i class="fas fa-user-clock"></i>
+                            <p>Loading admission applications...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div><!-- end .main-content -->
     </div><!-- end .dashboard-container -->
 
@@ -1142,9 +1281,7 @@
                 .replace(/'/g, '&#039;');
         }
 
-        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? `http://${window.location.hostname}:5000/api`
-            : '/api';
+        const API_BASE = '/api';
 
         async function adminFetch(urlOrPath, options) {
             if (typeof window.adminAuthFetch === 'function') {
@@ -1160,7 +1297,7 @@
 
         function showSection(name) {
             // Hide all sections
-            var sections = ['gallery', 'events', 'students', 'teachers', 'alumni', 'subject-mgmt', 'certificates', 'contact-queries'];
+            var sections = ['gallery', 'events', 'students', 'teachers', 'alumni', 'subject-mgmt', 'certificates', 'contact-queries', 'admissions'];
             for (var i = 0; i < sections.length; i++) {
                 var el = document.getElementById('section-' + sections[i]);
                 var link = document.getElementById('link-' + sections[i]);
@@ -1188,6 +1325,7 @@
             }
             if (name === 'certificates') loadAllCertificates();
             if (name === 'contact-queries') loadContactQueries();
+            if (name === 'admissions') loadAdmissionApplications();
 
             // Close mobile sidebar
             closeSidebar();
@@ -1611,11 +1749,12 @@
             var name = document.getElementById('newStudentName').value.trim();
             var parent = document.getElementById('newStudentParent').value.trim();
             var email = document.getElementById('newStudentEmail').value.trim();
+            var password = (document.getElementById('newStudentPassword') ? document.getElementById('newStudentPassword').value : '').trim() || '123456789';
             var btn = document.getElementById('btnAddStudent');
 
             if (!name) { toast('Enter student name.', 'error'); return; }
             if (!m || !c) { toast('Select medium and class.', 'error'); return; }
-            if (!email) { toast('Enter a valid accessible email for login & password setup.', 'error'); return; }
+            if (!email) { toast('Enter a valid accessible email for student login.', 'error'); return; }
             if (typeof window.provisionNeonAccount !== 'function') {
                 toast('Authentication helper is still loading. Please try again.', 'error');
                 return;
@@ -1658,7 +1797,7 @@
                         const finalCode = (validated && validated.student_code) || studentCode;
                         const finalEmail = (validated && validated.email) || email;
                         return {
-                            url: API_BASE + '/students',
+                            url: '/students',
                             options: {
                                 method: 'POST',
                                 headers: {
@@ -1672,6 +1811,7 @@
                                     medium: m,
                                     parent_name: parent || null,
                                     email: finalEmail,
+                                    password: password,
                                     auth_user_id: authUserId,
                                     roll_no: null,
                                     photo_url: null
@@ -1683,10 +1823,11 @@
                     }
                 });
 
-                toast('"' + name + '" added with Neon Managed Auth!');
+                toast('"' + name + '" added successfully! They can log in with email and password.');
                 document.getElementById('newStudentName').value = '';
                 document.getElementById('newStudentParent').value = '';
                 document.getElementById('newStudentEmail').value = '';
+                if (document.getElementById('newStudentPassword')) document.getElementById('newStudentPassword').value = '';
 
                 await loadStudents();
                 if (typeof window.showOnboardingModal === 'function') {
@@ -1933,6 +2074,7 @@
             var subject = document.getElementById('teacherSubject').value.trim();
             var medium = document.getElementById('teacherMedium').value;
             var email = document.getElementById('teacherEmail').value.trim();
+            var password = (document.getElementById('teacherPassword') ? document.getElementById('teacherPassword').value : '').trim() || '123456789';
             var phone = document.getElementById('teacherPhone') ? document.getElementById('teacherPhone').value.trim() : '';
             var photoInput = document.getElementById('teacherPhoto');
             var photoFile = (photoInput && photoInput.files && photoInput.files[0]) ? photoInput.files[0] : null;
@@ -1979,12 +2121,13 @@
                         formData.append('subject', subject);
                         formData.append('medium', medium);
                         formData.append('email', finalEmail);
+                        formData.append('password', password);
                         formData.append('auth_user_id', authUserId);
                         if (phone) formData.append('phone', phone);
                         if (photoFile) formData.append('photo', photoFile);
 
                         return {
-                            url: API_BASE + '/teachers',
+                            url: '/teachers',
                             options: {
                                 method: 'POST',
                                 headers: {
@@ -2006,6 +2149,7 @@
                 document.getElementById('teacherExperience').value = '';
                 document.getElementById('teacherSubject').value = '';
                 document.getElementById('teacherEmail').value = '';
+                if (document.getElementById('teacherPassword')) document.getElementById('teacherPassword').value = '';
                 if (document.getElementById('teacherPhone')) document.getElementById('teacherPhone').value = '';
                 if (photoInput) photoInput.value = '';
                 teacherPhotoBase64 = null;
@@ -2152,6 +2296,146 @@
             } catch (err) {
                 console.error(err);
                 toast(err.message, 'error');
+            }
+        }
+
+        /* ============================================================
+           ADMISSION APPLICATIONS
+        ============================================================ */
+        async function loadAdmissionApplications() {
+            var list = document.getElementById('admissionApplicationsList');
+            var filter = document.getElementById('admissionStatusFilter') ? document.getElementById('admissionStatusFilter').value : 'Pending';
+            var countEl = document.getElementById('totalAdmissionsCount');
+            if (!list) return;
+
+            try {
+                var url = '/admissions';
+                if (filter && filter !== 'All') {
+                    url += '?status=' + encodeURIComponent(filter);
+                }
+                const res = await adminFetch(url);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const apps = await res.json();
+
+                if (!Array.isArray(apps)) {
+                    throw new Error('Invalid admissions response');
+                }
+
+                if (countEl) countEl.textContent = apps.length;
+
+                if (apps.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><i class="fas fa-user-clock"></i><p>No admission applications found.</p></div>';
+                    return;
+                }
+
+                list.innerHTML = '';
+                apps.forEach(function (a) {
+                    var card = document.createElement('div');
+                    card.className = 'enrolled-row';
+                    card.style.flexDirection = 'column';
+                    card.style.alignItems = 'stretch';
+                    card.style.gap = '10px';
+
+                    var statusBorder = '#6366f1';
+                    var statusColor = '#4338ca';
+                    var statusBg = '#e0e7ff';
+                    if (a.status === 'Approved') {
+                        statusBorder = '#10b981';
+                        statusColor = '#065f46';
+                        statusBg = '#d1fae5';
+                    } else if (a.status === 'Rejected') {
+                        statusBorder = '#ef4444';
+                        statusColor = '#991b1b';
+                        statusBg = '#fee2e2';
+                    }
+
+                    card.style.borderLeft = '4px solid ' + statusBorder;
+                    card.style.background = '#ffffff';
+
+                    var dateStr = a.created_at ? new Date(a.created_at).toLocaleString() : '';
+                    var studentName = escapeHtml(a.student_name || 'N/A');
+                    var grade = escapeHtml(a.grade || 'N/A');
+                    var parentName = escapeHtml(a.parent_name || 'N/A');
+                    var email = escapeHtml(a.email || '');
+                    var phone = escapeHtml(a.phone || '');
+
+                    var docLink = '';
+                    if (a.document_url) {
+                        var fullDocUrl = a.document_url.startsWith('http') ? a.document_url : (API_BASE.replace('/api', '') + a.document_url);
+                        docLink = `<a href="${fullDocUrl}" target="_blank" download style="display:inline-flex; align-items:center; gap:6px; color:#4f46e5; text-decoration:none; font-size:0.85rem; font-weight:600; background:#eef2ff; padding:4px 10px; border-radius:6px; border:1px solid #c7d2fe;">
+                            <i class="fas fa-file-download"></i> View Document
+                        </a>`;
+                    }
+
+                    var actions = '';
+                    if (a.status !== 'Approved') {
+                        actions += `<button class="btn-add" style="padding: 6px 12px; font-size: 0.8rem; background: #16a34a;" onclick="updateAdmissionStatus(${a.id}, 'Approved')"><i class="fas fa-check"></i> Approve</button>`;
+                    }
+                    if (a.status !== 'Rejected') {
+                        actions += `<button class="btn-remove" style="padding: 6px 12px; font-size: 0.8rem; background: #eab308; color: #000;" onclick="updateAdmissionStatus(${a.id}, 'Rejected')"><i class="fas fa-times"></i> Reject</button>`;
+                    }
+                    actions += `<button class="btn-remove" style="padding: 6px 12px; font-size: 0.8rem;" onclick="deleteAdmissionItem(${a.id})"><i class="fas fa-trash-alt"></i> Delete</button>`;
+
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+                            <div>
+                                <span style="display:inline-block; font-size:0.75rem; font-weight:700; background:${statusBg}; color:${statusColor}; padding:2px 8px; border-radius:12px; margin-right:8px;">${a.status}</span>
+                                <strong style="font-size:1.05rem; color:#1e293b;">${studentName}</strong>
+                                <span style="font-size:0.85rem; color:#4f46e5; font-weight:600; margin-left:8px; background:#f5f3ff; padding:2px 8px; border-radius:6px;">${grade}</span>
+                                <span style="font-size:0.8rem; color:#64748b; margin-left:8px;"><i class="fas fa-clock"></i> ${dateStr}</span>
+                            </div>
+                            <div style="display:flex; gap:8px;">
+                                ${actions}
+                            </div>
+                        </div>
+                        <div style="font-size:0.85rem; color:#475569; display:flex; gap:18px; flex-wrap:wrap; align-items:center;">
+                            <span><strong>Parent:</strong> ${parentName}</span>
+                            ${email ? `<span><i class="fas fa-envelope"></i> <a href="mailto:${email}" style="color:#4f46e5; text-decoration:none;">${email}</a></span>` : ''}
+                            ${phone ? `<span><i class="fas fa-phone"></i> <a href="tel:${phone}" style="color:#4f46e5; text-decoration:none;">${phone}</a></span>` : ''}
+                            ${docLink}
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+            } catch (err) {
+                console.error('[Admin] Failed to load admission applications:', err);
+                toast('Failed to load admission applications.', 'error');
+            }
+        }
+
+        async function updateAdmissionStatus(id, newStatus) {
+            if (!confirm(`Mark application as ${newStatus}?`)) return;
+            try {
+                const res = await adminFetch('/admissions/' + id + '/status', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (!res.ok) throw new Error('Status update failed');
+                toast(`Application marked as ${newStatus}.`);
+                loadAdmissionApplications();
+                if (typeof window.fetchAdminPendingNotifications === 'function') {
+                    window.fetchAdminPendingNotifications();
+                }
+            } catch (err) {
+                console.error(err);
+                toast(err.message || 'Failed to update application', 'error');
+            }
+        }
+
+        async function deleteAdmissionItem(id) {
+            if (!confirm('Permanently delete this admission application?')) return;
+            try {
+                const res = await adminFetch('/admissions/' + id, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Delete failed');
+                toast('Application deleted.');
+                loadAdmissionApplications();
+                if (typeof window.fetchAdminPendingNotifications === 'function') {
+                    window.fetchAdminPendingNotifications();
+                }
+            } catch (err) {
+                console.error(err);
+                toast('Failed to delete application', 'error');
             }
         }
 
@@ -2489,35 +2773,111 @@
 
                 certs.sort((a, b) => new Date(b.request_date) - new Date(a.request_date)).forEach(c => {
                     const row = document.createElement('div');
-                    row.className = 'enrolled-row'; // Switched to enrolled-row for better flex layout
+                    row.className = 'enrolled-row';
+                    row.style.flexDirection = 'column';
+                    row.style.alignItems = 'stretch';
+                    row.style.gap = '12px';
+                    row.style.padding = '16px 20px';
+                    row.style.borderRadius = '10px';
+                    row.style.marginBottom = '12px';
+                    row.style.background = '#ffffff';
                     
-                    const statusColor = c.status === 'Accepted' ? '#28c76f' : c.status === 'Rejected' ? '#ea5455' : '#f39c12';
+                    let statusBorder = '#f59e0b';
+                    let statusColor = '#92400e';
+                    let statusBg = '#fef3c7';
+                    if (c.status === 'Accepted') {
+                        statusBorder = '#10b981';
+                        statusColor = '#065f46';
+                        statusBg = '#d1fae5';
+                    } else if (c.status === 'Rejected') {
+                        statusBorder = '#ef4444';
+                        statusColor = '#991b1b';
+                        statusBg = '#fee2e2';
+                    }
+                    row.style.borderLeft = '5px solid ' + statusBorder;
+                    row.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
+                    
                     const displayStatus = c.status === 'Pending' ? 'Under Process' : c.status;
+                    const dateFormatted = c.request_date ? new Date(c.request_date).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                    }) : 'N/A';
                     
                     let actionButtons = '';
                     if (c.status === 'Pending') {
                         actionButtons = `
-                            <button class="btn-full" style="background:#28c76f; padding:5px 10px; margin-top:0; width:auto; font-size:0.8rem; display: flex; align-items: center; gap: 5px;" onclick="updateCertificateStatus(${c.id}, 'Accepted')"><i class="fas fa-check"></i> Accept</button>
-                            <button class="btn-remove" style="padding:5px 10px; font-size:0.8rem; margin:0;" onclick="updateCertificateStatus(${c.id}, 'Rejected')"><i class="fas fa-times"></i> Reject</button>
+                            <button type="button" style="background:#16a34a; color:#ffffff !important; border:none; padding:6px 14px; border-radius:6px; font-size:0.82rem; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px;" onclick="updateCertificateStatus(${c.id}, 'Accepted')"><i class="fas fa-check" style="color:#ffffff;"></i> Accept</button>
+                            <button type="button" style="background:#dc2626; color:#ffffff !important; border:none; padding:6px 14px; border-radius:6px; font-size:0.82rem; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px;" onclick="deleteCertificateItem(${c.id})"><i class="fas fa-trash-alt" style="color:#ffffff;"></i> Reject & Delete</button>
+                        `;
+                    } else if (c.status === 'Accepted') {
+                        actionButtons = `
+                            <button type="button" style="background:#fee2e2; color:#dc2626 !important; border:1px solid #fecaca; padding:6px 14px; border-radius:6px; font-size:0.82rem; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px;" onclick="deleteCertificateItem(${c.id})" title="Delete Certificate Request"><i class="fas fa-trash-alt" style="color:#dc2626;"></i> Delete Request</button>
+                        `;
+                    } else {
+                        actionButtons = `
+                            <button type="button" style="background:#16a34a; color:#ffffff !important; border:none; padding:6px 14px; border-radius:6px; font-size:0.82rem; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px;" onclick="updateCertificateStatus(${c.id}, 'Accepted')"><i class="fas fa-undo" style="color:#ffffff;"></i> Re-Accept</button>
+                            <button type="button" style="background:#fee2e2; color:#dc2626 !important; border:1px solid #fecaca; padding:6px 14px; border-radius:6px; font-size:0.82rem; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px;" onclick="deleteCertificateItem(${c.id})"><i class="fas fa-trash-alt" style="color:#dc2626;"></i> Delete</button>
                         `;
                     }
-                    
+
+                    const studentName = escapeHtml(c.student_name || 'N/A');
+                    const studentCode = escapeHtml(c.student_code || 'N/A');
+                    const studentClass = escapeHtml(c.class || 'N/A');
+                    const studentMedium = escapeHtml(c.medium || 'Unknown');
+                    const parentName = escapeHtml(c.parent_name || 'N/A');
+                    const rollNo = escapeHtml(c.roll_no || 'N/A');
+                    const email = escapeHtml(c.email || '');
+                    const academicYear = escapeHtml(c.academic_year || '2025-2026');
+                    const certType = escapeHtml(c.certificate_type || 'Certificate');
+
                     row.innerHTML = `
-                        <div style="display:flex; align-items:center; gap:15px; flex: 1; min-width: 0;">
-                            <div style="width:40px;height:40px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                <i class="fas fa-file-alt" style="color:#94a3b8;"></i>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+                            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                                <span style="display:inline-block; font-size:0.78rem; font-weight:700; background:${statusBg}; color:${statusColor}; padding:3px 10px; border-radius:12px; text-transform:uppercase; letter-spacing:0.5px;">${displayStatus}</span>
+                                <strong style="font-size:1.15rem; color:var(--primary-color); font-family:var(--font-heading);">${certType}</strong>
+                                <span style="font-size:0.8rem; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:6px; font-weight:600;"><i class="fas fa-language"></i> ${studentMedium} Medium</span>
+                                <span style="font-size:0.8rem; color:#64748b;"><i class="fas fa-calendar-alt"></i> ${dateFormatted}</span>
                             </div>
-                            <div style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                <div class="enrolled-name" style="display: flex; align-items: center; gap: 8px;">
-                                    ${c.certificate_type}
-                                    <span style="font-size: 0.75rem; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #475569;">${c.medium}</span>
-                                </div>
-                                <div class="enrolled-sub">Student ID: ${c.student_code} | Date: ${new Date(c.request_date).toLocaleDateString()}</div>
-                                <div class="enrolled-sub" style="color:${statusColor}; font-weight:600;">Status: ${displayStatus}</div>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                ${actionButtons}
                             </div>
                         </div>
-                        <div style="display:flex; gap:10px; align-items:center; flex-shrink: 0; justify-content: flex-end;">
-                            ${actionButtons}
+
+                        <!-- All Student Details Box -->
+                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 16px; margin-top:2px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:8px; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <i class="fas fa-user-graduate" style="color:var(--secondary-color); font-size:1.1rem;"></i>
+                                    <strong style="font-size:1.05rem; color:#0f172a;">${studentName}</strong>
+                                </div>
+                                <span style="background:#0284c7; color:#ffffff; font-size:0.82rem; font-weight:700; padding:2px 10px; border-radius:4px; letter-spacing:0.5px;">
+                                    <i class="fas fa-id-badge"></i> Student ID: ${studentCode}
+                                </span>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; font-size:0.88rem; color:#334155;">
+                                <div>
+                                    <span style="color:#64748b; font-size:0.78rem; display:block; text-transform:uppercase; font-weight:600;">Class / Grade</span>
+                                    <strong><i class="fas fa-chalkboard"></i> Class ${studentClass}</strong> (${studentMedium})
+                                </div>
+                                <div>
+                                    <span style="color:#64748b; font-size:0.78rem; display:block; text-transform:uppercase; font-weight:600;">Roll Number</span>
+                                    <strong><i class="fas fa-hashtag"></i> ${rollNo}</strong>
+                                </div>
+                                <div>
+                                    <span style="color:#64748b; font-size:0.78rem; display:block; text-transform:uppercase; font-weight:600;">Parent / Guardian</span>
+                                    <strong><i class="fas fa-user-friends"></i> ${parentName}</strong>
+                                </div>
+                                <div>
+                                    <span style="color:#64748b; font-size:0.78rem; display:block; text-transform:uppercase; font-weight:600;">Registered Email</span>
+                                    ${email && email !== 'N/A' ? `<a href="mailto:${email}" style="color:#0284c7; text-decoration:none; word-break:break-all;"><i class="fas fa-envelope"></i> ${email}</a>` : '<span style="color:#94a3b8;">Not registered</span>'}
+                                </div>
+                                <div>
+                                    <span style="color:#64748b; font-size:0.78rem; display:block; text-transform:uppercase; font-weight:600;">Academic Year</span>
+                                    <span><i class="fas fa-calendar-check"></i> ${academicYear}</span>
+                                </div>
+                            </div>
                         </div>
                     `;
                     list.appendChild(row);
@@ -2545,6 +2905,22 @@
             } catch (err) {
                 console.error(err);
                 toast('Failed to update certificate status', 'error');
+            }
+        }
+
+        async function deleteCertificateItem(id) {
+            if (!confirm('Are you sure you want to permanently delete this certificate request from the database?')) return;
+            try {
+                const res = await adminFetch(`/certificates/${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Failed to delete certificate');
+                toast('Certificate request permanently deleted from database');
+                loadAllCertificates();
+                if (typeof window.fetchAdminPendingNotifications === 'function') {
+                    window.fetchAdminPendingNotifications();
+                }
+            } catch (err) {
+                console.error(err);
+                toast('Failed to delete certificate request', 'error');
             }
         }
 
@@ -2888,56 +3264,11 @@
             validatePayload,
             buildCreateRequest
         }) {
-            const hasLocalAdmin = sessionStorage.getItem('role') === 'admin';
             let token = sessionStorage.getItem('admin_token') || 'local-admin-token';
-            let authUserId = null;
-            let authClient = null;
+            const authUserId = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : 'auth-' + Date.now();
 
-            if (!hasLocalAdmin) {
-                try {
-                    const init = await initNeonAuth();
-                    authClient = init.authClient;
-                    const neonTok = await getInMemoryToken(authClient, init.authBaseUrl);
-                    if (neonTok) token = neonTok;
-                } catch (_) {}
-            }
-
-            // Step 1: Server-side pre-validation via authFetch
-            const validateResp = await window.adminAuthFetch(validatePath, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(validatePayload)
-            });
-            const validated = await parseJsonSafe(validateResp);
-            if (!validateResp.ok || !validated.valid) {
-                throw new Error(validated.error || `Validation failed (${validateResp.status})`);
-            }
-
-            const targetEmail = (validated.email || email || '').trim().toLowerCase();
-
-            // Step 2 & 3: Provision account in Neon Managed Auth if admin SDK is active; otherwise generate UUID
-            if (authClient && authClient.admin && typeof authClient.admin.createUser === 'function' && token && !token.includes(':')) {
-                let tempPassword = generateSecureTempPassword(20);
-                try {
-                    const createRes = await authClient.admin.createUser({
-                        email: targetEmail,
-                        password: tempPassword,
-                        name: displayName,
-                        role: 'user'
-                    });
-                    if (createRes && !createRes.error) {
-                        const createdUser = (createRes.data && (createRes.data.user || createRes.data)) || createRes.user || createRes;
-                        authUserId = createdUser && createdUser.id;
-                    }
-                } catch (_) {}
-            }
-
-            if (!authUserId) {
-                authUserId = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : 'auth-' + Date.now();
-            }
-
-            // Step 4: Save school DB record linked via auth_user_id through authFetch
-            const reqSpec = buildCreateRequest(validated, authUserId, token);
+            // Direct save without redundant roundtrips to remote Neon Auth
+            const reqSpec = buildCreateRequest(validatePayload, authUserId, token);
             let saveData = null;
             let saveFailedMessage = null;
 
@@ -2945,10 +3276,10 @@
                 const saveResp = await window.adminAuthFetch(reqSpec.url, reqSpec.options);
                 saveData = await parseJsonSafe(saveResp);
                 if (!saveResp.ok) {
-                    saveFailedMessage = (saveData && saveData.error) || `Failed to save school record (${saveResp.status})`;
+                    saveFailedMessage = (saveData && saveData.error) || `Failed to save record (${saveResp.status})`;
                 }
             } catch (networkErr) {
-                saveFailedMessage = networkErr.message || 'Network error while saving school record';
+                saveFailedMessage = networkErr.message || 'Network error while saving record';
             }
 
             if (saveFailedMessage) {
@@ -2959,7 +3290,7 @@
                 createdRecord: saveData,
                 authUserId,
                 identifierValue: reqSpec.identifierValue,
-                email: reqSpec.finalEmail || targetEmail
+                email: reqSpec.finalEmail || (email || '').trim().toLowerCase()
             };
         };
 
@@ -3010,9 +3341,10 @@
 
         window.fetchAdminPendingNotifications = async function () {
             try {
-                const [certRes, queryRes] = await Promise.all([
+                const [certRes, queryRes, admRes] = await Promise.all([
                     adminFetch('/certificates/pending-summary').catch(() => null),
-                    adminFetch('/contact/pending-summary').catch(() => null)
+                    adminFetch('/contact/pending-summary').catch(() => null),
+                    adminFetch('/admissions/pending-summary').catch(() => null)
                 ]);
 
                 let data = {};
@@ -3026,16 +3358,23 @@
                     unreadQueries = (qData && qData.unreadCount) || 0;
                 }
 
+                let pendingAdmissions = 0;
+                if (admRes && admRes.ok) {
+                    const aData = await admRes.json();
+                    pendingAdmissions = (aData && aData.pendingCount) || 0;
+                }
+
                 const certBadge = document.getElementById('certPendingBadge');
                 const alumniBadge = document.getElementById('alumniPendingBadge');
                 const queryBadge = document.getElementById('queryPendingBadge');
+                const admissionBadge = document.getElementById('admissionPendingBadge');
                 const bellBadge = document.getElementById('adminNotifBadge');
                 const totalLabel = document.getElementById('notifTotalLabel');
                 const bodyEl = document.getElementById('notifDropdownBody');
 
                 const certCount = (data.certificates && data.certificates.count) || 0;
                 const alumniCount = (data.alumni && data.alumni.count) || 0;
-                const total = certCount + alumniCount + unreadQueries;
+                const total = certCount + alumniCount + unreadQueries + pendingAdmissions;
 
                 if (certBadge) {
                     certBadge.textContent = certCount;
@@ -3048,6 +3387,10 @@
                 if (queryBadge) {
                     queryBadge.textContent = unreadQueries;
                     queryBadge.style.display = unreadQueries > 0 ? 'inline-block' : 'none';
+                }
+                if (admissionBadge) {
+                    admissionBadge.textContent = pendingAdmissions;
+                    admissionBadge.style.display = pendingAdmissions > 0 ? 'inline-block' : 'none';
                 }
                 if (bellBadge) {
                     bellBadge.textContent = total;
@@ -3067,6 +3410,18 @@
                         `;
                     } else {
                         let html = '';
+                        if (pendingAdmissions > 0) {
+                            html += `<div style="font-size:0.75rem; font-weight:700; color:#64748b; margin:6px 4px 4px; text-transform:uppercase; letter-spacing:0.5px;">Admissions (${pendingAdmissions})</div>`;
+                            html += `
+                                <div class="notif-card" onclick="showSection('admissions'); document.getElementById('adminNotifDropdown').classList.remove('show');">
+                                    <div class="notif-icon" style="background:#e0e7ff; color:#4338ca;"><i class="fas fa-user-plus"></i></div>
+                                    <div class="notif-content">
+                                        <p class="notif-title">${pendingAdmissions} Pending Application${pendingAdmissions > 1 ? 's' : ''}</p>
+                                        <p class="notif-sub">Click to review online admissions</p>
+                                    </div>
+                                </div>
+                            `;
+                        }
                         if (unreadQueries > 0) {
                             html += `<div style="font-size:0.75rem; font-weight:700; color:#64748b; margin:6px 4px 4px; text-transform:uppercase; letter-spacing:0.5px;">Contact Queries (${unreadQueries})</div>`;
                             html += `
@@ -3160,9 +3515,18 @@
             const authTimeout = setTimeout(() => {
                 sessionStorage.clear();
                 window.location.replace('login_admin.html?reason=auth_required');
-            }, 2500);
+            }, 5000);
 
             try {
+                // Check if admin token is stored in sessionStorage
+                const storedAdminToken = sessionStorage.getItem('admin_token');
+                if (storedAdminToken) {
+                    sessionStorage.setItem('role', 'admin');
+                    clearTimeout(authTimeout);
+                    unlock(sessionStorage.getItem('admin_name') || 'Super Admin');
+                    return;
+                }
+
                 const result = await verifyAdminSession();
                 clearTimeout(authTimeout);
                 if (!result || !result.isAdmin) {

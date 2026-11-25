@@ -361,8 +361,38 @@ footer {
     font-family: var(--font-main);
 }
 
-.contact-form button {
+.contact-form button:not(.password-toggle-btn) {
     width: 100%;
+}
+
+.password-toggle-btn {
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    color: #64748b !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 10 !important;
+    font-size: 1rem !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.password-toggle-btn:hover {
+    color: var(--primary-color) !important;
+    background: transparent !important;
+    transform: translateY(-50%) !important;
 }
 
 /* Page Specific: Login */
@@ -473,8 +503,9 @@ footer {
         position: fixed;
         top: 0;
         right: -100%;
-        width: min(75%, 320px);
+        width: min(80%, 320px);
         height: 100vh;
+        height: 100dvh; /* Dynamic viewport height for mobile browser navigation bars */
         background: linear-gradient(180deg, #1a252f 0%, #15202b 50%, #0f1923 100%);
         flex-direction: column;
         align-items: stretch;
@@ -485,6 +516,8 @@ footer {
         transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
         box-shadow: -10px 0 40px rgba(0, 0, 0, 0.3);
         overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
     }
 
     .nav-menu.active {
@@ -495,22 +528,23 @@ footer {
     .nav-menu::before {
         content: 'Menu';
         display: block;
-        padding: 24px 28px 20px;
+        padding: 16px 20px 14px;
         font-family: var(--font-heading);
-        font-size: 1.4rem;
+        font-size: 1.25rem;
         color: var(--secondary-color);
         font-weight: 700;
         letter-spacing: 1px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        margin-bottom: 8px;
+        margin-bottom: 4px;
+        flex-shrink: 0;
     }
 
     /* Nav Links Styling */
     .nav-menu a {
         display: flex;
         align-items: center;
-        padding: 14px 28px;
-        font-size: 1rem;
+        padding: 10px 20px;
+        font-size: 0.95rem;
         font-weight: 500;
         color: rgba(255, 255, 255, 0.75);
         border-left: 3px solid transparent;
@@ -518,6 +552,7 @@ footer {
         position: relative;
         opacity: 0;
         transform: translateX(20px);
+        flex-shrink: 0;
     }
 
     .nav-menu.active a {
@@ -576,22 +611,29 @@ footer {
     /* Mobile sidebar buttons (added by JS) */
     .mobile-nav-buttons {
         display: flex;
-        flex-direction: column;
-        gap: 10px;
-        padding: 20px 28px 30px;
-        margin-top: auto;
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 20px 24px;
+        margin-top: 10px;
         border-top: 1px solid rgba(255, 255, 255, 0.08);
+        flex-shrink: 0;
     }
 
     .mobile-nav-buttons a {
-        display: block;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         text-align: center;
-        padding: 12px 20px;
+        padding: 10px 12px;
         border-radius: 8px;
         font-weight: 600;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         text-transform: uppercase;
         letter-spacing: 1px;
+        text-decoration: none;
+        white-space: nowrap;
         transition: all 0.3s ease;
     }
 
@@ -824,5 +866,122 @@ footer {
     .toolbar button, .toolbar select {
         width: 100% !important;
         margin-bottom: 5px !important;
+    }
+}
+
+/* ============================================================
+   GLOBAL RESPONSIVENESS REFINEMENTS
+============================================================ */
+@media (max-width: 900px) {
+    .intro-grid {
+        grid-template-columns: 1fr !important;
+        gap: 2.5rem !important;
+    }
+
+    /* Admission Requirements inner cards */
+    .req-card-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    .admission-form-wrapper {
+        padding: 1.5rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Container padding on phones */
+    .container {
+        padding: 0 15px;
+    }
+
+    /* Headings scaling */
+    .section-title h2 {
+        font-size: 1.85rem;
+    }
+
+    .hero-content h1 {
+        font-size: 2rem;
+        line-height: 1.25;
+    }
+
+    .hero-content p {
+        font-size: 1rem;
+    }
+
+    /* Button stack on small screens */
+    .hero-buttons {
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+    }
+
+    .hero-buttons .btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    /* Grid collapses */
+    .grid-2,
+    .grid-3,
+    .grid-4,
+    .footer-grid,
+    .about-grid,
+    .contact-grid {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+    }
+
+    /* Admission two-column split */
+    .admission-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Modals scaling */
+    .modal-content {
+        width: 94% !important;
+        max-width: 94% !important;
+        margin: 10px auto !important;
+        padding: 16px !important;
+    }
+
+    /* Tables horizontal overflow handling */
+    table {
+        font-size: 0.85rem;
+    }
+
+    /* Public forms */
+    .contact-form input,
+    .contact-form select,
+    .contact-form textarea {
+        font-size: 0.95rem;
+        padding: 11px 12px;
+    }
+
+    /* Ensure embeds/iframes don't overflow */
+    iframe {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .section-title h2 {
+        font-size: 1.6rem;
+    }
+
+    .logo-text h1 {
+        font-size: 1rem;
+    }
+
+    .logo-text span {
+        font-size: 0.72rem;
+    }
+
+    .logo img {
+        height: 42px;
+    }
+
+    .header-bar h2 {
+        font-size: 1.2rem;
     }
 }

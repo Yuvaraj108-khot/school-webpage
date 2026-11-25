@@ -1,7 +1,7 @@
 const prisma = require('../prismaClient');
 const { SAFE_STUDENT_SELECT, withDbRetry } = require('../utils/accountProvisioning');
 
-function validateMarksScore(rawMarks) {
+function validateMarksScore(rawMarks, maxMarks = 1000) {
     if (rawMarks === undefined || rawMarks === null || typeof rawMarks === 'boolean') {
         return null;
     }
@@ -10,10 +10,27 @@ function validateMarksScore(rawMarks) {
         return null;
     }
     const num = Number(str);
-    if (!Number.isFinite(num) || !Number.isInteger(num) || num < 0 || num > 100) {
+    if (!Number.isFinite(num) || num < 0 || (maxMarks && num > maxMarks)) {
         return null;
     }
-    return num;
+    return Math.round(num);
+}
+
+function validateMarksTotal(rawTotal) {
+    if (rawTotal === undefined || rawTotal === null || typeof rawTotal === 'boolean') {
+        return 100;
+    }
+    const num = parseInt(String(rawTotal).trim(), 10);
+    return (Number.isFinite(num) && num > 0) ? num : 100;
+
+}
+
+function validateMarksTotal(rawTotal) {
+    if (rawTotal === undefined || rawTotal === null || typeof rawTotal === 'boolean') {
+        return 100;
+    }
+    const num = parseInt(String(rawTotal).trim(), 10);
+    return (Number.isFinite(num) && num > 0) ? num : 100;
 }
 
 // Resolve relational helper
@@ -125,15 +142,16 @@ exports.getMarksByStudent = async (req, res) => {
 
 exports.createMarks = async (req, res) => {
     try {
-        const { student_code, class: className, medium, subject, exam_type, marks } = req.body;
+        const { student_code, class: className, medium, subject, exam_type, marks, total } = req.body;
         
         if (!student_code || !subject || !exam_type || marks === undefined) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        const validatedScore = validateMarksScore(marks);
+        const validatedTotal = validateMarksTotal(total);
+        const validatedScore = validateMarksScore(marks, validatedTotal);
         if (validatedScore === null) {
-            return res.status(400).json({ error: 'Marks must be a valid integer between 0 and 100.' });
+            return res.status(400).json({ error: `Marks must be a valid number between 0 and ${validatedTotal}.` });
         }
 
         // Resolve relational mappings
@@ -152,6 +170,7 @@ exports.createMarks = async (req, res) => {
                 },
                 update: {
                     marks: validatedScore,
+                    total: validatedTotal,
                     // Keep legacy field updated too
                     student_code,
                     class: className,
@@ -164,12 +183,12 @@ exports.createMarks = async (req, res) => {
                     subject_id: ids.subjectId,
                     exam_id: ids.examId,
                     marks: validatedScore,
+                    total: validatedTotal,
                     student_code,
                     class: className,
                     medium,
                     subject,
-                    exam_type,
-                    total: 100
+                    exam_type
                 }
             });
         } else {
@@ -187,7 +206,10 @@ exports.createMarks = async (req, res) => {
             if (existing) {
                 result = await prisma.marks.update({
                     where: { id: existing.id },
-                    data: { marks: validatedScore }
+                    data: {
+                        marks: validatedScore,
+                        total: validatedTotal
+                    }
                 });
             } else {
                 result = await prisma.marks.create({
@@ -198,7 +220,7 @@ exports.createMarks = async (req, res) => {
                         subject,
                         exam_type,
                         marks: validatedScore,
-                        total: 100
+                        total: validatedTotal
                     }
                 });
             }
@@ -219,33 +241,66 @@ exports.createMarksBulk = async (req, res) => {
             return res.status(400).json({ error: 'Invalid payload structure' });
         }
 
+        const defaultTotal = validateMarksTotal(req.body.total);
+
         for (const item of marks_list) {
-            if (!item || typeof item.student_code !== 'string' || !item.student_code.trim() || validateMarksScore(item.marks) === null) {
-                return res.status(400).json({ error: 'Marks must be a valid integer between 0 and 100 for every student entry.' });
+            const itemTotal = validateMarksTotal(item.total || defaultTotal);
+            if (!item || typeof item.student_code !== 'string' || !item.student_code.trim() || validateMarksScore(item.marks, itemTotal) === null) {
+                return res.status(400).json({ error: `Marks must be a valid number between 0 and ${itemTotal} for every student entry.` });
             }
         }
 
-        // Execute in transaction to ensure safety
+        // Resolve shared metadata (Medium, Class, Exam, Subject, and Students) in parallel ONCE upfront
+        const codes = marks_list.map(i => i.student_code.trim());
+        const medName = medium === 'CBSE' ? 'English' : medium;
+        const clsName = className ? className.replace(/\D/g, '') : '';
+
+        const [med, exam, students] = await Promise.all([
+            medName ? prisma.medium.findUnique({ where: { name: medName } }) : null,
+            exam_type ? prisma.exam.findUnique({ where: { name: exam_type } }) : null,
+            prisma.student.findMany({ where: { student_code: { in: codes } } })
+        ]);
+
+        const mediumId = med?.id || null;
+        let classId = null;
+        if (mediumId && clsName) {
+            const cls = await prisma.schoolClass.findUnique({
+                where: { name_medium_id: { name: clsName, medium_id: mediumId } }
+            });
+            classId = cls?.id || null;
+        }
+
+        let subjectId = null;
+        if (subject && classId && mediumId) {
+            const sub = await prisma.subject.findUnique({
+                where: { name_class_id_medium_id: { name: subject, class_id: classId, medium_id: mediumId } }
+            });
+            subjectId = sub?.id || null;
+        }
+        const examId = exam?.id || null;
+        const studentMap = new Map(students.map(s => [s.student_code, s]));
+
+        // Execute all marks upserts concurrently inside a single transaction
         const results = await withDbRetry(() => prisma.$transaction(async (tx) => {
-            const txResults = [];
-            for (const item of marks_list) {
+            return Promise.all(marks_list.map(async (item) => {
                 const code = item.student_code.trim();
-                const validatedScore = validateMarksScore(item.marks);
+                const itemTotal = validateMarksTotal(item.total || defaultTotal);
+                const validatedScore = validateMarksScore(item.marks, itemTotal);
+                const student = studentMap.get(code);
+                const studentId = student?.id || null;
 
-                // Resolve relational mappings on the active transaction client
-                const ids = await resolveRelationalIds(code, className, medium, subject, exam_type, tx);
-
-                if (ids.studentId && ids.subjectId && ids.examId) {
-                    const result = await tx.marks.upsert({
+                if (studentId && subjectId && examId) {
+                    return tx.marks.upsert({
                         where: {
                             student_id_subject_id_exam_id: {
-                                student_id: ids.studentId,
-                                subject_id: ids.subjectId,
-                                exam_id: ids.examId
+                                student_id: studentId,
+                                subject_id: subjectId,
+                                exam_id: examId
                             }
                         },
                         update: {
                             marks: validatedScore,
+                            total: itemTotal,
                             student_code: code,
                             class: className,
                             medium,
@@ -253,21 +308,19 @@ exports.createMarksBulk = async (req, res) => {
                             exam_type
                         },
                         create: {
-                            student_id: ids.studentId,
-                            subject_id: ids.subjectId,
-                            exam_id: ids.examId,
+                            student_id: studentId,
+                            subject_id: subjectId,
+                            exam_id: examId,
                             marks: validatedScore,
+                            total: itemTotal,
                             student_code: code,
                             class: className,
                             medium,
                             subject,
-                            exam_type,
-                            total: 100
+                            exam_type
                         }
                     });
-                    txResults.push(result);
                 } else {
-                    // Fallback legacy
                     const existing = await tx.marks.findFirst({
                         where: {
                             student_code: code,
@@ -278,14 +331,16 @@ exports.createMarksBulk = async (req, res) => {
                         }
                     });
 
-                    let result;
                     if (existing) {
-                        result = await tx.marks.update({
+                        return tx.marks.update({
                             where: { id: existing.id },
-                            data: { marks: validatedScore }
+                            data: {
+                                marks: validatedScore,
+                                total: itemTotal
+                            }
                         });
                     } else {
-                        result = await tx.marks.create({
+                        return tx.marks.create({
                             data: {
                                 student_code: code,
                                 class: className,
@@ -293,14 +348,12 @@ exports.createMarksBulk = async (req, res) => {
                                 subject,
                                 exam_type,
                                 marks: validatedScore,
-                                total: 100
+                                total: itemTotal
                             }
                         });
                     }
-                    txResults.push(result);
                 }
-            }
-            return txResults;
+            }));
         }, {
             maxWait: 15000,
             timeout: 60000

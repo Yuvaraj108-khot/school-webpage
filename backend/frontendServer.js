@@ -8,6 +8,14 @@ const ROOT_DIR = path.join(__dirname, '../');
 const FRONTEND_PORT = parseInt(process.env.FRONTEND_PORT || '8000', 10);
 const BACKEND_ORIGIN = process.env.BACKEND_URL || 'http://localhost:5000';
 
+// Persistent keep-alive agent to eliminate TCP handshake latency on every proxy request
+const keepAliveAgent = new http.Agent({
+    keepAlive: true,
+    keepAliveMsecs: 60000,
+    maxSockets: 100,
+    maxFreeSockets: 50
+});
+
 const ALLOWED_PUBLIC_FILES = new Set([
     'index.html',
     'about.html',
@@ -69,7 +77,8 @@ function proxyApiRequest(req, res, backendTarget) {
             port: backendTarget.port || 5000,
             method: req.method,
             path: req.originalUrl,
-            headers: outgoingHeaders
+            headers: outgoingHeaders,
+            agent: keepAliveAgent
         },
         (proxyRes) => {
             res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);

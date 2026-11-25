@@ -1135,6 +1135,10 @@
                             <label><i class="fas fa-file-alt"></i> Exam</label>
                             <select id="marksExam" onchange="checkMarksReady()">
                                 <option value="">-- Select Exam --</option>
+                                <option value="Unit Test 1">Unit Test 1</option>
+                                <option value="Unit Test 2">Unit Test 2</option>
+                                <option value="Mid-Term Exam">Mid-Term Exam</option>
+                                <option value="Annual / Final Exam">Annual / Final Exam</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -1142,6 +1146,10 @@
                              <select id="marksSubject" disabled onchange="checkMarksReady()">
                                  <option value="">-- Select Subject --</option>
                              </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-award"></i> Total / Max Marks</label>
+                            <input type="number" id="marksTotalMarks" placeholder="e.g. 20, 25, 50, 100" min="1" max="1000" value="20" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; width: 100%; box-sizing: border-box;" onchange="updateMarksMaxAttribute()">
                         </div>
                     </div>
 
@@ -1388,16 +1396,36 @@
             const gate = document.getElementById('teacherAuthGate');
             if (gate) gate.remove();
 
-            // Load protected dropdown metadata AFTER authentication succeeds
-            const mediums = await apiFetch('/mediums?is_active=true');
-            if (Array.isArray(mediums) && mediums.length > 0) {
-                allMediums = mediums;
-                populateMediumDropdowns();
-            }
+            // Pre-load all dropdown metadata in parallel on boot for instant dropdown changes
+            const fallbackExams = [
+                { name: 'Unit Test 1' },
+                { name: 'Unit Test 2' },
+                { name: 'Mid-Term Exam' },
+                { name: 'Annual / Final Exam' }
+            ];
 
-            const exams = await apiFetch('/exams?is_active=true');
-            if (Array.isArray(exams) && exams.length > 0) {
-                populateExamDropdowns(exams);
+            try {
+                const [mediums, allClasses, exams] = await Promise.all([
+                    apiFetch('/mediums?is_active=true').catch(() => []),
+                    apiFetch('/classes?is_active=true').catch(() => []),
+                    apiFetch('/exams?is_active=true').catch(() => fallbackExams)
+                ]);
+
+                if (Array.isArray(mediums) && mediums.length > 0) {
+                    allMediums = mediums;
+                    populateMediumDropdowns();
+                }
+
+                if (Array.isArray(allClasses) && allClasses.length > 0) {
+                    allClasses.forEach(c => {
+                        if (!classesByMedium[c.medium_id]) classesByMedium[c.medium_id] = [];
+                        classesByMedium[c.medium_id].push(c);
+                    });
+                }
+
+                populateExamDropdowns(Array.isArray(exams) && exams.length > 0 ? exams : fallbackExams);
+            } catch (_) {
+                populateExamDropdowns(fallbackExams);
             }
 
             // Setup Mobile Menu Drawer
@@ -1456,14 +1484,27 @@
         }
 
         function populateExamDropdowns(exams) {
+            const list = Array.isArray(exams) && exams.length > 0 ? exams : [
+                { name: 'Unit Test 1' },
+                { name: 'Unit Test 2' },
+                { name: 'Mid-Term Exam' },
+                { name: 'Annual / Final Exam' }
+            ];
             const dropdownIds = ['marksExam', 'dlMarksExam'];
             dropdownIds.forEach(id => {
                 const select = document.getElementById(id);
                 if (select) {
+                    const prevVal = select.value;
                     select.innerHTML = '<option value="">-- Select Exam --</option>';
-                    exams.forEach(ex => {
-                        select.innerHTML += `<option value="${ex.name}">${ex.name}</option>`;
+                    list.forEach(ex => {
+                        const opt = document.createElement('option');
+                        opt.value = ex.name;
+                        opt.textContent = ex.name;
+                        select.appendChild(opt);
                     });
+                    if (prevVal && list.some(ex => ex.name === prevVal)) {
+                        select.value = prevVal;
+                    }
                 }
             });
         }
@@ -1896,6 +1937,14 @@
         }
 
         // ===================== MARKS LOAD & SUBMIT =====================
+        function updateMarksMaxAttribute() {
+            const totalMarksVal = parseInt(document.getElementById('marksTotalMarks')?.value, 10) || 100;
+            const labels = document.querySelectorAll('.marks-total-label');
+            labels.forEach(lbl => { lbl.textContent = '/ ' + totalMarksVal; });
+            const inputs = document.querySelectorAll('.marks-score-input');
+            inputs.forEach(inp => { inp.max = totalMarksVal; });
+        }
+
         async function loadMarksStudents() {
             const medium = document.getElementById('marksMedium').value;
             const cls = document.getElementById('marksClass').value;
@@ -1916,6 +1965,8 @@
                 return;
             }
 
+            const totalMarksVal = parseInt(document.getElementById('marksTotalMarks')?.value, 10) || 100;
+
             students.forEach((student, index) => {
                 const row = document.createElement('div');
                 row.className = 'marks-row';
@@ -1925,7 +1976,10 @@
                         <div class="student-name">${student.name}</div>
                         <div class="student-roll">${student.student_code}</div>
                     </div>
-                    <input type="number" placeholder="Marks" min="0" max="100" id="mark-input-${index}">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <input type="number" class="marks-score-input" placeholder="Marks" min="0" max="${totalMarksVal}" id="mark-input-${index}" style="width:85px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:6px; font-weight:600; text-align:center;">
+                        <span class="marks-total-label" style="color:#64748b; font-weight:700; font-size:0.9rem;">/ ${totalMarksVal}</span>
+                    </div>
                 `;
                 container.appendChild(row);
             });
@@ -1938,9 +1992,16 @@
             const cls = document.getElementById('marksClass').value;
             const exam = document.getElementById('marksExam').value;
             const subject = document.getElementById('marksSubject').value;
+            const totalMarksInput = document.getElementById('marksTotalMarks');
+            const totalMarksVal = parseInt(totalMarksInput ? totalMarksInput.value : '100', 10);
 
             if (!medium || !cls || !exam || !subject) {
                 showToast('Please fill all options first.', 'error');
+                return;
+            }
+
+            if (!totalMarksVal || totalMarksVal <= 0) {
+                showToast('Please specify a valid Total / Max Marks (e.g. 20, 25, 50, 100).', 'error');
                 return;
             }
 
@@ -1955,18 +2016,19 @@
             activeStudentList.forEach((student, i) => {
                 const input = document.getElementById(`mark-input-${i}`);
                 const markVal = input ? parseFloat(input.value) : NaN;
-                if (isNaN(markVal) || markVal < 0 || markVal > 100) {
+                if (isNaN(markVal) || markVal < 0 || markVal > totalMarksVal) {
                     hasInvalid = true;
                 } else {
                     marks_list.push({
                         student_code: student.student_code,
-                        marks: markVal
+                        marks: markVal,
+                        total: totalMarksVal
                     });
                 }
             });
 
             if (hasInvalid) {
-                showToast('Please enter valid marks (0-100) for all students.', 'error');
+                showToast(`Please enter valid marks between 0 and ${totalMarksVal} for all students.`, 'error');
                 return;
             }
 
@@ -1978,12 +2040,13 @@
                 medium: queryMedium,
                 subject: subject,
                 exam_type: exam,
+                total: totalMarksVal,
                 marks_list
             };
 
             const result = await apiPost('/marks/bulk', payload);
             if (result) {
-                showToast(`Marks submitted successfully for ${result.results.length} students!`, 'success');
+                showToast(`Marks (out of ${totalMarksVal}) submitted successfully for ${result.results.length} students!`, 'success');
                 // Reset marks inputs
                 activeStudentList.forEach((_, i) => {
                     const input = document.getElementById(`mark-input-${i}`);

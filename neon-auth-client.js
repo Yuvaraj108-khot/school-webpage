@@ -7,12 +7,6 @@ let inMemoryCookieJwt = null;
  * Resolves the Express backend API base URL for local dev or same-origin deployment.
  */
 export function getApiBase() {
-    if (window.location.port === '5000' || window.location.port === '8000') {
-        return '/api';
-    }
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return `http://${window.location.hostname}:5000/api`;
-    }
     return '/api';
 }
 
@@ -21,7 +15,11 @@ function resolveApiUrl(urlOrPath) {
         return urlOrPath;
     }
     const clean = urlOrPath.startsWith('/') ? urlOrPath : `/${urlOrPath}`;
-    return `${getApiBase()}${clean}`;
+    const base = getApiBase();
+    if (clean === base || clean.startsWith(`${base}/`)) {
+        return clean;
+    }
+    return `${base}${clean}`;
 }
 
 /**
@@ -297,9 +295,14 @@ export async function verifyCookieBackedSession(options = {}) {
 }
 
 async function resolveBearerTokenForMode(authMode, forceRefresh = false) {
-    const storedAdminToken = sessionStorage.getItem('admin_token');
-    if (storedAdminToken) {
-        return storedAdminToken;
+    if (!forceRefresh) {
+        const stored = sessionStorage.getItem('admin_token') || sessionStorage.getItem('teacher_token') || sessionStorage.getItem('student_token') || sessionStorage.getItem('token');
+        if (stored) {
+            return stored;
+        }
+        if (inMemoryCookieJwt) {
+            return inMemoryCookieJwt;
+        }
     }
 
     if (authMode === 'admin') {

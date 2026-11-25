@@ -93,9 +93,19 @@
                 </div>
                 <div style="margin-bottom: 1.5rem;">
                     <label style="display: block; margin-bottom: 5px; color: #333;">Password</label>
-                    <input type="password" id="password" placeholder="Enter your password" required>
+                    <div style="position: relative; margin-bottom: 15px;">
+                        <input type="password" id="password" placeholder="Enter your password" style="padding-right: 48px; margin-bottom: 0;" required>
+                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('password', this)" aria-label="Toggle password visibility">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+                <div style="margin-top: 10px; padding: 10px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; font-size: 0.78rem; color: #64748b; line-height: 1.4;">
+                    <strong>Demo Logins:</strong><br>
+                    &bull; Student: <code>student</code> / <code>pass</code><br>
+                    &bull; Teacher: <code>teacher</code> / <code>pass</code>
+                </div>
             </form>
 
             <div style="margin-top: 1.5rem; text-align: center; font-size: 0.8rem; color: #666;">
@@ -111,6 +121,26 @@
         </div>
     </div>
 
+    <script>
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (icon) {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                }
+            } else {
+                input.type = 'password';
+                if (icon) {
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            }
+        }
+    </script>
     <script type="module">
         import { getApiBase, verifyAdminSession, verifyCookieBackedSession } from './neon-auth-client.js';
 
@@ -170,6 +200,7 @@
                         sessionStorage.setItem('role', 'teacher');
                         sessionStorage.setItem('teacher_name', data.teacher_name);
                         sessionStorage.setItem('staff_id', data.staff_id);
+                        if (data.token) sessionStorage.setItem('teacher_token', data.token);
                         window.location.href = 'dashboard_teacher.html';
                         return;
                     } else if (data.role === 'student') {
@@ -178,6 +209,7 @@
                         sessionStorage.setItem('student_name', data.student_name);
                         sessionStorage.setItem('student_class', data.student_class || '');
                         sessionStorage.setItem('student_medium', data.student_medium || '');
+                        if (data.token) sessionStorage.setItem('student_token', data.token);
                         window.location.href = 'dashboard_student.html';
                         return;
                     }

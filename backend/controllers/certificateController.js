@@ -3,22 +3,49 @@ const { sendAdminNotification } = require('../utils/emailService');
 
 exports.getCertificates = async (req, res) => {
     try {
-        const certificates = await prisma.certificateRequest.findMany();
+        const certificates = await prisma.certificateRequest.findMany({
+            orderBy: { request_date: 'desc' }
+        });
         
-        // Fetch all students to map medium
+        // Fetch all students to map comprehensive student details
         const students = await prisma.student.findMany({
-            select: { student_code: true, medium: true }
+            select: {
+                id: true,
+                student_code: true,
+                name: true,
+                class: true,
+                medium: true,
+                parent_name: true,
+                roll_no: true,
+                email: true,
+                photo_url: true
+            }
         });
         const studentMap = {};
-        students.forEach(s => studentMap[s.student_code] = s.medium);
+        students.forEach(s => {
+            if (s.student_code) {
+                studentMap[s.student_code] = s;
+                studentMap[s.student_code.toLowerCase()] = s;
+            }
+        });
 
-        const enrichedCertificates = certificates.map(c => ({
-            ...c,
-            medium: studentMap[c.student_code] || 'Unknown'
-        }));
+        const enrichedCertificates = certificates.map(c => {
+            const st = (c.student_code && (studentMap[c.student_code] || studentMap[c.student_code.toLowerCase()])) || {};
+            return {
+                ...c,
+                student_name: st.name || 'Unknown Student',
+                class: st.class || 'N/A',
+                medium: st.medium || 'Unknown',
+                parent_name: st.parent_name || 'N/A',
+                roll_no: st.roll_no || 'N/A',
+                email: st.email || 'N/A',
+                photo_url: st.photo_url || null
+            };
+        });
 
         res.json(enrichedCertificates);
     } catch (error) {
+        console.error('getCertificates Error:', error);
         res.status(500).json({ error: 'Failed to fetch certificates' });
     }
 };
@@ -148,6 +175,21 @@ exports.updateCertificate = async (req, res) => {
     } catch (error) {
         console.error('Update Certificate Error:', error.message);
         res.status(500).json({ error: 'Failed to update certificate request' });
+    }
+};
+
+exports.deleteCertificate = async (req, res) => {
+    try {
+        const id = parseInt(req.params.id, 10);
+        const existing = await prisma.certificateRequest.findUnique({ where: { id } });
+        if (!existing) {
+            return res.status(404).json({ error: 'Certificate request not found' });
+        }
+        await prisma.certificateRequest.delete({ where: { id } });
+        res.json({ message: 'Certificate request permanently deleted from database' });
+    } catch (error) {
+        console.error('Delete Certificate Error:', error.message);
+        res.status(500).json({ error: 'Failed to delete certificate request' });
     }
 };
 

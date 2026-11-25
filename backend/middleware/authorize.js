@@ -3,6 +3,17 @@ const neonAuthMiddleware = require('./neonAuthMiddleware');
 const requireNeonAdmin = require('./requireNeonAdmin');
 const { omitPassword, normalizeEmail } = require('../utils/accountProvisioning');
 
+const profileCache = new Map();
+const PROFILE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function invalidateProfileCache(userId) {
+    if (userId) {
+        profileCache.delete(userId);
+    } else {
+        profileCache.clear();
+    }
+}
+
 /**
  * Resolves and enforces verified Neon Auth JWT + active/unbanned Neon user +
  * email-aligned active school profile (Admin, Teacher, or Student).
@@ -22,15 +33,25 @@ async function requireAuth(req, res, next) {
         const { user, roles } = resolved;
         const canonicalEmail = normalizeEmail(user.email);
 
+        // Check in-memory profile cache to avoid redundant cross-region DB lookups on every request
+        const cachedProfile = profileCache.get(user.id);
+        if (cachedProfile && Date.now() < cachedProfile.expiresAt) {
+            req.auth = cachedProfile.auth;
+            if (cachedProfile.neonAdmin) {
+                req.neonAdmin = cachedProfile.neonAdmin;
+            }
+            return next();
+        }
+
         // 1. Admin role strictly resolved from neon_auth."user"
         if (roles.includes('admin')) {
-            req.neonAdmin = {
+            const neonAdmin = {
                 userId: user.id,
                 email: canonicalEmail,
                 name: user.name || 'Administrator',
                 roles
             };
-            req.auth = {
+            const auth = {
                 authenticated: true,
                 userId: user.id,
                 email: canonicalEmail,
@@ -45,6 +66,9 @@ async function requireAuth(req, res, next) {
                 teacher: null,
                 student: null
             };
+            req.neonAdmin = neonAdmin;
+            req.auth = auth;
+            profileCache.set(user.id, { auth, neonAdmin, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
             return next();
         }
 
@@ -63,7 +87,7 @@ async function requireAuth(req, res, next) {
             }
 
             const safeTeacher = omitPassword(teacher);
-            req.auth = {
+            const auth = {
                 authenticated: true,
                 userId: user.id,
                 email: canonicalEmail,
@@ -74,6 +98,8 @@ async function requireAuth(req, res, next) {
                 teacher: safeTeacher,
                 student: null
             };
+            req.auth = auth;
+            profileCache.set(user.id, { auth, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
             return next();
         }
 
@@ -92,7 +118,7 @@ async function requireAuth(req, res, next) {
             }
 
             const safeStudent = omitPassword(student);
-            req.auth = {
+            const auth = {
                 authenticated: true,
                 userId: user.id,
                 email: canonicalEmail,
@@ -103,6 +129,8 @@ async function requireAuth(req, res, next) {
                 teacher: null,
                 student: safeStudent
             };
+            req.auth = auth;
+            profileCache.set(user.id, { auth, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
             return next();
         }
 

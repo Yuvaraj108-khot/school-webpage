@@ -77,7 +77,8 @@ exports.validateTeacherCreation = async (req, res) => {
         return res.json({
             valid: true,
             staff_id: cleanStaffId,
-            email: emailCheck.email
+            email: emailCheck.email,
+            existing_auth_user_id: avail.existingNeonUserId || null
         });
     } catch (error) {
         console.error('Validate Teacher Error:', error.message);
@@ -106,15 +107,19 @@ exports.createTeacher = async (req, res) => {
             ? auth_user_id.trim()
             : require('crypto').randomUUID();
 
-        const existingStaff = await prisma.teacher.findFirst({
-            where: { staff_id: { equals: cleanStaffId, mode: 'insensitive' } },
-            select: { id: true }
-        });
+        // Check staff ID uniqueness and email availability in parallel
+        const [existingStaff, avail] = await Promise.all([
+            prisma.teacher.findFirst({
+                where: { staff_id: { equals: cleanStaffId, mode: 'insensitive' } },
+                select: { id: true }
+            }),
+            checkEmailAvailable(emailCheck.email, { includeNeonAuth: false })
+        ]);
+
         if (existingStaff) {
             return res.status(400).json({ error: 'Staff ID already exists.' });
         }
 
-        const avail = await checkEmailAvailable(emailCheck.email, { includeNeonAuth: false });
         if (!avail.available) {
             return res.status(409).json({ error: avail.error });
         }
@@ -127,6 +132,10 @@ exports.createTeacher = async (req, res) => {
                 ON CONFLICT (id) DO NOTHING
             `;
         } catch (_) {}
+
+        // Hash initial password if provided, or default to 123456789
+        const rawPassword = (typeof req.body.password === 'string' && req.body.password.trim()) ? req.body.password.trim() : '123456789';
+        const initialHashedPassword = hashPassword(rawPassword);
 
         let photo_url = null;
         if (req.file) {
@@ -145,7 +154,7 @@ exports.createTeacher = async (req, res) => {
                 photo_url,
                 staff_id: cleanStaffId,
                 email: emailCheck.email,
-                password: null,
+                password: initialHashedPassword,
                 auth_user_id: finalAuthUserId,
                 phone: phone || null
             }
@@ -165,17 +174,47 @@ exports.deleteTeacher = async (req, res) => {
         const teacher = await prisma.teacher.findUnique({ where: { id } });
         if (!teacher) return res.status(404).json({ error: 'Teacher not found' });
 
-        // Hard delete: remove associated records first to avoid foreign key constraints
+        const teacherEmail = (teacher.email || '').trim().toLowerCase();
+        const authUserId = teacher.auth_user_id;
+
+        // 1. Remove associated assignments
         await prisma.subjectTeacher.deleteMany({
             where: { teacher_id: id }
-        });
+        }).catch(() => {});
 
+        // 2. Delete uploaded photo file from disk if present
+        if (teacher.photo_url && teacher.photo_url.startsWith('/uploads/')) {
+            try {
+                const fs = require('fs');
+                const path = require('path');
+                const filePath = path.join(__dirname, '..', teacher.photo_url);
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                }
+            } catch (_) {}
+        }
+
+        // 3. Completely purge from Neon Managed Auth user table
+        if (authUserId) {
+            try {
+                await prisma.$executeRaw`DELETE FROM neon_auth."user" WHERE id = ${authUserId}::uuid`;
+            } catch (_) {}
+        }
+        if (teacherEmail) {
+            try {
+                await prisma.$executeRaw`DELETE FROM neon_auth."user" WHERE LOWER(email) = ${teacherEmail} AND role != 'admin'`;
+            } catch (_) {}
+        }
+
+        // 4. Hard delete from teacher table
         const deleted = await prisma.teacher.delete({
             where: { id }
         });
-        res.json({ message: 'Teacher deleted successfully', teacher: omitPassword(deleted) });
+
+        res.json({ message: 'Teacher and all related records permanently deleted from database', teacher: omitPassword(deleted) });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to delete teacher' });
+        console.error('Delete Teacher Error:', error);
+        res.status(500).json({ error: 'Failed to delete teacher from database' });
     }
 };
 
