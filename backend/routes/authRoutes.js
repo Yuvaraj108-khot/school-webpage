@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 const prisma = require('../prismaClient');
 const { hashPassword, verifyPassword } = require('../utils/passwordSecurity');
 const requireNeonAdmin = require('../middleware/requireNeonAdmin');
@@ -471,7 +472,44 @@ async function sendSchoolVerificationEmail(targetEmail, otpCode) {
         `
     };
 
-    // Try SMTPS (port 465)
+    // 1. Try sending via Cloudflare Worker SMTPS Bridge (TLS 465 from edge)
+    try {
+        const bridgeRes = await fetch('https://school-webpage.yuvarajkhot2005.workers.dev/api/worker-send-email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Worker-Email-Key': 'sbei-secure-email-key-2026'
+            },
+            body: JSON.stringify({ to: targetEmail, otp: otpCode }),
+            signal: AbortSignal.timeout(12000)
+        });
+        const bridgeData = await bridgeRes.json().catch(() => ({}));
+        if (bridgeRes.ok && bridgeData.success) {
+            console.log(`[EMAIL OTP] Delivered successfully to ${targetEmail} via Cloudflare Worker SMTP Bridge`);
+            return true;
+        } else {
+            console.warn(`[EMAIL OTP] Cloudflare Worker Bridge notice:`, bridgeData);
+        }
+    } catch (bridgeErr) {
+        console.warn(`[EMAIL OTP] Cloudflare Worker Bridge notice:`, bridgeErr.message);
+    }
+
+    // 2. Direct Nodemailer fallback (using service: 'gmail')
+    try {
+        const tService = nodemailer.createTransport({
+            service: 'gmail',
+            auth: { user: schoolEmail, pass: schoolEmailPass },
+            connectionTimeout: 8000,
+            greetingTimeout: 8000
+        });
+        await tService.sendMail(mailOptions);
+        console.log(`[EMAIL OTP] Delivered successfully to ${targetEmail} via direct Nodemailer`);
+        return true;
+    } catch (errService) {
+        console.warn(`[EMAIL OTP] Direct Gmail service error:`, errService.message);
+    }
+
+    // 3. Direct SMTPS (port 465) fallback
     try {
         const t465 = nodemailer.createTransport({
             host: 'smtp.gmail.com',
@@ -499,7 +537,7 @@ async function sendSchoolVerificationEmail(targetEmail, otpCode) {
             console.log(`[EMAIL OTP] Delivered successfully to ${targetEmail} via port 587`);
             return true;
         } catch (err587) {
-            console.error(`[EMAIL OTP] Delivery failed on both 465 and 587:`, err587.message);
+            console.error(`[EMAIL OTP] Delivery failed on all local SMTP transports:`, err587.message);
             return false;
         }
     }
@@ -543,25 +581,46 @@ router.post('/neon/request-reset-otp', otpRateLimiter, async (req, res) => {
         console.log(`[PASSWORD RESET OTP] YOUR VERIFICATION CODE IS: ${otpCode}`);
         console.log('======================================================\n');
 
-        // 1. Dispatch over HTTPS via Neon Auth (guaranteed to deliver from cloud hosts)
+        // 1. Ensure target email exists in neon_auth."user" so Better-Auth does not drop the request
+        try {
+            const existingNeon = await prisma.$queryRaw`
+                SELECT id FROM neon_auth."user" WHERE LOWER(email) = ${targetEmail.toLowerCase()} LIMIT 1
+            `;
+            if (!existingNeon || existingNeon.length === 0) {
+                const newUid = crypto.randomUUID();
+                const userName = targetEmail.split('@')[0] || 'User';
+                await prisma.$executeRaw`
+                    INSERT INTO neon_auth."user" (id, name, email, "emailVerified", "createdAt", "updatedAt", role)
+                    VALUES (${newUid}::uuid, ${userName}, ${targetEmail.toLowerCase()}, true, NOW(), NOW(), 'user')
+                `;
+                await prisma.$executeRaw`
+                    INSERT INTO neon_auth.account (id, "accountId", "providerId", "userId", "createdAt", "updatedAt")
+                    VALUES (${crypto.randomUUID()}::uuid, ${targetEmail.toLowerCase()}, 'credential', ${newUid}::uuid, NOW(), NOW())
+                `;
+                console.log(`[Neon Auth] Auto-provisioned user ${targetEmail} in neon_auth."user"`);
+            }
+        } catch (provErr) {
+            console.warn(`[Neon Auth] User auto-provision note:`, provErr.message);
+        }
+
+        // 2. Dispatch over HTTPS via Neon Auth
         const baseUrl = getNeonAuthBaseUrl();
         const origin = resolveNeonOrigin(req);
         if (targetEmail && baseUrl) {
-            try {
-                await fetch(`${baseUrl}/forget-password/email-otp`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', Origin: origin },
-                    body: JSON.stringify({ email: targetEmail }),
-                    signal: AbortSignal.timeout(5000)
-                });
+            fetch(`${baseUrl}/forget-password/email-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Origin: origin },
+                body: JSON.stringify({ email: targetEmail }),
+                signal: AbortSignal.timeout(5000)
+            }).then(() => {
                 console.log(`[Neon Auth] Successfully dispatched verification email to ${targetEmail} via HTTPS`);
-            } catch (neonErr) {
+            }).catch((neonErr) => {
                 console.log(`[Neon Auth] HTTPS dispatch note:`, neonErr.message);
-            }
+            });
         }
 
-        // 2. Also dispatch school-branded email via Nodemailer if SMTP port is accessible
-        sendSchoolVerificationEmail(targetEmail, otpCode).catch((err) => {
+        // 3. Dispatch school-branded email via Worker SMTPS Bridge & Nodemailer
+        await sendSchoolVerificationEmail(targetEmail, otpCode).catch((err) => {
             console.error('[EMAIL OTP] Dispatch error:', err.message);
         });
 
@@ -607,14 +666,15 @@ router.post('/neon/verify-reset-otp', otpRateLimiter, async (req, res) => {
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 2500))
             ]);
         } catch (_) {}
+        const targetEmail = resolvedEmail || (cleanIdent.includes('@') ? cleanIdent : null);
         const baseUrl = getNeonAuthBaseUrl();
         const origin = resolveNeonOrigin(req);
-        if (resolvedEmail && baseUrl) {
+        if (targetEmail && baseUrl) {
             const resp = await fetch(`${baseUrl}/email-otp/check-verification-otp`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Origin: origin },
                 body: JSON.stringify({
-                    email: resolvedEmail,
+                    email: targetEmail,
                     otp: cleanOtp,
                     type: 'forget-password'
                 }),
@@ -704,20 +764,31 @@ router.post('/neon/reset-password', otpRateLimiter, async (req, res) => {
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 2500))
             ]);
         } catch (_) {}
+        const targetEmail = resolvedEmail || (cleanIdent.includes('@') ? cleanIdent : null);
         const baseUrl = getNeonAuthBaseUrl();
         const origin = resolveNeonOrigin(req);
-        if (resolvedEmail && baseUrl) {
+        if (targetEmail && baseUrl) {
             const resp = await fetch(`${baseUrl}/email-otp/reset-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Origin: origin },
                 body: JSON.stringify({
-                    email: resolvedEmail,
+                    email: targetEmail,
                     otp: cleanOtp,
                     password
                 }),
                 signal: AbortSignal.timeout(3000)
             }).catch(() => null);
             if (resp && resp.ok) {
+                const hashedPassword = hashPassword(password);
+                await prisma.student.updateMany({
+                    where: { email: { equals: targetEmail, mode: 'insensitive' } },
+                    data: { password: hashedPassword }
+                }).catch(() => {});
+                await prisma.teacher.updateMany({
+                    where: { email: { equals: targetEmail, mode: 'insensitive' } },
+                    data: { password: hashedPassword }
+                }).catch(() => {});
+
                 return res.json({
                     success: true,
                     message: 'Password updated successfully. You can now log in with your new password.'
