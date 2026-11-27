@@ -1,3 +1,6 @@
+// Explicitly load iconv-lite so Vercel bundler packages its nested helpers
+require('iconv-lite');
+
 let app;
 let initError = null;
 
