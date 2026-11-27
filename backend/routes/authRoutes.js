@@ -425,6 +425,86 @@ router.post('/logout', async (req, res) => {
     res.json({ success: true });
 });
 
+// Helper to send beautifully branded school verification email with automatic port fallback
+async function sendSchoolVerificationEmail(targetEmail, otpCode) {
+    const schoolEmail = (process.env.SCHOOL_EMAIL || 'srimadbhuvanendraeducationalin@gmail.com').trim();
+    const schoolEmailPass = (process.env.SCHOOL_EMAIL_PASSWORD || 'mldx xrfw pwsi jjgh').replace(/\s+/g, '');
+    if (!targetEmail || !schoolEmail || !schoolEmailPass) return false;
+
+    const mailOptions = {
+        from: `"Shri Basaveshwar English Medium School" <${schoolEmail}>`,
+        to: targetEmail,
+        subject: 'Password Reset Verification PIN - Shri Basaveshwar English Medium School',
+        text: `Shri Basaveshwar English Medium School (SBEI)\n\nYour Password Reset Verification PIN is: ${otpCode}\n\nThis PIN is valid for 15 minutes. Enter it on the password reset page to choose a new password.\n\nIf you did not request this verification code, please ignore this email or contact school administration at ${schoolEmail}.`,
+        html: `
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 580px; margin: 0 auto; padding: 0; border: 1px solid #dbe2ea; border-radius: 12px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
+                <div style="background: linear-gradient(135deg, #0f3057 0%, #1a4f8b 100%); padding: 28px 24px; text-align: center; color: #ffffff;">
+                    <h1 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.5px;">Shri Basaveshwar English Medium School</h1>
+                    <p style="margin: 6px 0 0; font-size: 14px; opacity: 0.9; color: #e2e8f0;">Srimad Bhuvanendra Educational Institutions (SBEI)</p>
+                </div>
+                <div style="padding: 32px 28px; color: #2d3748; line-height: 1.6;">
+                    <h2 style="color: #0f3057; margin-top: 0; font-size: 18px; border-bottom: 2px solid #edf2f7; padding-bottom: 12px;">Password Reset Request</h2>
+                    <p style="font-size: 15px; margin-bottom: 20px;">Dear Student / Staff Member,</p>
+                    <p style="font-size: 15px; margin-bottom: 24px;">We received a request to reset the password for your account. Please use the following 6-digit Verification PIN to proceed:</p>
+                    
+                    <div style="text-align: center; margin: 30px 0;">
+                        <div style="display: inline-block; background: #f0f4f9; border: 2px dashed #0f3057; border-radius: 10px; padding: 16px 36px;">
+                            <span style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #0f3057; font-family: monospace;">${otpCode}</span>
+                        </div>
+                        <p style="color: #718096; font-size: 13px; margin-top: 10px;">Valid for 15 minutes</p>
+                    </div>
+                    
+                    <div style="background-color: #f7fafc; border-left: 4px solid #0f3057; padding: 14px 18px; border-radius: 4px; margin: 24px 0;">
+                        <p style="margin: 0; font-size: 13px; color: #4a5568;">
+                            <strong>Important Security Notice:</strong> Never share this PIN with anyone. School staff will never ask for your verification code or password.
+                        </p>
+                    </div>
+                    
+                    <p style="font-size: 14px; color: #4a5568;">If you did not request this password reset, you can safely ignore this email. Your current password will remain unchanged.</p>
+                </div>
+                <div style="background-color: #edf2f7; padding: 18px 24px; text-align: center; font-size: 12px; color: #718096; border-top: 1px solid #e2e8f0;">
+                    <p style="margin: 0 0 4px;"><strong>Shri Basaveshwar English Medium School</strong></p>
+                    <p style="margin: 0 0 6px;">Official Portal: <a href="https://school-webpage.yuvarajkhot2005.workers.dev" style="color: #0f3057; text-decoration: none; font-weight: 600;">school-webpage.yuvarajkhot2005.workers.dev</a></p>
+                    <p style="margin: 0;">For assistance, contact: <a href="mailto:${schoolEmail}" style="color: #0f3057;">${schoolEmail}</a></p>
+                </div>
+            </div>
+        `
+    };
+
+    // Try SMTPS (port 465)
+    try {
+        const t465 = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
+            auth: { user: schoolEmail, pass: schoolEmailPass },
+            connectionTimeout: 8000,
+            greetingTimeout: 8000
+        });
+        await t465.sendMail(mailOptions);
+        console.log(`[EMAIL OTP] Delivered successfully to ${targetEmail} via port 465`);
+        return true;
+    } catch (err465) {
+        console.warn(`[EMAIL OTP] Port 465 notice (${err465.message}). Retrying on port 587...`);
+        try {
+            const t587 = nodemailer.createTransport({
+                host: 'smtp.gmail.com',
+                port: 587,
+                secure: false,
+                auth: { user: schoolEmail, pass: schoolEmailPass },
+                connectionTimeout: 8000,
+                greetingTimeout: 8000
+            });
+            await t587.sendMail(mailOptions);
+            console.log(`[EMAIL OTP] Delivered successfully to ${targetEmail} via port 587`);
+            return true;
+        } catch (err587) {
+            console.error(`[EMAIL OTP] Delivery failed on both 465 and 587:`, err587.message);
+            return false;
+        }
+    }
+}
+
 // Instant OTP verification and reset handler
 router.post('/neon/request-reset-otp', otpRateLimiter, async (req, res) => {
     try {
@@ -435,7 +515,6 @@ router.post('/neon/request-reset-otp', otpRateLimiter, async (req, res) => {
 
         let resolvedEmail = null;
         try {
-            // Resolve email with a 3 second timeout so a slow DB or network never hangs the request
             resolvedEmail = await Promise.race([
                 resolveNeonRecoveryEmail(identifier),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
@@ -447,111 +526,29 @@ router.post('/neon/request-reset-otp', otpRateLimiter, async (req, res) => {
         }
 
         const cleanIdent = identifier.trim().toLowerCase();
-
-        // Generate 6-digit OTP
-        const otpCode = String(Math.floor(100000 + Math.random() * 900000));
-        const expiresAt = Date.now() + 15 * 60 * 1000;
-        localResetOtpStore.set(cleanIdent, { otp: otpCode, email: resolvedEmail, expiresAt });
-        if (resolvedEmail) {
-            localResetOtpStore.set(resolvedEmail.toLowerCase(), { otp: otpCode, email: resolvedEmail, expiresAt });
-        }
-
-        console.log('\n======================================================');
-        console.log(`[PASSWORD RESET OTP] Target: ${identifier} (${resolvedEmail || 'local account'})`);
-        console.log(`[PASSWORD RESET OTP] YOUR VERIFICATION CODE IS: ${otpCode}`);
-        console.log('======================================================\n');
-
-        // Send OTP directly via Nodemailer and Neon Auth HTTPS API
-        const targetEmail = resolvedEmail || (identifier.includes('@') ? identifier.trim() : null);
-        const schoolEmail = (process.env.SCHOOL_EMAIL || 'srimadbhuvanendraeducationalin@gmail.com').trim();
-        const schoolEmailPass = (process.env.SCHOOL_EMAIL_PASSWORD || 'mldx xrfw pwsi jjgh').replace(/\s+/g, '');
+        const targetEmail = resolvedEmail || (identifier.includes('@') ? identifier.trim().toLowerCase() : null);
 
         if (!targetEmail) {
             return res.status(404).json({ error: 'No registered account found with that ID or email.' });
         }
 
-        // 1. Dispatch over HTTPS via Neon Auth (bypasses cloud providers' SMTP port blocks)
-        const baseUrl = getNeonAuthBaseUrl();
-        const origin = resolveNeonOrigin(req);
-        if (targetEmail && baseUrl) {
-            try {
-                await fetch(`${baseUrl}/forget-password/email-otp`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', Origin: origin },
-                    body: JSON.stringify({ email: targetEmail }),
-                    signal: AbortSignal.timeout(4000)
-                });
-                console.log(`[Neon Auth] Successfully dispatched verification email to ${targetEmail} via HTTPS`);
-            } catch (neonErr) {
-                console.log(`[Neon Auth] HTTPS dispatch note:`, neonErr.message);
-            }
-        }
+        // Generate 6-digit OTP
+        const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+        const expiresAt = Date.now() + 15 * 60 * 1000;
+        localResetOtpStore.set(cleanIdent, { otp: otpCode, email: targetEmail, expiresAt });
+        localResetOtpStore.set(targetEmail, { otp: otpCode, email: targetEmail, expiresAt });
 
-        // 2. Also dispatch via Nodemailer SMTP (direct from School Gmail)
-        if (targetEmail && schoolEmail && schoolEmailPass) {
-            try {
-                const transporter = nodemailer.createTransport({
-                    host: 'smtp.gmail.com',
-                    port: 465,
-                    secure: true,
-                    auth: {
-                        user: schoolEmail,
-                        pass: schoolEmailPass
-                    },
-                    connectionTimeout: 8000,
-                    greetingTimeout: 8000,
-                    socketTimeout: 8000
-                });
+        console.log('\n======================================================');
+        console.log(`[PASSWORD RESET OTP] Target: ${identifier} -> ${targetEmail}`);
+        console.log(`[PASSWORD RESET OTP] YOUR VERIFICATION CODE IS: ${otpCode}`);
+        console.log('======================================================\n');
 
-                transporter.sendMail({
-                    from: `"Shri Basaveshwar English Medium School" <${schoolEmail}>`,
-                    to: targetEmail,
-                    subject: 'Password Reset Verification PIN - Shri Basaveshwar English Medium School',
-                    text: `Shri Basaveshwar English Medium School (SBEI)\n\nYour Password Reset Verification PIN is: ${otpCode}\n\nThis PIN is valid for 15 minutes. Enter it on the password reset page to choose a new password.\n\nIf you did not request this verification code, please ignore this email or contact school administration at ${schoolEmail}.`,
-                    html: `
-                        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 580px; margin: 0 auto; padding: 0; border: 1px solid #dbe2ea; border-radius: 12px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
-                            <div style="background: linear-gradient(135deg, #0f3057 0%, #1a4f8b 100%); padding: 28px 24px; text-align: center; color: #ffffff;">
-                                <h1 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.5px;">Shri Basaveshwar English Medium School</h1>
-                                <p style="margin: 6px 0 0; font-size: 14px; opacity: 0.9; color: #e2e8f0;">Srimad Bhuvanendra Educational Institutions (SBEI)</p>
-                            </div>
-                            <div style="padding: 32px 28px; color: #2d3748; line-height: 1.6;">
-                                <h2 style="color: #0f3057; margin-top: 0; font-size: 18px; border-bottom: 2px solid #edf2f7; padding-bottom: 12px;">Password Reset Request</h2>
-                                <p style="font-size: 15px; margin-bottom: 20px;">Dear Student / Staff Member,</p>
-                                <p style="font-size: 15px; margin-bottom: 24px;">We received a request to reset the password for your account. Please use the following 6-digit Verification PIN to proceed:</p>
-                                
-                                <div style="text-align: center; margin: 30px 0;">
-                                    <div style="display: inline-block; background: #f0f4f9; border: 2px dashed #0f3057; border-radius: 10px; padding: 16px 36px;">
-                                        <span style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #0f3057; font-family: monospace;">${otpCode}</span>
-                                    </div>
-                                    <p style="color: #718096; font-size: 13px; margin-top: 10px;">Valid for 15 minutes</p>
-                                </div>
-                                
-                                <div style="background-color: #f7fafc; border-left: 4px solid #0f3057; padding: 14px 18px; border-radius: 4px; margin: 24px 0;">
-                                    <p style="margin: 0; font-size: 13px; color: #4a5568;">
-                                        <strong>Important Security Notice:</strong> Never share this PIN with anyone. School staff will never ask for your verification code or password.
-                                    </p>
-                                </div>
-                                
-                                <p style="font-size: 14px; color: #4a5568;">If you did not request this password reset, you can safely ignore this email. Your current password will remain unchanged.</p>
-                            </div>
-                            <div style="background-color: #edf2f7; padding: 18px 24px; text-align: center; font-size: 12px; color: #718096; border-top: 1px solid #e2e8f0;">
-                                <p style="margin: 0 0 4px;"><strong>Shri Basaveshwar English Medium School</strong></p>
-                                <p style="margin: 0 0 6px;">Official Portal: <a href="https://school-webpage.yuvarajkhot2005.workers.dev" style="color: #0f3057; text-decoration: none; font-weight: 600;">school-webpage.yuvarajkhot2005.workers.dev</a></p>
-                                <p style="margin: 0;">For assistance, contact: <a href="mailto:${schoolEmail}" style="color: #0f3057;">${schoolEmail}</a></p>
-                            </div>
-                        </div>
-                    `
-                }).then(() => {
-                    console.log(`[EMAIL OTP] SMTP delivered verification code to ${targetEmail}`);
-                }).catch((mailErr) => {
-                    console.log(`[EMAIL OTP] SMTP notice (expected on cloud hosts blocking port 465):`, mailErr.message);
-                });
-            } catch (mailErr) {
-                console.log(`[EMAIL OTP] Setup notice:`, mailErr.message);
-            }
-        }
+        // Send email in background (or awaited with timeout)
+        sendSchoolVerificationEmail(targetEmail, otpCode).catch((err) => {
+            console.error('[EMAIL OTP] Dispatch error:', err.message);
+        });
 
-        // Return immediately with success — NO OTP IN RESPONSE
+        // Return immediately with success
         return res.json({
             success: true,
             message: 'A 6-digit verification code has been sent to your registered email address.'
