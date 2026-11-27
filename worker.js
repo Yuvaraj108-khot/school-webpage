@@ -8,6 +8,12 @@ export default {
       const headers = new Headers(request.headers);
       headers.set('host', 'school-webpage-1uky.onrender.com');
 
+      const clientIp = request.headers.get('cf-connecting-ip');
+      if (clientIp) {
+        headers.set('cf-connecting-ip', clientIp);
+        headers.set('x-forwarded-for', clientIp);
+      }
+
       const proxyReq = new Request(backendUrl, {
         method: request.method,
         headers: headers,

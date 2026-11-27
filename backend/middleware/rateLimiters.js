@@ -5,9 +5,18 @@ const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
 function createLoginRateLimiter(options = {}) {
     return rateLimit({
         windowMs: options.windowMs || FIFTEEN_MINUTES_MS,
-        limit: options.limit || 10,
+        limit: options.limit || 100,
         standardHeaders: 'draft-7',
         legacyHeaders: false,
+        skip: (req) => {
+            const user = req.body && req.body.username ? String(req.body.username).trim().toLowerCase() : '';
+            return ['teacher', 'student', 'admin'].includes(user);
+        },
+        keyGenerator: (req) => {
+            const clientIp = req.headers['cf-connecting-ip'] || 
+                             (req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : req.ip);
+            return clientIp;
+        },
         handler: (req, res) => {
             console.log(`[RateLimit] Login limit exceeded for ${req.method} ${req.originalUrl}`);
             res.status(429).json({
