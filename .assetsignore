@@ -1,0 +1,13 @@
+.git
+node_modules
+backend
+prisma
+api
+scratch
+.gemini
+*.log
+.env*
+package-lock.json
+wrangler.toml
+vercel.json
+_redirects
