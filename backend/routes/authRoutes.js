@@ -487,7 +487,7 @@ router.post('/neon/request-reset-otp', otpRateLimiter, async (req, res) => {
             }
         }
 
-        // 2. Also dispatch via Nodemailer SMTP with short timeout (succeeds when SMTP ports 465/587 are available)
+        // 2. Also dispatch via Nodemailer SMTP (direct from School Gmail)
         if (targetEmail && schoolEmail && schoolEmailPass) {
             try {
                 const transporter = nodemailer.createTransport({
@@ -498,24 +498,47 @@ router.post('/neon/request-reset-otp', otpRateLimiter, async (req, res) => {
                         user: schoolEmail,
                         pass: schoolEmailPass
                     },
-                    connectionTimeout: 2500,
-                    greetingTimeout: 2500,
-                    socketTimeout: 3000
+                    connectionTimeout: 8000,
+                    greetingTimeout: 8000,
+                    socketTimeout: 8000
                 });
 
                 transporter.sendMail({
-                    from: `"Srimad Bhuvanendra School" <${schoolEmail}>`,
+                    from: `"Shri Basaveshwar English Medium School" <${schoolEmail}>`,
                     to: targetEmail,
-                    subject: 'Password Reset Verification Code - SBEI',
-                    text: `Your password reset verification code is: ${otpCode}. It will expire in 15 minutes.`,
+                    subject: 'Password Reset Verification PIN - Shri Basaveshwar English Medium School',
+                    text: `Shri Basaveshwar English Medium School (SBEI)\n\nYour Password Reset Verification PIN is: ${otpCode}\n\nThis PIN is valid for 15 minutes. Enter it on the password reset page to choose a new password.\n\nIf you did not request this verification code, please ignore this email or contact school administration at ${schoolEmail}.`,
                     html: `
-                        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #e0e0e0; border-radius: 8px;">
-                            <h2 style="color: #1a3a5c; margin-top: 0;">Password Reset Request</h2>
-                            <p style="color: #444; font-size: 15px;">You requested to reset your password. Use the verification code below:</p>
-                            <div style="text-align: center; margin: 24px 0;">
-                                <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #1a3a5c; background: #f0f4f8; padding: 12px 24px; border-radius: 6px; display: inline-block;">${otpCode}</span>
+                        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 580px; margin: 0 auto; padding: 0; border: 1px solid #dbe2ea; border-radius: 12px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
+                            <div style="background: linear-gradient(135deg, #0f3057 0%, #1a4f8b 100%); padding: 28px 24px; text-align: center; color: #ffffff;">
+                                <h1 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.5px;">Shri Basaveshwar English Medium School</h1>
+                                <p style="margin: 6px 0 0; font-size: 14px; opacity: 0.9; color: #e2e8f0;">Srimad Bhuvanendra Educational Institutions (SBEI)</p>
                             </div>
-                            <p style="color: #777; font-size: 13px;">This code will expire in 15 minutes. If you did not request this, please ignore this email.</p>
+                            <div style="padding: 32px 28px; color: #2d3748; line-height: 1.6;">
+                                <h2 style="color: #0f3057; margin-top: 0; font-size: 18px; border-bottom: 2px solid #edf2f7; padding-bottom: 12px;">Password Reset Request</h2>
+                                <p style="font-size: 15px; margin-bottom: 20px;">Dear Student / Staff Member,</p>
+                                <p style="font-size: 15px; margin-bottom: 24px;">We received a request to reset the password for your account. Please use the following 6-digit Verification PIN to proceed:</p>
+                                
+                                <div style="text-align: center; margin: 30px 0;">
+                                    <div style="display: inline-block; background: #f0f4f9; border: 2px dashed #0f3057; border-radius: 10px; padding: 16px 36px;">
+                                        <span style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #0f3057; font-family: monospace;">${otpCode}</span>
+                                    </div>
+                                    <p style="color: #718096; font-size: 13px; margin-top: 10px;">Valid for 15 minutes</p>
+                                </div>
+                                
+                                <div style="background-color: #f7fafc; border-left: 4px solid #0f3057; padding: 14px 18px; border-radius: 4px; margin: 24px 0;">
+                                    <p style="margin: 0; font-size: 13px; color: #4a5568;">
+                                        <strong>Important Security Notice:</strong> Never share this PIN with anyone. School staff will never ask for your verification code or password.
+                                    </p>
+                                </div>
+                                
+                                <p style="font-size: 14px; color: #4a5568;">If you did not request this password reset, you can safely ignore this email. Your current password will remain unchanged.</p>
+                            </div>
+                            <div style="background-color: #edf2f7; padding: 18px 24px; text-align: center; font-size: 12px; color: #718096; border-top: 1px solid #e2e8f0;">
+                                <p style="margin: 0 0 4px;"><strong>Shri Basaveshwar English Medium School</strong></p>
+                                <p style="margin: 0 0 6px;">Official Portal: <a href="https://school-webpage.yuvarajkhot2005.workers.dev" style="color: #0f3057; text-decoration: none; font-weight: 600;">school-webpage.yuvarajkhot2005.workers.dev</a></p>
+                                <p style="margin: 0;">For assistance, contact: <a href="mailto:${schoolEmail}" style="color: #0f3057;">${schoolEmail}</a></p>
+                            </div>
                         </div>
                     `
                 }).then(() => {
