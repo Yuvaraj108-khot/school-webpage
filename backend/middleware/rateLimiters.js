@@ -29,9 +29,15 @@ function createLoginRateLimiter(options = {}) {
 function createOtpRateLimiter(options = {}) {
     return rateLimit({
         windowMs: options.windowMs || FIFTEEN_MINUTES_MS,
-        limit: options.limit || 5,
+        limit: options.limit || 30,
         standardHeaders: 'draft-7',
         legacyHeaders: false,
+        keyGenerator: (req) => {
+            const ident = (req.body && req.body.identifier) ? String(req.body.identifier).toLowerCase().trim() : '';
+            const clientIp = req.headers['cf-connecting-ip'] || 
+                             (req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : req.ip);
+            return ident ? `${clientIp}:${ident}` : clientIp;
+        },
         handler: (req, res) => {
             console.log(`[RateLimit] OTP verification limit exceeded for ${req.method} ${req.originalUrl}`);
             res.status(429).json({
