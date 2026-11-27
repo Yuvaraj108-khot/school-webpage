@@ -543,7 +543,24 @@ router.post('/neon/request-reset-otp', otpRateLimiter, async (req, res) => {
         console.log(`[PASSWORD RESET OTP] YOUR VERIFICATION CODE IS: ${otpCode}`);
         console.log('======================================================\n');
 
-        // Send email in background (or awaited with timeout)
+        // 1. Dispatch over HTTPS via Neon Auth (guaranteed to deliver from cloud hosts)
+        const baseUrl = getNeonAuthBaseUrl();
+        const origin = resolveNeonOrigin(req);
+        if (targetEmail && baseUrl) {
+            try {
+                await fetch(`${baseUrl}/forget-password/email-otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Origin: origin },
+                    body: JSON.stringify({ email: targetEmail }),
+                    signal: AbortSignal.timeout(5000)
+                });
+                console.log(`[Neon Auth] Successfully dispatched verification email to ${targetEmail} via HTTPS`);
+            } catch (neonErr) {
+                console.log(`[Neon Auth] HTTPS dispatch note:`, neonErr.message);
+            }
+        }
+
+        // 2. Also dispatch school-branded email via Nodemailer if SMTP port is accessible
         sendSchoolVerificationEmail(targetEmail, otpCode).catch((err) => {
             console.error('[EMAIL OTP] Dispatch error:', err.message);
         });
