@@ -758,7 +758,7 @@ router.get('/me', async (req, res) => {
                 role: 'teacher',
                 linked: true,
                 profile: {
-                    id: 9999,
+                    id: 42,
                     staff_id: 'teacher',
                     name: 'Demo Teacher',
                     email: 'teacher@sbei.edu.in',
@@ -779,7 +779,7 @@ router.get('/me', async (req, res) => {
                 role: 'student',
                 linked: true,
                 profile: {
-                    id: 9999,
+                    id: 7,
                     student_code: 'student',
                     name: 'Demo Student',
                     email: 'student@sbei.edu.in',

@@ -72,6 +72,66 @@ async function requireAuth(req, res, next) {
             return next();
         }
 
+        // Demo Teacher instant session match
+        if (user.id === '11111111-1111-4111-8111-111111111111' || (roles.includes('teacher') && user.email === 'teacher@sbei.edu.in')) {
+            const safeTeacher = {
+                id: 42,
+                staff_id: 'teacher',
+                name: 'Demo Teacher',
+                email: 'teacher@sbei.edu.in',
+                subject: 'Mathematics',
+                medium: 'English',
+                designation: 'Senior Teacher',
+                category: 'High School',
+                photo_url: null,
+                is_active: true
+            };
+            const auth = {
+                authenticated: true,
+                userId: user.id,
+                email: 'teacher@sbei.edu.in',
+                name: safeTeacher.name,
+                role: 'teacher',
+                roles: ['teacher'],
+                profile: safeTeacher,
+                teacher: safeTeacher,
+                student: null
+            };
+            req.auth = auth;
+            profileCache.set(user.id, { auth, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
+            return next();
+        }
+
+        // Demo Student instant session match
+        if (user.id === '22222222-2222-4222-8222-222222222222' || (roles.includes('student') && user.email === 'student@sbei.edu.in')) {
+            const safeStudent = {
+                id: 7,
+                student_code: 'student',
+                name: 'Demo Student',
+                email: 'student@sbei.edu.in',
+                class: '10',
+                medium: 'English',
+                roll_no: '1',
+                parent_name: 'Demo Parent',
+                photo_url: null,
+                is_active: true
+            };
+            const auth = {
+                authenticated: true,
+                userId: user.id,
+                email: 'student@sbei.edu.in',
+                name: safeStudent.name,
+                role: 'student',
+                roles: ['student'],
+                profile: safeStudent,
+                teacher: null,
+                student: safeStudent
+            };
+            req.auth = auth;
+            profileCache.set(user.id, { auth, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
+            return next();
+        }
+
         // 2. Teacher record linked by auth_user_id
         const teacher = await prisma.teacher.findFirst({
             where: { auth_user_id: user.id }
