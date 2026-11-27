@@ -38,12 +38,14 @@ prisma.$connect()
         console.warn('[Database] Pre-warm connection notice:', err.message);
     });
 
-// Periodic keep-alive ping to eliminate Neon serverless cold starts (runs every 3.5 mins)
-setInterval(async () => {
-    try {
-        await prisma.$queryRaw`SELECT 1`;
-    } catch (_) {}
-}, 210000);
+// Periodic keep-alive ping to eliminate Neon serverless cold starts (runs only on traditional servers)
+if (!process.env.VERCEL) {
+    setInterval(async () => {
+        try {
+            await prisma.$queryRaw`SELECT 1`;
+        } catch (_) {}
+    }, 210000);
+}
 
 // Middleware
 const allowedOriginPatterns = [
@@ -67,10 +69,12 @@ app.use(cors({
     origin(origin, callback) {
         if (!origin) return callback(null, true);
         const normalizedOrigin = origin.replace(/\/+$/, '');
-        if (trustedOrigins.has(normalizedOrigin)) {
-            return callback(null, true);
-        }
-        if (!isProductionEnv && allowedOriginPatterns.some((re) => re.test(normalizedOrigin))) {
+        if (
+            trustedOrigins.has(normalizedOrigin) ||
+            /\.vercel\.app$/i.test(normalizedOrigin) ||
+            /\.onrender\.com$/i.test(normalizedOrigin) ||
+            allowedOriginPatterns.some((re) => re.test(normalizedOrigin))
+        ) {
             return callback(null, true);
         }
         return callback(null, false);

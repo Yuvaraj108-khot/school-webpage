@@ -2,8 +2,15 @@
   "version": 2,
   "builds": [
     {
-      "src": "backend/server.js",
-      "use": "@vercel/node"
+      "src": "api/index.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "prisma/**",
+          "node_modules/.prisma/**",
+          "backend/**"
+        ]
+      }
     },
     {
       "src": "*.html",
@@ -17,7 +24,7 @@
       "src": "*.js",
       "use": "@vercel/static",
       "config": {
-        "excludeFiles": ["backend/**", "node_modules/**"]
+        "excludeFiles": ["backend/**", "api/**", "node_modules/**"]
       }
     },
     {
@@ -28,11 +35,11 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/backend/server.js"
+      "dest": "/api/index.js"
     },
     {
       "src": "/uploads/(.*)",
-      "dest": "/backend/server.js"
+      "dest": "/api/index.js"
     },
     {
       "src": "/(.*)",
