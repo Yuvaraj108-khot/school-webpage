@@ -1,5 +1,8 @@
-// Explicitly load iconv-lite so Vercel bundler packages its nested helpers
-require('iconv-lite');
+// Explicitly reference nested modules so Vercel NFT bundler packages them
+try {
+    require('iconv-lite');
+    require('iconv-lite/lib/helpers/merge-exports');
+} catch (_) {}
 
 let app;
 let initError = null;

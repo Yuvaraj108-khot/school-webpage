@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "node_modules/iconv-lite/**"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
